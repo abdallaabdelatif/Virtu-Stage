@@ -1,10 +1,58 @@
+# Virtual Environments
 venv/
+.venv/
+env/
+ENV/
+**/venv/
+**/.venv/
+
+# Python Cache
 __pycache__/
-pretrained_models/
-*.pth
-*.ckpt
-*.bin
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+**/___pycache__/
+
+# Database Files 
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment Variables
+.env
+.env.local
+.env.development
+.env.production
+**/.env
+
+# Distribution / Packaging 
+dist/
+build/
+*.egg-info/
+*.egg
+wheels/
+
+# IDE & Editor Files 
 .vscode/
 .idea/
 *.swp
 *.swo
+*.suo
+*.user
+
+# OS Files 
+.DS_Store
+.DS_Store?
+Thumbs.db
+desktop.ini
+
+# Testing & Coverage 
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Logs 
+*.log
+logs/
