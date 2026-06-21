@@ -1,9 +1,0 @@
-fastapi
-uvicorn
-torch==2.2.2+cpu
-torchaudio==2.2.2+cpu
-speechbrain>=1.0.2
-numpy<2
-librosa
-pyaudioanalysis
-scipy
