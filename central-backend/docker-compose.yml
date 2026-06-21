@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  central-backend:
+    build: .
+    ports:
+      - "9000:9000"
+    environment:
+      - CRUD_BASE_URL=http://crud:8000
+    depends_on: []

@@ -6,6 +6,7 @@ from app.routers import session as session_router
 from app.routers import conversation_history as conversation_history_router
 from app.routers import voice_analysis as voice_analysis_router
 from app.routers import motion_analysis as motion_analysis_router
+from app.routers import auth as auth_router
 
 from app.models import user as user_model
 from app.models import session as session_model
@@ -28,6 +29,7 @@ app.include_router(session_router.router)
 app.include_router(conversation_history_router.router)
 app.include_router(voice_analysis_router.router)
 app.include_router(motion_analysis_router.router)
+app.include_router(auth_router.router)
 
 
 @app.get("/")
