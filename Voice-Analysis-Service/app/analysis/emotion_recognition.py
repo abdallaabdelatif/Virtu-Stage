@@ -42,12 +42,16 @@ class EmotionRecognizer:
         logger.info("Emotion recognition model loaded.")
 
     def predict(self, wav_path: str) -> EmotionScores:
-        _, probabilities, _, _ = self._classifier.classify_file(wav_path)
-        probs = torch.exp(probabilities).squeeze(0).tolist()
-        score_by_label = dict(zip(MODEL_LABEL_ORDER, probs))
+        out_prob, _, _, text_lab = self._classifier.classify_file(wav_path)
+        probs = torch.exp(out_prob).squeeze(0).tolist()
+        label_map = {"ang": "angry", "hap": "happy", "neu": "neutral", "sad": "sad"}
+        score_by_label = {}
+        for lab, prob in zip(text_lab, probs):
+            full_emotion = label_map.get(lab.lower(), lab.lower())
+            score_by_label[full_emotion] = prob
         return EmotionScores(
-            neutral=score_by_label["neutral"],
-            happy=score_by_label["happy"],
-            sad=score_by_label["sad"],
-            angry=score_by_label["angry"],
+            neutral=score_by_label.get("neutral", 0.0),
+            happy=score_by_label.get("happy", 0.0),
+            sad=score_by_label.get("sad", 0.0),
+            angry=score_by_label.get("angry", 0.0),
         )
