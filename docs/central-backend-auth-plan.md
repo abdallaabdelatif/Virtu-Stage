@@ -38,8 +38,9 @@ Concrete tasks:
    - `app/auth/jwt.py` — JWT helpers: `create_access_token(data)`, `verify_token(token)` using HS256 and `SECRET_KEY`.
    - `app/auth/passwords.py` — `verify_password_with_crud_hash(plain, stored_hash)` to match CRUD's PBKDF2 implementation (base64(salt+digest), salt length 32 bytes, iterations 100000, hash name sha256). Implement `hash_password_for_tests()` (optional).
    - `app/auth/routes.py` — expose:
-     - `POST /auth/register` : Accept `UserRegister` -> call `crud_client.create_user(payload)` -> return `201` + minimal user object (no password).
-     - `POST /auth/login` : Accept `UserLogin` (username/email + password) -> fetch users via `crud_client.list_users()` and find matching username/email -> verify password with `verify_password_with_crud_hash` -> issue `access_token` (JWT) and `refresh_token` (optional).
+     - `POST /api/auth/register`: create the user through CRUD and return the user with an access token.
+     - `POST /api/auth/login`: verify username/email and password through CRUD, then return the user with an access token.
+     - `GET /api/auth/me`: validate the Bearer token and return the current user.
    - `app/auth/deps.py` — `get_current_user` dependency: verify JWT and attach user info (call CRUD `GET /users/{id}` if needed).
 
 5. Tests & docs for auth
@@ -47,8 +48,9 @@ Concrete tasks:
    - `docs/auth.md` — short usage (curl) examples for register & login.
 
 Acceptance criteria for Phase 1
-- `POST /auth/register` creates a new user through CRUD and returns created user (no password).
-- `POST /auth/login` returns a valid JWT when provided correct credentials.
+- `POST /api/auth/register` creates a user through CRUD and returns the user with a valid JWT.
+- `POST /api/auth/login` returns the user with a valid JWT for correct credentials.
+- `GET /api/auth/me` restores the authenticated user from the JWT.
 - `GET /` health check present.
 
 ---

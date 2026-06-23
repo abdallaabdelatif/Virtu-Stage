@@ -44,16 +44,17 @@ Use PowerShell `Invoke-RestMethod` to POST a new user through the Central Backen
 $body = @{
   username = "alice"
   email = "alice@example.com"
-  password = "secret123"
+  password = "Strong123!"
   first_name = "Alice"
   last_name = "A"
   gender = "female"
 } | ConvertTo-Json
 
-Invoke-RestMethod -Method Post -Uri "http://localhost:9000/auth/register" -ContentType "application/json" -Body $body
+Invoke-RestMethod -Method Post -Uri "http://localhost:9000/api/auth/register" -ContentType "application/json" -Body $body
 ```
 
-Expected: HTTP 201 JSON response with the created user fields (no password). If username/email already exists you will get a 409 from CRUD.
+Expected: HTTP 201 JSON response containing `access_token`, `token_type`, and
+the created `user`. Duplicate usernames or emails return `409`.
 
 4) Test Login (Central Backend only)
 
@@ -62,21 +63,35 @@ Login via Central Backend to receive a JWT access token:
 ```powershell
 $login = @{
   username_or_email = "alice"
-  password = "secret123"
+  password = "Strong123!"
 } | ConvertTo-Json
 
-$result = Invoke-RestMethod -Method Post -Uri "http://localhost:9000/auth/login" -ContentType "application/json" -Body $login
+$result = Invoke-RestMethod -Method Post -Uri "http://localhost:9000/api/auth/login" -ContentType "application/json" -Body $login
 $result
 ```
 
-Expected: JSON containing `access_token`, e.g.:
+Expected: JSON containing `access_token`, `token_type`, and `user`.
 
 ```json
-{ "access_token": "<JWT>", "token_type": "bearer" }
+{ "access_token": "<JWT>", "token_type": "bearer", "user": { "username": "alice" } }
 ```
 
-5)
+5) Test the authenticated user endpoint
 
 ```powershell
-
+$headers = @{ Authorization = "Bearer $($result.access_token)" }
+Invoke-RestMethod -Method Get -Uri "http://localhost:9000/api/auth/me" -Headers $headers
 ```
+
+Expected: the complete authenticated user object.
+
+6) Test through the frontend
+
+From the dashboard root:
+
+```powershell
+npm run dev
+```
+
+Open `http://localhost:5173`. Register, sign out, sign in using either the
+username or email, and refresh the page to verify session restoration.

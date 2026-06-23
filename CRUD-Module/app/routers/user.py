@@ -1,6 +1,3 @@
-import hashlib
-import os
-import base64
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -8,14 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_session
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, UserUpdate
+from app.security.passwords import hash_password
+from app.dependencies.internal import require_internal_api_key
 
 router = APIRouter(prefix="/users", tags=["users"])
-
-
-def _hash_password(password: str) -> str:
-    salt = os.urandom(32)
-    digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 100_000)
-    return base64.b64encode(salt + digest).decode()
 
 
 @router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -23,19 +16,27 @@ async def create_user(
     payload: UserCreate,
     session: AsyncSession = Depends(get_session),
 ) -> User:
-    existing = await session.scalar(
-        select(User).where(
-            (User.username == payload.username) | (User.email == payload.email)
-        )
+    username_exists = await session.scalar(
+        select(User.user_id).where(User.username == payload.username)
     )
-    if existing:
+    if username_exists:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Username or email already exists",
+            detail="Username is already taken",
+        )
+    email_exists = await session.scalar(
+        select(User.user_id).where(User.email == payload.email)
+    )
+    if email_exists:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An account with this email already exists",
         )
 
     data = payload.model_dump(exclude={"password"})
-    data["password_hash"] = _hash_password(payload.password)
+    data["password_hash"] = hash_password(payload.password)
+    data["role"] = "user"
+    data["is_active"] = True
     user = User(**data)
     session.add(user)
     await session.commit()
@@ -100,6 +101,7 @@ async def update_user(
 async def delete_user(
     user_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
+    _internal_access: None = Depends(require_internal_api_key),
 ) -> None:
     user = await session.get(User, user_id)
     if not user:

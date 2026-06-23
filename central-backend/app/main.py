@@ -1,23 +1,46 @@
 from fastapi import FastAPI, Request
+import httpx
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.auth.routes import router as auth_router
 from app.api.protected import router as protected_router
+from app.api.account import router as account_router
+from app.api.admin import router as admin_router
 from app.auth.jwt import verify_token
 from app.clients.crud_client import crud_client
+from app.config import CORS_ORIGINS
 
 
 app = FastAPI(title="Central Backend")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# Paths that do not require authentication
-_PUBLIC_PATH_PREFIXES = ("/auth", "/docs", "/openapi.json", "/redoc", "/")
+# Exact paths that do not require authentication.
+_PUBLIC_PATHS = {
+    "/",
+    "/api/auth/login",
+    "/api/auth/register",
+    "/api/auth/forgot-password",
+    "/api/auth/reset-password",
+    "/openapi.json",
+}
+_PUBLIC_PATH_PREFIXES = ("/docs", "/redoc")
 
 
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
     path = request.url.path
-    # allow public prefixes
-    if any(path.startswith(p) for p in _PUBLIC_PATH_PREFIXES):
+    if (
+        request.method == "OPTIONS"
+        or path in _PUBLIC_PATHS
+        or any(path.startswith(prefix) for prefix in _PUBLIC_PATH_PREFIXES)
+    ):
         return await call_next(request)
 
     auth = request.headers.get("authorization")
@@ -35,6 +58,11 @@ async def auth_middleware(request: Request, call_next):
             raise Exception("user not found")
         # attach user for downstream handlers (optional)
         request.state.user = user
+    except httpx.HTTPError:
+        return JSONResponse(
+            {"detail": "CRUD service is unavailable"},
+            status_code=502,
+        )
     except Exception:
         return JSONResponse({"detail": "Invalid authentication credentials"}, status_code=401)
 
@@ -43,6 +71,8 @@ async def auth_middleware(request: Request, call_next):
 
 app.include_router(auth_router, prefix="")
 app.include_router(protected_router)
+app.include_router(account_router)
+app.include_router(admin_router)
 
 
 @app.get("/")

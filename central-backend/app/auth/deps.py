@@ -1,35 +1,37 @@
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from app.auth.jwt import verify_token
-from app.clients.crud_client import crud_client
+from fastapi import Depends, HTTPException, Request, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 security = HTTPBearer()
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    request: Request,
+    _credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
-    token = credentials.credentials
-    try:
-        payload = verify_token(token)
-    except Exception:
+    user = getattr(request.state, "user", None)
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
         )
+    return user
 
-    user_id = payload.get("sub")
-    if not user_id:
+
+async def get_current_active_user(
+    user=Depends(get_current_user),
+):
+    if not user.get("is_active", False):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token payload",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is disabled",
         )
+    return user
 
-    user = await crud_client.get_user(user_id)
-    if not user:
+
+async def require_admin(user=Depends(get_current_active_user)):
+    if user.get("role") != "admin":
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
         )
-
     return user

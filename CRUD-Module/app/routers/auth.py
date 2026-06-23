@@ -1,45 +1,144 @@
-import base64
-import hashlib
-import hmac
-from fastapi import APIRouter, HTTPException, status, Depends
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.database import get_session
+from app.dependencies.internal import require_internal_api_key
 from app.models.user import User
+from app.schemas.auth import (
+    EmailLookupRequest,
+    InternalProfileUpdate,
+    InternalLoginRequest,
+    PasswordChangeRequest,
+    UserStatusUpdate,
+)
 from app.schemas.user import UserResponse
+from app.security.passwords import hash_password, verify_password
 
-router = APIRouter()
-
-
-def _verify_password(plain_password: str, stored_hash_b64: str) -> bool:
-    try:
-        decoded = base64.b64decode(stored_hash_b64)
-    except Exception:
-        return False
-    if len(decoded) <= 32:
-        return False
-    salt = decoded[:32]
-    digest = decoded[32:]
-    new_digest = hashlib.pbkdf2_hmac("sha256", plain_password.encode(), salt, 100_000)
-    return hmac.compare_digest(new_digest, digest)
+router = APIRouter(
+    prefix="/internal",
+    tags=["internal-auth"],
+    dependencies=[Depends(require_internal_api_key)],
+)
 
 
-@router.post("/internal/auth/login", response_model=UserResponse)
-async def internal_login(payload: dict, session: AsyncSession = Depends(get_session)):
-    # Accepts JSON: {"username_or_email": "...", "password": "..."}
-    username_or_email = payload.get("username_or_email")
-    password = payload.get("password")
-    if not username_or_email or not password:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing credentials")
-
+@router.post("/auth/login", response_model=UserResponse)
+async def internal_login(
+    payload: InternalLoginRequest,
+    session: AsyncSession = Depends(get_session),
+) -> User:
     result = await session.execute(
-        select(User).where((User.username == username_or_email) | (User.email == username_or_email))
+        select(User).where(
+            (User.username == payload.username_or_email)
+            | (User.email == payload.username_or_email)
+        )
     )
     user = result.scalar_one_or_none()
+    if not user or not verify_password(payload.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+        )
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is disabled",
+        )
+    return user
+
+
+@router.post("/users/by-email", response_model=UserResponse)
+async def get_user_by_email(
+    payload: EmailLookupRequest,
+    session: AsyncSession = Depends(get_session),
+) -> User:
+    user = await session.scalar(
+        select(User).where(User.email == payload.email)
+    )
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    return user
 
-    if not _verify_password(password, user.password_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
+@router.patch("/auth/change-password")
+async def change_password(
+    payload: PasswordChangeRequest,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, str]:
+    user = await session.get(User, payload.user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is disabled",
+        )
+    if not verify_password(payload.current_password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        )
+    if verify_password(payload.new_password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be different from current password",
+        )
+
+    user.password_hash = hash_password(payload.new_password)
+    await session.commit()
+    return {"message": "Password updated successfully"}
+
+
+@router.patch("/users/{user_id}/status", response_model=UserResponse)
+async def update_user_status(
+    user_id: uuid.UUID,
+    payload: UserStatusUpdate,
+    session: AsyncSession = Depends(get_session),
+) -> User:
+    user = await session.get(User, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    if user.role == "admin" and not payload.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The administrator account cannot be disabled",
+        )
+    user.is_active = payload.is_active
+    await session.commit()
+    await session.refresh(user)
+    return user
+
+
+@router.patch("/users/{user_id}/profile", response_model=UserResponse)
+async def update_user_profile(
+    user_id: uuid.UUID,
+    payload: InternalProfileUpdate,
+    session: AsyncSession = Depends(get_session),
+) -> User:
+    user = await session.get(User, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is disabled",
+        )
+    user.first_name = payload.first_name
+    user.last_name = payload.last_name
+    await session.commit()
+    await session.refresh(user)
     return user
