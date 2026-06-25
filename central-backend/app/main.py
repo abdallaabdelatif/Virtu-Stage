@@ -29,6 +29,9 @@ _PUBLIC_PATHS = {
     "/api/auth/register",
     "/api/auth/forgot-password",
     "/api/auth/reset-password",
+    "/sessions",
+    "/voice-analyses",
+    "/motion-analyses",
     "/openapi.json",
 }
 

@@ -7,6 +7,10 @@ CRUD_BASE_URL = os.getenv("CRUD_BASE_URL", "http://localhost:8000")
 VOICE_ANALYSIS_WS_URL = os.getenv("VOICE_ANALYSIS_WS_URL", "ws://localhost:8001")
 CONVERSATIONAL_COMPONENT_WS_URL = os.getenv("CONVERSATIONAL_COMPONENT_WS_URL", "ws://localhost:9000/ws")
 VIDEO_ANALYSIS_WS_URL = os.getenv("VIDEO_ANALYSIS_WS_URL", "ws://localhost:9001")
+MOTION_ANALYSIS_WS_URL = os.getenv(
+    "MOTION_ANALYSIS_WS_URL", VIDEO_ANALYSIS_WS_URL
+)
+VR_DEFAULT_USER_ID = os.getenv("VR_DEFAULT_USER_ID", "")
 CENTRALIZED_BACKEND_URL = os.getenv("CENTRALIZED_BACKEND_URL", "http://localhost:9000")
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me-super-secret")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")

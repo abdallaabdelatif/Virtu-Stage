@@ -58,6 +58,11 @@ class MotionAnalysis(Base):
     nervousness_indicator: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False)
     motion_overall_score: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False)
 
+    presentation_assessment: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    recommendations: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    dominant_posture_type: Mapped[str | None] = mapped_column(nullable=True)
+    session_metrics: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
     analyzed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

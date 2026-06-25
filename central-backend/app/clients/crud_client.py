@@ -37,6 +37,18 @@ class CRUDClient:
             r.raise_for_status()
             return r.json()
 
+    async def create_motion_analysis(self, payload: dict[str, Any]) -> dict[str, Any]:
+        async with httpx.AsyncClient() as client:
+            r = await client.post(f"{self.base}/motion-analysis", json=payload, timeout=30.0)
+            r.raise_for_status()
+            return r.json()
+
+    async def create_training_session(self, payload: dict[str, Any]) -> dict[str, Any]:
+        async with httpx.AsyncClient() as client:
+            r = await client.post(f"{self.base}/sessions", json=payload, timeout=10.0)
+            r.raise_for_status()
+            return r.json()
+
     async def get_user(self, user_id: str) -> dict[str, Any] | None:
         async with httpx.AsyncClient() as client:
             response = await client.get(

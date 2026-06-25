@@ -1,17 +1,31 @@
 import asyncio
 import contextlib
 import json
+import logging
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, status
-from fastapi.responses import JSONResponse
-from app.api.schemas.vr import VRSessionCreate, VRAudioControlMessage, VoiceAnalysisResultPayload
+from app.api.schemas.vr import (
+    VRSessionCreate,
+    VRAudioControlMessage,
+    VoiceAnalysisResultPayload,
+    MotionAnalysisResultPayload,
+)
 from app.clients.voice_analysis_proxy import VoiceAnalysisProxy
 from app.clients.conversational_proxy import ConversationalProxy
+from app.clients.motion_analysis_proxy import MotionAnalysisProxy
 from app.clients.crud_client import crud_client
+from app.config import VR_DEFAULT_USER_ID
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="", tags=["vr"])
 
 session_store: dict[str, dict] = {}
+
+
+def _scenario_from_mode(mode: int) -> str:
+    return "public_speaking" if mode == 2 else "interview"
+
 
 @router.post("/sessions", status_code=status.HTTP_201_CREATED)
 async def create_session(payload: VRSessionCreate):
@@ -25,13 +39,39 @@ async def create_session(payload: VRSessionCreate):
         "user_id": payload.user_id,
         "voice_proxy": None,
         "conv_proxy": None,
+        "motion_proxy": None,
     }
+
+    user_id = payload.user_id or VR_DEFAULT_USER_ID
+    if user_id:
+        try:
+            await crud_client.create_training_session(
+                {
+                    "session_id": session_id,
+                    "user_id": user_id,
+                    "scenario_type": _scenario_from_mode(payload.mode),
+                    "difficulty_level": "medium",
+                }
+            )
+        except Exception:
+            logger.exception(
+                "Could not create CRUD training session for VR session %s", session_id
+            )
+
     return {"session_id": session_id}
+
 
 @router.post("/voice-analyses", status_code=status.HTTP_201_CREATED)
 async def ingest_voice_analysis(payload: VoiceAnalysisResultPayload):
     stored = await crud_client.create_voice_analysis(payload.model_dump())
     return stored
+
+
+@router.post("/motion-analyses", status_code=status.HTTP_201_CREATED)
+async def ingest_motion_analysis(payload: MotionAnalysisResultPayload):
+    stored = await crud_client.create_motion_analysis(payload.model_dump())
+    return stored
+
 
 @router.websocket("/ws/vr/audio/{session_id}")
 async def vr_audio_socket(websocket: WebSocket, session_id: str):
@@ -106,7 +146,7 @@ async def vr_audio_socket(websocket: WebSocket, session_id: str):
         if voice_proxy.ws is not None:
             await voice_proxy.close()
         await conv_proxy.close()
-        session_store.pop(session_id, None)
+
 
 @router.websocket("/ws/vr/frames/{session_id}")
 async def vr_frame_socket(websocket: WebSocket, session_id: str):
@@ -116,10 +156,18 @@ async def vr_frame_socket(websocket: WebSocket, session_id: str):
         await websocket.close(code=1008)
         return
 
+    motion_proxy = MotionAnalysisProxy(session_id=session_id)
+    session["motion_proxy"] = motion_proxy
+
     try:
+        await motion_proxy.connect()
         while True:
             data = await websocket.receive_bytes()
-            # TODO: validate frame data and forward to video analysis when ready
-            pass
+            await motion_proxy.send_bytes(data)
     except WebSocketDisconnect:
         pass
+    except Exception:
+        logger.exception("VR frame socket error for session %s", session_id)
+    finally:
+        await motion_proxy.close()
+        session_store.pop(session_id, None)

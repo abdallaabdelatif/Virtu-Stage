@@ -21,7 +21,12 @@ async def create_session(
     payload: TrainingSessionCreate,
     session: AsyncSession = Depends(get_session),
 ) -> TrainingSession:
-    training_session = TrainingSession(**payload.model_dump())
+    data = payload.model_dump()
+    session_id = data.pop("session_id", None)
+    if session_id is not None:
+        training_session = TrainingSession(session_id=session_id, **data)
+    else:
+        training_session = TrainingSession(**data)
     session.add(training_session)
     await session.commit()
     await session.refresh(training_session)
