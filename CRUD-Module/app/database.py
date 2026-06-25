@@ -7,7 +7,24 @@ import os
 
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./app.db")
-engine: AsyncEngine = create_async_engine(DATABASE_URL)
+
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+elif DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
+
+connect_args = {}
+engine_kwargs = {}
+if DATABASE_URL.startswith("postgresql+asyncpg://"):
+    connect_args["statement_cache_size"] = 0
+    engine_kwargs["pool_pre_ping"] = True
+    engine_kwargs["pool_recycle"] = 1800
+
+engine: AsyncEngine = create_async_engine(
+    DATABASE_URL,
+    connect_args=connect_args,
+    **engine_kwargs,
+)
 
 if DATABASE_URL.startswith("sqlite"):
     @event.listens_for(engine.sync_engine, "connect")

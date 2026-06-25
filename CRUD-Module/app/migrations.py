@@ -6,12 +6,16 @@ MIGRATION_ID = "20260623_core_auth"
 
 
 def _run_core_auth_migration(sync_connection) -> None:
+    dialect = sync_connection.dialect.name
+    timestamp_type = "TIMESTAMP" if dialect == "postgresql" else "DATETIME"
+    boolean_default = "TRUE" if dialect == "postgresql" else "1"
+
     sync_connection.execute(
         text(
-            """
+            f"""
             CREATE TABLE IF NOT EXISTS schema_migrations (
                 migration_id VARCHAR(100) PRIMARY KEY,
-                applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                applied_at {timestamp_type} NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
             """
         )
@@ -30,7 +34,6 @@ def _run_core_auth_migration(sync_connection) -> None:
     inspector = inspect(sync_connection)
     if "users" in inspector.get_table_names():
         columns = {column["name"] for column in inspector.get_columns("users")}
-        dialect = sync_connection.dialect.name
 
         if "role" not in columns:
             sync_connection.execute(
@@ -41,7 +44,6 @@ def _run_core_auth_migration(sync_connection) -> None:
             )
 
         if "is_active" not in columns:
-            boolean_default = "TRUE" if dialect == "postgresql" else "1"
             sync_connection.execute(
                 text(
                     "ALTER TABLE users ADD COLUMN "
@@ -53,7 +55,10 @@ def _run_core_auth_migration(sync_connection) -> None:
             text("UPDATE users SET role = 'user' WHERE role IS NULL OR role = ''")
         )
         sync_connection.execute(
-            text("UPDATE users SET is_active = 1 WHERE is_active IS NULL")
+            text(
+                "UPDATE users SET is_active = "
+                f"{boolean_default} WHERE is_active IS NULL"
+            )
         )
 
     sync_connection.execute(
