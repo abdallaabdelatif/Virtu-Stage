@@ -6,6 +6,7 @@ from app.auth.routes import router as auth_router
 from app.api.protected import router as protected_router
 from app.api.account import router as account_router
 from app.api.admin import router as admin_router
+from app.api.vr import router as vr_router
 from app.auth.jwt import verify_token
 from app.clients.crud_client import crud_client
 from app.config import CORS_ORIGINS
@@ -30,8 +31,6 @@ _PUBLIC_PATHS = {
     "/api/auth/reset-password",
     "/openapi.json",
 }
-_PUBLIC_PATH_PREFIXES = ("/docs", "/redoc")
-
 
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
@@ -39,7 +38,6 @@ async def auth_middleware(request: Request, call_next):
     if (
         request.method == "OPTIONS"
         or path in _PUBLIC_PATHS
-        or any(path.startswith(prefix) for prefix in _PUBLIC_PATH_PREFIXES)
     ):
         return await call_next(request)
 
@@ -70,6 +68,7 @@ async def auth_middleware(request: Request, call_next):
 
 
 app.include_router(auth_router, prefix="")
+app.include_router(vr_router)
 app.include_router(protected_router)
 app.include_router(account_router)
 app.include_router(admin_router)

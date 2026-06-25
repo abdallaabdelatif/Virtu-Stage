@@ -42,12 +42,12 @@ Use PowerShell `Invoke-RestMethod` to POST a new user through the Central Backen
 
 ```powershell
 $body = @{
-  username = "alice"
-  email = "alice@example.com"
+  username = "ahmed"
+  email = "ahmed@example.com"
   password = "Strong123!"
-  first_name = "Alice"
-  last_name = "A"
-  gender = "female"
+  first_name = "Ahmed"
+  last_name = "Rasheed"
+  gender = "male"
 } | ConvertTo-Json
 
 Invoke-RestMethod -Method Post -Uri "http://localhost:9000/api/auth/register" -ContentType "application/json" -Body $body
@@ -62,7 +62,7 @@ Login via Central Backend to receive a JWT access token:
 
 ```powershell
 $login = @{
-  username_or_email = "alice"
+  username_or_email = "ahmed"
   password = "Strong123!"
 } | ConvertTo-Json
 

@@ -1,0 +1,185 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Networking;
+using NativeWebSocket;
+using System.Text;
+
+public class BackendClient : MonoBehaviour
+{
+    [SerializeField]
+    private string backendApiBaseUrl = "http://192.168.0.165:8082";
+
+    [SerializeField]
+    private string wsBaseUrl = "ws://192.168.0.165:8082";
+
+    [SerializeField]
+    private int selectedMode = 1;
+
+    private string sessionId;
+
+    private WebSocket ws;
+    private bool connected;
+
+    private Queue<byte[]> audioQueue;
+    [SerializeField]
+    private StreamingAudioPlayer audioPlayer;
+
+    [System.Serializable]
+    private class SessionRequest
+    {
+        public string session_id;
+        public int mode;
+        public string job;
+    }
+
+    [System.Serializable]
+    private class SessionResponse
+    {
+        public string session_id;
+    }
+
+    private async void Start()
+    {
+        var mic = FindObjectOfType<MicCapture>();
+
+        audioQueue = mic.AudioQueue;
+
+        if (!await CreateSession())
+        {
+            Debug.LogError("Failed to create session with central backend");
+            return;
+        }
+
+        ws = new WebSocket($"{wsBaseUrl}/ws/vr/audio/{sessionId}");
+
+        ws.OnOpen += () =>
+        {
+            connected = true;
+            Debug.Log($"Connected to backend session {sessionId}");
+            ws.SendText($"{{\"type\":\"set_mode\",\"mode\":{selectedMode}}}");
+            if (selectedMode == 1)
+            {
+                string job = VRMenuController.SelectedJob;
+                ws.SendText($"{{\"type\":\"set_job\",\"job\":\"{job}\"}}");
+            }
+            StartCoroutine(SendAudioLoop());
+        };
+
+        ws.OnMessage += (bytes) =>
+        {
+            bool isJson = bytes.Length > 0 && bytes[0] == (byte)'{';
+            if (isJson)
+            {
+                string msg = Encoding.UTF8.GetString(bytes);
+
+                if (msg.Contains("\"tts_start\""))
+                {
+                    audioPlayer.BeginSpeech();
+                }
+                else if (msg.Contains("\"tts_end\""))
+                {
+                    audioPlayer.EndSpeech();
+                }
+
+                return;
+            }
+
+            audioPlayer.EnqueueAudio(bytes);
+        };
+
+        ws.OnClose += (code) =>
+        {
+            connected = false;
+            Debug.Log($"Backend websocket closed: {code}");
+        };
+
+        ws.OnError += (err) =>
+        {
+            Debug.LogError(err);
+        };
+
+        await ws.Connect();
+    }
+
+    private async System.Threading.Tasks.Task<bool> CreateSession()
+    {
+        sessionId = Guid.NewGuid().ToString();
+
+        var request = new SessionRequest()
+        {
+            session_id = sessionId,
+            mode = selectedMode,
+            job = selectedMode == 1 ? VRMenuController.SelectedJob : string.Empty
+        };
+
+        string jsonBody = JsonUtility.ToJson(request);
+        using var webRequest = new UnityWebRequest($"{backendApiBaseUrl}/sessions", "POST");
+        byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonBody);
+        webRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
+        webRequest.downloadHandler = new DownloadHandlerBuffer();
+        webRequest.SetRequestHeader("Content-Type", "application/json");
+
+        await webRequest.SendWebRequest();
+
+        if (webRequest.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError($"CreateSession error: {webRequest.error}");
+            return false;
+        }
+
+        var response = JsonUtility.FromJson<SessionResponse>(webRequest.downloadHandler.text);
+        if (string.IsNullOrEmpty(response.session_id))
+        {
+            Debug.LogError("Backend returned empty session_id");
+            return false;
+        }
+
+        sessionId = response.session_id;
+        VRSessionContext.SessionId = sessionId;
+        return true;
+    }
+
+    private void Update()
+    {
+#if !UNITY_WEBGL || UNITY_EDITOR
+        ws?.DispatchMessageQueue();
+#endif
+    }
+
+    IEnumerator SendAudioLoop()
+    {
+        while (connected)
+        {
+            while (audioQueue.Count > 0)
+            {
+                ws.Send(audioQueue.Dequeue());
+            }
+
+            yield return null;
+        }
+    }
+
+    public void GeneratePresentationQuestion()
+    {
+        if (!connected || ws == null)
+            return;
+
+        ws.SendText("{\"type\":\"generate_question\"}");
+
+        Debug.Log("Requested presentation question from backend");
+    }
+
+    private async void OnDestroy()
+    {
+        if (ws != null)
+        {
+            if (connected)
+            {
+                ws.SendText("{\"type\":\"audio_end\"}");
+            }
+            await ws.Close();
+        }
+    }
+}
