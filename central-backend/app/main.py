@@ -33,6 +33,7 @@ _PUBLIC_PATHS = {
     "/voice-analyses",
     "/motion-analyses",
     "/openapi.json",
+    "/sessions",
 }
 
 @app.middleware("http")
