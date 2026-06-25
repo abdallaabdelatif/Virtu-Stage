@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from app.auth.routes import router as auth_router
 from app.api.protected import router as protected_router
+from app.api.vr import router as vr_router
 from app.auth.jwt import verify_token
 from app.clients.crud_client import crud_client
 
@@ -10,7 +11,8 @@ app = FastAPI(title="Central Backend")
 
 
 # Paths that do not require authentication
-_PUBLIC_PATH_PREFIXES = ("/auth", "/docs", "/openapi.json", "/redoc", "/")
+# TODO: Remove VR endpoints (/sessions, /ws/vr) from public paths after testing phase is complete
+_PUBLIC_PATH_PREFIXES = ("/auth", "/docs", "/openapi.json", "/redoc", "/", "/voice-analyses", "/sessions", "/ws/vr")
 
 
 @app.middleware("http")
@@ -42,6 +44,7 @@ async def auth_middleware(request: Request, call_next):
 
 
 app.include_router(auth_router, prefix="")
+app.include_router(vr_router)
 app.include_router(protected_router)
 
 

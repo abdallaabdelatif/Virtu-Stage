@@ -22,6 +22,12 @@ class CRUDClient:
                 return r.json()
             return None
 
+    async def create_voice_analysis(self, payload: dict[str, Any]) -> dict[str, Any]:
+        async with httpx.AsyncClient() as client:
+            r = await client.post(f"{self.base}/voice-analysis", json=payload, timeout=10.0)
+            r.raise_for_status()
+            return r.json()
+
     async def get_user(self, user_id: str) -> dict[str, Any] | None:
         async with httpx.AsyncClient() as client:
             r = await client.get(f"{self.base}/users/{user_id}", timeout=10.0)

@@ -1,0 +1,22 @@
+# Web framework
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+websockets>=13.1
+
+# Validation
+pydantic>=2.6.0
+
+# LLM Provider
+openai>=1.0.0
+
+# STT Provider
+deepgram-sdk>=3.0.0
+
+# TTS Provider
+elevenlabs>=0.2.0
+
+# Environment
+python-dotenv>=1.0.0
+
+# Audio
+numpy>=1.24.0
