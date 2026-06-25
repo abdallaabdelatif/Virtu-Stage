@@ -56,7 +56,7 @@ class AudioAnalysisPipeline:
                     happy=emotion_scores.happy,
                     sad=emotion_scores.sad,
                     angry=emotion_scores.angry,
-                    dominant=emotion_scores.dominant,
+                    dominant=emotion_scores.dominant_emotion,
                 ),
                 paralinguistic=ParalinguisticScoresSchema(
                     anxiety_level=paralinguistic_scores.anxiety_level,

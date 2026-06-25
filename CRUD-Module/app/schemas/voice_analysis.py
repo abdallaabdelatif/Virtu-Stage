@@ -27,6 +27,11 @@ class VoiceAnalysisCreate(BaseModel):
     confidence_score: float = Field(ge=0.0, le=1.0)
     clarity_level: float = Field(ge=0.0, le=1.0)
     focus_score: float = Field(ge=0.0, le=1.0)
+    pause_ratio: float
+    pause_count: int
+    longest_pause_sec: float
+    filler_words_cnt: int
+    speech_rate_wpm: float
 
     @model_validator(mode="after")
     def derive_dominant_emotion(self) -> "VoiceAnalysisCreate":
@@ -51,6 +56,11 @@ class VoiceAnalysisCreate(BaseModel):
             "confidence_score": self.confidence_score,
             "clarity_level": self.clarity_level,
             "focus_score": self.focus_score,
+            "pause_ratio": self.pause_ratio,
+            "pause_count": self.pause_count,
+            "longest_pause_seconds": self.longest_pause_sec,
+            "filler_words_count": self.filler_words_cnt,
+            "speech_rate_wpm": self.speech_rate_wpm,
         }
 
 
@@ -60,6 +70,11 @@ class VoiceAnalysisUpdate(BaseModel):
     confidence_score: float | None = Field(default=None, ge=0.0, le=1.0)
     clarity_level: float | None = Field(default=None, ge=0.0, le=1.0)
     focus_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    pause_ratio: float | None
+    pause_count: int | None
+    longest_pause_seconds: float | None
+    filler_words_count: int | None
+    speech_rate_wpm: float | None
 
 
 class VoiceAnalysisResponse(BaseModel):
@@ -76,4 +91,9 @@ class VoiceAnalysisResponse(BaseModel):
     confidence_score: float
     clarity_level: float
     focus_score: float
+    pause_ratio: float
+    pause_count: int
+    longest_pause_seconds: float
+    filler_words_count: int
+    speech_rate_wpm: float
     analyzed_at: datetime

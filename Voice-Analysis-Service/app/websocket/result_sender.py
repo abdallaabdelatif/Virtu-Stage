@@ -20,6 +20,7 @@ async def send_result_to_central_backend(result: VoiceAnalysisResult) -> None:
             "happy": result.emotions.happy,
             "sad": result.emotions.sad,
             "angry": result.emotions.angry,
+            "dominant": result.emotions.dominant,
         },
         "anxiety_level": result.paralinguistic.anxiety_level,
         "confidence_score": result.paralinguistic.confidence_score,

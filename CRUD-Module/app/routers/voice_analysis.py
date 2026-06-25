@@ -83,6 +83,11 @@ async def update_voice_analysis(
         voice_analysis.emotion_happy = payload.emotions.happy
         voice_analysis.emotion_sad = payload.emotions.sad
         voice_analysis.emotion_angry = payload.emotions.angry
+        voice_analysis.pause_ratio = payload.pause_ratio
+        voice_analysis.pause_count = payload.pause_count
+        voice_analysis.longest_pause_seconds = payload.longest_pause_seconds
+        voice_analysis.filler_words_count = payload.filler_words_count
+        voice_analysis.speech_rate_wpm = payload.speech_rate_wpm
 
         scores = {
             "neutral": payload.emotions.neutral,
@@ -96,7 +101,6 @@ async def update_voice_analysis(
         value = getattr(payload, field)
         if value is not None:
             setattr(voice_analysis, field, value)
-
     await db.commit()
     await db.refresh(voice_analysis)
     return voice_analysis
