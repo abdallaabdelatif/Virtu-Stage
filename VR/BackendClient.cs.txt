@@ -121,7 +121,12 @@ public class BackendClient : MonoBehaviour
         webRequest.downloadHandler = new DownloadHandlerBuffer();
         webRequest.SetRequestHeader("Content-Type", "application/json");
 
-        await webRequest.SendWebRequest();
+        var operation = webRequest.SendWebRequest();
+
+        while (!operation.isDone)
+        {
+            await System.Threading.Tasks.Task.Yield();
+        }
 
         if (webRequest.result != UnityWebRequest.Result.Success)
         {
