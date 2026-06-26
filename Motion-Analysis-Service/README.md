@@ -12,9 +12,11 @@ Rule-based upper-body motion analysis for presentation coaching. Tracks pose (Me
 | central-backend → this service | `WS /ws/motion-analysis/frames/{session_id}` | Same batches forwarded |
 | This service → central-backend | `POST /motion-analyses` (on socket close) | CRUD-shaped JSON scores |
 
-Entry point: `uvicorn app.main:app` — see `app/websocket/frame_handler.py`.
+Entry point: `uvicorn app.main:app` — see `app/websocket/frame_session.py`.
 
-`run_webcam_demo.py` is a **local dev tool only** (offline video file + optional overlay). It is not used when the app runs with VR.
+While frames stream in, a **live OpenCV preview** (same overlay as the video demo) opens on the machine running this service. Final scores are still computed and POSTed when the WebSocket closes. Set `MOTION_LIVE_PREVIEW=0` in `.env` on headless servers.
+
+`run_webcam_demo.py` is a **local dev tool** (offline video file). It uses the same `LivePreview` overlay.
 
 ## Architecture
 
@@ -59,7 +61,7 @@ Copy `.env.example` to `.env` and set `CENTRALIZED_BACKEND_URL` (default `http:/
 uvicorn app.main:app --host 0.0.0.0 --port 9001
 ```
 
-The service listens for WebSocket connections. It buffers incoming VR frame batches until the client disconnects, then runs analysis and POSTs results to central-backend.
+The service listens for WebSocket connections. Each batch updates the **live preview** window; on disconnect it runs the full session analysis and POSTs results to central-backend.
 
 With the full stack running:
 
@@ -70,21 +72,31 @@ With the full stack running:
 
 Set `VR_DEFAULT_USER_ID` in central-backend `.env` to a valid CRUD user UUID so training sessions are created for the FK on `motion_analysis`.
 
-## Local demo (development only — not WebSocket)
+## Local demo (offline video)
 
-Headless analysis on a video file using the **same pipeline** as production:
+Same live preview as the VR WebSocket path:
 
 ```powershell
 python run_webcam_demo.py --video "path\to\video.mp4"
 ```
 
-Optional live overlay window:
+Press **Q** in the preview window to hide the overlay. Results save to `output/motion_analysis_<id>.json`.
+
+### Test WebSocket preview without VR
 
 ```powershell
-python run_webcam_demo.py --video "path\to\video.mp4" --preview
+# Terminal 1
+uvicorn app.main:app --host 0.0.0.0 --port 9001
+
+# Terminal 2 — sends a video as fake VR batches
+python test_ws_frame_client.py --video "path\to\video.mp4"
 ```
 
-Results save to `output/motion_analysis_<id>.json` including `presentation_assessment`. Production VR sessions POST the same fields to CRUD via central-backend.
+Through central-backend:
+
+```powershell
+python test_ws_frame_client.py --video "path\to\video.mp4" --via-central-backend
+```
 
 ## Core modules
 

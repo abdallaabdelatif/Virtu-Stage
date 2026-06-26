@@ -32,3 +32,13 @@ def decode_vr_frame_batch(data: bytes) -> list[VRFrame]:
         frames.append(VRFrame(index=index, timestamp_ms=timestamp_ms, jpeg=jpeg))
 
     return frames
+
+
+def encode_vr_frame_batch(frames: list[VRFrame]) -> bytes:
+    parts = [struct.pack("<I", len(frames))]
+    for frame in frames:
+        parts.append(
+            struct.pack("<IqI", frame.index, frame.timestamp_ms, len(frame.jpeg))
+        )
+        parts.append(frame.jpeg)
+    return b"".join(parts)

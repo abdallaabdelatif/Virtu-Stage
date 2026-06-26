@@ -7,13 +7,17 @@ from app.models.motion_analysis_service import FrameEvaluation
 from app.models.motion_frame_data import MotionFrameData
 from app.visualization.overlay import draw_overlay, draw_skeleton
 
-WINDOW_TITLE = "VirtuStage Motion Analysis (WebSocket preview)"
+WINDOW_TITLE = "VirtuStage Motion Analysis"
 
 
 class LivePreview:
 
     def __init__(self) -> None:
         self._enabled = True
+
+    @property
+    def is_enabled(self) -> bool:
+        return self._enabled
 
     def show(
         self,

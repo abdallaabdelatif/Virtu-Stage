@@ -2,8 +2,8 @@
 Local development tool — NOT the production input path.
 
 Production uses WebSocket frame batches (uvicorn app.main:app).
-This script reuses MotionAnalysisPipeline + FrameProcessor for offline video files.
-Use --preview to open a live overlay window; default is headless analysis.
+Uses the same LivePreview overlay as the VR / WebSocket pipeline.
+Press Q in the preview window to hide the overlay (analysis continues).
 """
 
 from __future__ import annotations
@@ -13,29 +13,25 @@ import sys
 import uuid
 from pathlib import Path
 
-import cv2
-
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
 from app.analysis.motion_pipeline import MotionAnalysisPipeline
 from app.models.motion_frame_data import MotionFrameData
 from app.reporting.session_report import print_presentation_assessment, save_session_report
-from app.visualization.overlay import draw_overlay, draw_skeleton
+from app.visualization.live_preview import LivePreview
+from app.visualization.preview_frame import PreviousFrameHolder, preview_motion_frame
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Offline motion analysis on a video file.")
     parser.add_argument("--video", type=Path, required=True, help="Path to a video file")
-    parser.add_argument(
-        "--preview",
-        action="store_true",
-        help="Show live skeleton overlay window (optional)",
-    )
     return parser.parse_args()
 
 
-def run_headless_video(video_path: Path, *, preview: bool) -> None:
+def run_video_demo(video_path: Path) -> None:
+    import cv2
+
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
         raise RuntimeError(f"Could not open video file: {video_path}")
@@ -46,14 +42,15 @@ def run_headless_video(video_path: Path, *, preview: bool) -> None:
         fps = 30.0
 
     pipeline = MotionAnalysisPipeline()
+    preview = LivePreview()
     motion_frames: list[MotionFrameData] = []
-    previous_frame: MotionFrameData | None = None
+    previous = PreviousFrameHolder()
     frame_index = 0
     timestamp_ms = 0
 
     print(f"Session ID : {session_id}")
     print(f"FPS        : {fps:.1f}")
-    print(f"Mode       : {'preview' if preview else 'headless'}\n")
+    print(f"Preview    : on (Q to hide overlay)\n")
 
     try:
         while cap.isOpened():
@@ -62,33 +59,29 @@ def run_headless_video(video_path: Path, *, preview: bool) -> None:
                 break
 
             motion_frame = pipeline.processor.process_bgr(bgr, timestamp_ms, frame_index)
-            if motion_frame is not None:
-                motion_frames.append(motion_frame)
-
-            if preview and motion_frame is not None:
-                evaluation = pipeline.service.evaluate_frame(
-                    motion_frame, previous_frame, fps
-                )
-                draw_skeleton(bgr, motion_frame)
-                draw_overlay(bgr, evaluation, frame_index, frame_index / fps)
-                cv2.imshow("VirtuStage Motion Analysis (dev preview)", bgr)
-                if cv2.waitKey(1) & 0xFF == ord("q"):
-                    break
-                previous_frame = motion_frame
-
+            preview_motion_frame(
+                pipeline,
+                preview,
+                motion_frame,
+                motion_frames,
+                previous,
+                fps=fps,
+                frame_index=frame_index,
+                timestamp_ms=timestamp_ms,
+                bgr=bgr,
+            )
             frame_index += 1
             timestamp_ms += int(1000 / fps)
     finally:
         cap.release()
-        if preview:
-            cv2.destroyAllWindows()
+        preview.close()
         pipeline.close()
 
     if not motion_frames:
         print("No reliable pose frames captured. Nothing to analyze.")
         return
 
-    result = pipeline.run_from_motion_frames(motion_frames, fps=fps, session_id=session_id)
+    result = pipeline.run_from_motion_frames(session_id, motion_frames, fps=fps)
     output_path = save_session_report(result, ROOT / "output")
     print_presentation_assessment(
         result, frames_analyzed=len(motion_frames), output_path=output_path
@@ -97,7 +90,7 @@ def run_headless_video(video_path: Path, *, preview: bool) -> None:
 
 def main() -> None:
     args = parse_args()
-    run_headless_video(args.video.resolve(), preview=args.preview)
+    run_video_demo(args.video.resolve())
 
 
 if __name__ == "__main__":
