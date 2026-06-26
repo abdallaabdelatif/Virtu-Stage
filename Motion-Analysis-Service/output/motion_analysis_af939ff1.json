@@ -1,0 +1,418 @@
+{
+  "analyzed_at": "2026-06-25T15:32:40.585908+00:00",
+  "session_id": "af939ff1-06c2-422a-b72d-96556df93dbc",
+  "presentation_assessment": {
+    "overall_presentation": "good",
+    "overall_meaning": "Solid presentation with minor issues. A few adjustments would improve audience engagement.",
+    "posture": "good",
+    "posture_meaning": "Generally upright with occasional lean or shoulder asymmetry.",
+    "gaze": "excellent",
+    "gaze_meaning": "Head stays level and forward \u2014 good proxy for audience eye contact.",
+    "gestures": "excellent",
+    "gestures_meaning": "Purposeful hand movement \u2014 neither frozen nor excessive.",
+    "composure": "good",
+    "composure_meaning": "Mostly composed with occasional fidgeting or hand-to-face contact.",
+    "stability": "good",
+    "stability_meaning": "Generally stable with minor head movement.",
+    "dimension_summary": {
+      "posture": "good",
+      "gaze": "excellent",
+      "gestures": "excellent",
+      "composure": "good",
+      "stability": "good"
+    }
+  },
+  "dominant_posture_type": "shoulder_misalignment",
+  "recommendations": [
+    "Level your shoulders for a confident, symmetrical posture."
+  ],
+  "rule_trigger_counts": {
+    "shoulder_alignment": 696,
+    "excessive_movement": 201,
+    "sudden_left_hand": 18,
+    "hand_near_face": 72,
+    "sudden_right_hand": 6,
+    "sudden_right_wrist": 3,
+    "sudden_left_wrist": 2,
+    "leaning_forward": 383
+  },
+  "posture_type_counts": {
+    "shoulder_misalignment": 534,
+    "excessive_hand_movement": 196,
+    "neutral": 252,
+    "hand_near_face": 72,
+    "excellent": 420,
+    "acceptable": 109,
+    "leaning_forward_warning": 377
+  },
+  "session_metrics": {
+    "looking_down_ratio": 0.0,
+    "forward_lean_avg_deg": 10.93,
+    "backward_lean_avg_deg": 0.01,
+    "hand_near_face_ratio": 0.037,
+    "hand_tracking_ratio": 0.715,
+    "rocking_score": 0.582,
+    "body_static_duration_sec": 0.3,
+    "hand_dominance_ratio": 0.527,
+    "sudden_events": 29,
+    "repetitive_groups": 1
+  },
+  "crud_numeric_scores": {
+    "session_id": "af939ff1-06c2-422a-b72d-96556df93dbc",
+    "head_stability_score": 0.86,
+    "head_movement_variance": 0.0093,
+    "head_angle": 84.2745,
+    "head_avg_velocity": 0.2272,
+    "fidgeting_level": "low",
+    "fidgeting_score": 0.09,
+    "sudden_index": [
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 7400,
+        "frame_index": 185
+      },
+      {
+        "body_part": "right_hand",
+        "timestamp_ms": 8120,
+        "frame_index": 203
+      },
+      {
+        "body_part": "right_hand",
+        "timestamp_ms": 8160,
+        "frame_index": 204
+      },
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 9040,
+        "frame_index": 226
+      },
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 10680,
+        "frame_index": 267
+      },
+      {
+        "body_part": "right_hand",
+        "timestamp_ms": 11160,
+        "frame_index": 279
+      },
+      {
+        "body_part": "right_hand",
+        "timestamp_ms": 14480,
+        "frame_index": 362
+      },
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 14560,
+        "frame_index": 364
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 21360,
+        "frame_index": 534
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 27640,
+        "frame_index": 691
+      },
+      {
+        "body_part": "right_hand",
+        "timestamp_ms": 33920,
+        "frame_index": 848
+      },
+      {
+        "body_part": "right_hand",
+        "timestamp_ms": 34360,
+        "frame_index": 859
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 35880,
+        "frame_index": 897
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 35920,
+        "frame_index": 898
+      },
+      {
+        "body_part": "left_wrist",
+        "timestamp_ms": 36200,
+        "frame_index": 905
+      },
+      {
+        "body_part": "left_wrist",
+        "timestamp_ms": 36240,
+        "frame_index": 906
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 36440,
+        "frame_index": 911
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 40280,
+        "frame_index": 1007
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 43600,
+        "frame_index": 1090
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 47520,
+        "frame_index": 1188
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 48200,
+        "frame_index": 1205
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 49200,
+        "frame_index": 1230
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 55000,
+        "frame_index": 1375
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 55320,
+        "frame_index": 1383
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 82640,
+        "frame_index": 2066
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 83600,
+        "frame_index": 2090
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 84560,
+        "frame_index": 2114
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 84600,
+        "frame_index": 2115
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 84640,
+        "frame_index": 2116
+      }
+    ],
+    "repetitive_index": [
+      {
+        "body_part": "left_hand",
+        "count": 8,
+        "timestamps_ms": [
+          35880,
+          35920,
+          36440,
+          40280,
+          43600,
+          47520,
+          48200,
+          49200
+        ]
+      }
+    ],
+    "hand_movement_score": 92.0,
+    "left_hand_avg_velocity": 0.5494,
+    "right_hand_avg_velocity": 0.3754,
+    "posture_quality": 78.0,
+    "posture_score": 78.0,
+    "nervousness_indicator": 22.0,
+    "motion_overall_score": 78.0
+  },
+  "crud_payload": {
+    "session_id": "af939ff1-06c2-422a-b72d-96556df93dbc",
+    "head_stability_score": 0.86,
+    "head_movement_variance": 0.0093,
+    "head_angle": 84.2745,
+    "head_avg_velocity": 0.2272,
+    "fidgeting_level": "low",
+    "fidgeting_score": 0.09,
+    "sudden_index": [
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 7400,
+        "frame_index": 185
+      },
+      {
+        "body_part": "right_hand",
+        "timestamp_ms": 8120,
+        "frame_index": 203
+      },
+      {
+        "body_part": "right_hand",
+        "timestamp_ms": 8160,
+        "frame_index": 204
+      },
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 9040,
+        "frame_index": 226
+      },
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 10680,
+        "frame_index": 267
+      },
+      {
+        "body_part": "right_hand",
+        "timestamp_ms": 11160,
+        "frame_index": 279
+      },
+      {
+        "body_part": "right_hand",
+        "timestamp_ms": 14480,
+        "frame_index": 362
+      },
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 14560,
+        "frame_index": 364
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 21360,
+        "frame_index": 534
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 27640,
+        "frame_index": 691
+      },
+      {
+        "body_part": "right_hand",
+        "timestamp_ms": 33920,
+        "frame_index": 848
+      },
+      {
+        "body_part": "right_hand",
+        "timestamp_ms": 34360,
+        "frame_index": 859
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 35880,
+        "frame_index": 897
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 35920,
+        "frame_index": 898
+      },
+      {
+        "body_part": "left_wrist",
+        "timestamp_ms": 36200,
+        "frame_index": 905
+      },
+      {
+        "body_part": "left_wrist",
+        "timestamp_ms": 36240,
+        "frame_index": 906
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 36440,
+        "frame_index": 911
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 40280,
+        "frame_index": 1007
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 43600,
+        "frame_index": 1090
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 47520,
+        "frame_index": 1188
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 48200,
+        "frame_index": 1205
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 49200,
+        "frame_index": 1230
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 55000,
+        "frame_index": 1375
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 55320,
+        "frame_index": 1383
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 82640,
+        "frame_index": 2066
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 83600,
+        "frame_index": 2090
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 84560,
+        "frame_index": 2114
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 84600,
+        "frame_index": 2115
+      },
+      {
+        "body_part": "left_hand",
+        "timestamp_ms": 84640,
+        "frame_index": 2116
+      }
+    ],
+    "repetitive_index": [
+      {
+        "body_part": "left_hand",
+        "count": 8,
+        "timestamps_ms": [
+          35880,
+          35920,
+          36440,
+          40280,
+          43600,
+          47520,
+          48200,
+          49200
+        ]
+      }
+    ],
+    "hand_movement_score": 92.0,
+    "left_hand_avg_velocity": 0.5494,
+    "right_hand_avg_velocity": 0.3754,
+    "posture_quality": 78.0,
+    "posture_score": 78.0,
+    "nervousness_indicator": 22.0,
+    "motion_overall_score": 78.0
+  }
+}

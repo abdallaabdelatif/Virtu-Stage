@@ -22,6 +22,10 @@ class MotionAnalysisCreate(BaseModel):
     posture_score: float = Field(ge=0.0)
     nervousness_indicator: float = Field(ge=0.0)
     motion_overall_score: float = Field(ge=0.0)
+    presentation_assessment: dict | None = None
+    recommendations: list[str] | None = None
+    dominant_posture_type: str | None = None
+    session_metrics: dict | None = None
 
 
 class MotionAnalysisUpdate(BaseModel):
@@ -40,6 +44,10 @@ class MotionAnalysisUpdate(BaseModel):
     posture_score: float | None = Field(default=None, ge=0.0)
     nervousness_indicator: float | None = Field(default=None, ge=0.0)
     motion_overall_score: float | None = Field(default=None, ge=0.0)
+    presentation_assessment: dict | None = None
+    recommendations: list[str] | None = None
+    dominant_posture_type: str | None = None
+    session_metrics: dict | None = None
 
 
 class MotionAnalysisResponse(BaseModel):
@@ -61,4 +69,8 @@ class MotionAnalysisResponse(BaseModel):
     posture_score: float
     nervousness_indicator: float
     motion_overall_score: float
+    presentation_assessment: Any
+    recommendations: Any
+    dominant_posture_type: str | None
+    session_metrics: Any
     analyzed_at: datetime

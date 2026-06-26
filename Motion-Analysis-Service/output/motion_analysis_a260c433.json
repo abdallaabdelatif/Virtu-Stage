@@ -1,0 +1,119 @@
+{
+  "analyzed_at": "2026-06-25T15:14:50.321375+00:00",
+  "session_id": "a260c433-37e5-4b77-a78c-da400a428a59",
+  "presentation_assessment": {
+    "overall_presentation": "developing",
+    "overall_meaning": "Noticeable nonverbal habits that may distract the audience. Targeted practice is recommended.",
+    "posture": "developing",
+    "posture_meaning": "Frequent slouching, leaning, or closed posture.",
+    "gaze": "excellent",
+    "gaze_meaning": "Head stays level and forward \u2014 good proxy for audience eye contact.",
+    "gestures": "excellent",
+    "gestures_meaning": "Purposeful hand movement \u2014 neither frozen nor excessive.",
+    "composure": "excellent",
+    "composure_meaning": "Calm, controlled movement with low fidgeting and nervous gestures.",
+    "stability": "excellent",
+    "stability_meaning": "Steady head and torso \u2014 no rocking or erratic jerks.",
+    "dimension_summary": {
+      "posture": "developing",
+      "gaze": "excellent",
+      "gestures": "excellent",
+      "composure": "excellent",
+      "stability": "excellent"
+    }
+  },
+  "dominant_posture_type": "shoulder_misalignment",
+  "recommendations": [
+    "Level your shoulders for a confident, symmetrical posture."
+  ],
+  "rule_trigger_counts": {
+    "shoulder_alignment": 275,
+    "excessive_movement": 30,
+    "sudden_right_wrist": 3
+  },
+  "posture_type_counts": {
+    "shoulder_misalignment": 258,
+    "neutral": 140,
+    "excessive_hand_movement": 30,
+    "excellent": 144
+  },
+  "session_metrics": {
+    "looking_down_ratio": 0.0,
+    "forward_lean_avg_deg": 5.78,
+    "backward_lean_avg_deg": 0.03,
+    "hand_near_face_ratio": 0.0,
+    "rocking_score": 0.195,
+    "body_static_duration_sec": 0.3,
+    "hand_dominance_ratio": 0.558,
+    "sudden_events": 3,
+    "repetitive_groups": 0
+  },
+  "crud_numeric_scores": {
+    "session_id": "a260c433-37e5-4b77-a78c-da400a428a59",
+    "head_stability_score": 0.93,
+    "head_movement_variance": 0.001,
+    "head_angle": 29.3111,
+    "head_avg_velocity": 0.2024,
+    "fidgeting_level": "low",
+    "fidgeting_score": 0.01,
+    "sudden_index": [
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 9040,
+        "frame_index": 226
+      },
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 10680,
+        "frame_index": 267
+      },
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 14560,
+        "frame_index": 364
+      }
+    ],
+    "repetitive_index": [],
+    "hand_movement_score": 92.0,
+    "left_hand_avg_velocity": 0.507,
+    "right_hand_avg_velocity": 0.3828,
+    "posture_quality": 58.0,
+    "posture_score": 58.0,
+    "nervousness_indicator": 8.0,
+    "motion_overall_score": 58.0
+  },
+  "crud_payload": {
+    "session_id": "a260c433-37e5-4b77-a78c-da400a428a59",
+    "head_stability_score": 0.93,
+    "head_movement_variance": 0.001,
+    "head_angle": 29.3111,
+    "head_avg_velocity": 0.2024,
+    "fidgeting_level": "low",
+    "fidgeting_score": 0.01,
+    "sudden_index": [
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 9040,
+        "frame_index": 226
+      },
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 10680,
+        "frame_index": 267
+      },
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 14560,
+        "frame_index": 364
+      }
+    ],
+    "repetitive_index": [],
+    "hand_movement_score": 92.0,
+    "left_hand_avg_velocity": 0.507,
+    "right_hand_avg_velocity": 0.3828,
+    "posture_quality": 58.0,
+    "posture_score": 58.0,
+    "nervousness_indicator": 8.0,
+    "motion_overall_score": 58.0
+  }
+}

@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_session
 from app.models.motion_analysis import MotionAnalysis
+from app.models.session import TrainingSession
 from app.schemas.motion_analysis import (
     MotionAnalysisCreate,
     MotionAnalysisResponse,
@@ -31,6 +32,11 @@ async def create_motion_analysis(
 
     motion_analysis = MotionAnalysis(**payload.model_dump())
     db.add(motion_analysis)
+
+    training_session = await db.get(TrainingSession, payload.session_id)
+    if training_session is not None:
+        training_session.motion_analysis_score = payload.motion_overall_score
+
     await db.commit()
     await db.refresh(motion_analysis)
     return motion_analysis

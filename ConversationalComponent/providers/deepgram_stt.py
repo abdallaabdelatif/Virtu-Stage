@@ -26,7 +26,7 @@ class DeepgramSTT(ISTTService):
 
         self.ws = await websockets.connect(
             url,
-            extra_headers={
+            additional_headers={
                 "Authorization": f"Token {self.api_key}"
             }
         )

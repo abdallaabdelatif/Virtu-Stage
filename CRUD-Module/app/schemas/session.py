@@ -11,6 +11,7 @@ class TrainingSessionCreate(BaseModel):
     user_id: uuid.UUID
     scenario_type: ScenarioType
     difficulty_level: DifficultyLevel
+    session_id: uuid.UUID | None = None
 
 
 class TrainingSessionUpdate(BaseModel):

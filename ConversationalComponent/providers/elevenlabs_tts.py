@@ -25,7 +25,7 @@ class ElevenLabsTTS(ITTSService):
 
         async with websockets.connect(
             url,
-            extra_headers={
+            additional_headers={
                 "xi-api-key": self.api_key
             }
         ) as ws:

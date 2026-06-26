@@ -1,0 +1,98 @@
+{
+  "session_id": "bafec4bc-5d54-4ffd-9882-9f72cedc9845",
+  "head_stability_score": 0.89,
+  "head_movement_variance": 0.0074,
+  "head_angle": 21.1646,
+  "head_avg_velocity": 0.183,
+  "fidgeting_level": "low",
+  "fidgeting_score": 0.06,
+  "sudden_index": [
+    {
+      "body_part": "left_wrist",
+      "timestamp_ms": 51777,
+      "frame_index": 1569
+    },
+    {
+      "body_part": "right_wrist",
+      "timestamp_ms": 51777,
+      "frame_index": 1569
+    },
+    {
+      "body_part": "left_wrist",
+      "timestamp_ms": 66495,
+      "frame_index": 2015
+    },
+    {
+      "body_part": "right_wrist",
+      "timestamp_ms": 66495,
+      "frame_index": 2015
+    }
+  ],
+  "repetitive_index": [],
+  "hand_movement_score": 1.0,
+  "left_hand_avg_velocity": 0.419,
+  "right_hand_avg_velocity": 0.3371,
+  "posture_quality": 80.0,
+  "posture_score": 80.0,
+  "nervousness_indicator": 24.82,
+  "motion_overall_score": 64.22,
+  "analyzed_at": "2026-06-25T14:05:10.987671+00:00",
+  "recommendations": [
+    "Level your shoulders for a more confident, symmetrical posture.",
+    "Slow down hand movements for a calmer delivery.",
+    "Frequent sudden movements (4 events)"
+  ],
+  "dominant_posture_type": "excellent",
+  "rule_trigger_counts": {
+    "excessive_movement": 15,
+    "sudden_left_wrist": 2,
+    "sudden_right_wrist": 2,
+    "shoulder_alignment": 16,
+    "leaning_forward": 2
+  },
+  "posture_type_counts": {
+    "excellent": 56,
+    "excessive_hand_movement": 15,
+    "shoulder_misalignment": 4,
+    "leaning_forward_warning": 1
+  },
+  "crud_payload": {
+    "session_id": "bafec4bc-5d54-4ffd-9882-9f72cedc9845",
+    "head_stability_score": 0.89,
+    "head_movement_variance": 0.0074,
+    "head_angle": 21.1646,
+    "head_avg_velocity": 0.183,
+    "fidgeting_level": "low",
+    "fidgeting_score": 0.06,
+    "sudden_index": [
+      {
+        "body_part": "left_wrist",
+        "timestamp_ms": 51777,
+        "frame_index": 1569
+      },
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 51777,
+        "frame_index": 1569
+      },
+      {
+        "body_part": "left_wrist",
+        "timestamp_ms": 66495,
+        "frame_index": 2015
+      },
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 66495,
+        "frame_index": 2015
+      }
+    ],
+    "repetitive_index": [],
+    "hand_movement_score": 1.0,
+    "left_hand_avg_velocity": 0.419,
+    "right_hand_avg_velocity": 0.3371,
+    "posture_quality": 80.0,
+    "posture_score": 80.0,
+    "nervousness_indicator": 24.82,
+    "motion_overall_score": 64.22
+  }
+}

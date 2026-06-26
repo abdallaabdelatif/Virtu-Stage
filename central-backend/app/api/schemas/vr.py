@@ -34,6 +34,29 @@ class VoiceAnalysisResultPayload(BaseModel):
     focus_score: float
 
 
+class MotionAnalysisResultPayload(BaseModel):
+    session_id: str
+    head_stability_score: float = Field(ge=0.0)
+    head_movement_variance: float = Field(ge=0.0)
+    head_angle: float
+    head_avg_velocity: float = Field(ge=0.0)
+    fidgeting_level: str
+    fidgeting_score: float = Field(ge=0.0)
+    sudden_index: dict | list | None = None
+    repetitive_index: dict | list | None = None
+    hand_movement_score: float = Field(ge=0.0)
+    left_hand_avg_velocity: float = Field(ge=0.0)
+    right_hand_avg_velocity: float = Field(ge=0.0)
+    posture_quality: float = Field(ge=0.0)
+    posture_score: float = Field(ge=0.0)
+    nervousness_indicator: float = Field(ge=0.0)
+    motion_overall_score: float = Field(ge=0.0)
+    presentation_assessment: dict | None = None
+    recommendations: list[str] | None = None
+    dominant_posture_type: str | None = None
+    session_metrics: dict | None = None
+
+
 class ConversationalTTSMessage(BaseModel):
     type: str
     text: str | None = None

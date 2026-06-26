@@ -1,0 +1,244 @@
+{
+  "session_id": "8903a23f-82e0-4e5b-b4f1-23a8fb5759f4",
+  "head_stability_score": 0.94,
+  "head_movement_variance": 0.0016,
+  "head_angle": 31.2168,
+  "head_avg_velocity": 0.1581,
+  "fidgeting_level": "low",
+  "fidgeting_score": 0.0,
+  "sudden_index": [
+    {
+      "body_part": "left_wrist",
+      "timestamp_ms": 13160,
+      "frame_index": 329
+    },
+    {
+      "body_part": "right_wrist",
+      "timestamp_ms": 13160,
+      "frame_index": 329
+    },
+    {
+      "body_part": "left_wrist",
+      "timestamp_ms": 13200,
+      "frame_index": 330
+    },
+    {
+      "body_part": "right_wrist",
+      "timestamp_ms": 13240,
+      "frame_index": 331
+    },
+    {
+      "body_part": "left_wrist",
+      "timestamp_ms": 48240,
+      "frame_index": 1206
+    },
+    {
+      "body_part": "right_wrist",
+      "timestamp_ms": 83920,
+      "frame_index": 2098
+    },
+    {
+      "body_part": "right_wrist",
+      "timestamp_ms": 83960,
+      "frame_index": 2099
+    },
+    {
+      "body_part": "left_wrist",
+      "timestamp_ms": 88920,
+      "frame_index": 2223
+    },
+    {
+      "body_part": "left_wrist",
+      "timestamp_ms": 88960,
+      "frame_index": 2224
+    },
+    {
+      "body_part": "left_wrist",
+      "timestamp_ms": 91360,
+      "frame_index": 2284
+    },
+    {
+      "body_part": "left_wrist",
+      "timestamp_ms": 91400,
+      "frame_index": 2285
+    },
+    {
+      "body_part": "left_wrist",
+      "timestamp_ms": 91440,
+      "frame_index": 2286
+    },
+    {
+      "body_part": "left_wrist",
+      "timestamp_ms": 132560,
+      "frame_index": 3314
+    },
+    {
+      "body_part": "right_wrist",
+      "timestamp_ms": 142240,
+      "frame_index": 3556
+    },
+    {
+      "body_part": "right_wrist",
+      "timestamp_ms": 142920,
+      "frame_index": 3573
+    },
+    {
+      "body_part": "left_wrist",
+      "timestamp_ms": 157120,
+      "frame_index": 3928
+    },
+    {
+      "body_part": "right_wrist",
+      "timestamp_ms": 178320,
+      "frame_index": 4458
+    },
+    {
+      "body_part": "left_wrist",
+      "timestamp_ms": 217640,
+      "frame_index": 5441
+    },
+    {
+      "body_part": "left_wrist",
+      "timestamp_ms": 217920,
+      "frame_index": 5448
+    }
+  ],
+  "repetitive_index": [],
+  "hand_movement_score": 1.0,
+  "left_hand_avg_velocity": 0.6016,
+  "right_hand_avg_velocity": 0.3146,
+  "posture_quality": 60.0,
+  "posture_score": 60.0,
+  "nervousness_indicator": 3.21,
+  "motion_overall_score": 63.57,
+  "analyzed_at": "2026-06-25T14:18:56.713144+00:00",
+  "recommendations": [
+    "Level your shoulders for a more confident, symmetrical posture."
+  ],
+  "dominant_posture_type": "shoulder_misalignment",
+  "rule_trigger_counts": {
+    "shoulder_alignment": 5061,
+    "excessive_movement": 737,
+    "sudden_left_wrist": 12,
+    "sudden_right_wrist": 7
+  },
+  "posture_type_counts": {
+    "shoulder_misalignment": 4356,
+    "excessive_hand_movement": 737,
+    "excellent": 241
+  },
+  "crud_payload": {
+    "session_id": "8903a23f-82e0-4e5b-b4f1-23a8fb5759f4",
+    "head_stability_score": 0.94,
+    "head_movement_variance": 0.0016,
+    "head_angle": 31.2168,
+    "head_avg_velocity": 0.1581,
+    "fidgeting_level": "low",
+    "fidgeting_score": 0.0,
+    "sudden_index": [
+      {
+        "body_part": "left_wrist",
+        "timestamp_ms": 13160,
+        "frame_index": 329
+      },
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 13160,
+        "frame_index": 329
+      },
+      {
+        "body_part": "left_wrist",
+        "timestamp_ms": 13200,
+        "frame_index": 330
+      },
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 13240,
+        "frame_index": 331
+      },
+      {
+        "body_part": "left_wrist",
+        "timestamp_ms": 48240,
+        "frame_index": 1206
+      },
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 83920,
+        "frame_index": 2098
+      },
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 83960,
+        "frame_index": 2099
+      },
+      {
+        "body_part": "left_wrist",
+        "timestamp_ms": 88920,
+        "frame_index": 2223
+      },
+      {
+        "body_part": "left_wrist",
+        "timestamp_ms": 88960,
+        "frame_index": 2224
+      },
+      {
+        "body_part": "left_wrist",
+        "timestamp_ms": 91360,
+        "frame_index": 2284
+      },
+      {
+        "body_part": "left_wrist",
+        "timestamp_ms": 91400,
+        "frame_index": 2285
+      },
+      {
+        "body_part": "left_wrist",
+        "timestamp_ms": 91440,
+        "frame_index": 2286
+      },
+      {
+        "body_part": "left_wrist",
+        "timestamp_ms": 132560,
+        "frame_index": 3314
+      },
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 142240,
+        "frame_index": 3556
+      },
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 142920,
+        "frame_index": 3573
+      },
+      {
+        "body_part": "left_wrist",
+        "timestamp_ms": 157120,
+        "frame_index": 3928
+      },
+      {
+        "body_part": "right_wrist",
+        "timestamp_ms": 178320,
+        "frame_index": 4458
+      },
+      {
+        "body_part": "left_wrist",
+        "timestamp_ms": 217640,
+        "frame_index": 5441
+      },
+      {
+        "body_part": "left_wrist",
+        "timestamp_ms": 217920,
+        "frame_index": 5448
+      }
+    ],
+    "repetitive_index": [],
+    "hand_movement_score": 1.0,
+    "left_hand_avg_velocity": 0.6016,
+    "right_hand_avg_velocity": 0.3146,
+    "posture_quality": 60.0,
+    "posture_score": 60.0,
+    "nervousness_indicator": 3.21,
+    "motion_overall_score": 63.57
+  }
+}
