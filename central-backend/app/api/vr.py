@@ -27,6 +27,18 @@ def _scenario_from_mode(mode: int) -> str:
     return "public_speaking" if mode == 2 else "interview"
 
 
+def _cleanup_session(session_id: str) -> None:
+    session = session_store.get(session_id)
+    if session is None:
+        return
+
+    active_streams = session.get("active_streams", {})
+    if active_streams.get("audio", False) or active_streams.get("frames", False):
+        return
+
+    session_store.pop(session_id, None)
+
+
 @router.post("/sessions", status_code=status.HTTP_201_CREATED)
 async def create_session(payload: VRSessionCreate):
     session_id = payload.session_id
@@ -81,6 +93,9 @@ async def vr_audio_socket(websocket: WebSocket, session_id: str):
     if session is None:
         await websocket.close(code=1008)
         return
+
+    session.setdefault("active_streams", {"audio": False, "frames": False})
+    session["active_streams"]["audio"] = True
 
     voice_proxy = VoiceAnalysisProxy(session_id=session_id)
     conv_proxy = ConversationalProxy(session_id=session_id, mode=session["mode"], job=session["job"])
@@ -143,9 +158,11 @@ async def vr_audio_socket(websocket: WebSocket, session_id: str):
     except WebSocketDisconnect:
         pass
     finally:
+        session["active_streams"]["audio"] = False
         if voice_proxy.ws is not None:
             await voice_proxy.close()
         await conv_proxy.close()
+        _cleanup_session(session_id)
 
 
 @router.websocket("/ws/vr/frames/{session_id}")
@@ -155,6 +172,9 @@ async def vr_frame_socket(websocket: WebSocket, session_id: str):
     if session is None:
         await websocket.close(code=1008)
         return
+
+    session.setdefault("active_streams", {"audio": False, "frames": False})
+    session["active_streams"]["frames"] = True
 
     motion_proxy = MotionAnalysisProxy(session_id=session_id)
     session["motion_proxy"] = motion_proxy
@@ -169,5 +189,6 @@ async def vr_frame_socket(websocket: WebSocket, session_id: str):
     except Exception:
         logger.exception("VR frame socket error for session %s", session_id)
     finally:
+        session["active_streams"]["frames"] = False
         await motion_proxy.close()
-        session_store.pop(session_id, None)
+        _cleanup_session(session_id)

@@ -73,3 +73,37 @@ def test_ingest_voice_analysis_forwards_to_crud(monkeypatch):
     assert response.status_code == 201
     assert response.json()["success"] is True
     assert response.json()["session_id"] == payload["session_id"]
+
+
+def test_cleanup_session_waits_for_other_streams_to_finish():
+    session_id = str(uuid.uuid4())
+    vr_module.session_store[session_id] = {
+        "mode": 1,
+        "job": "tester",
+        "user_id": "test-user",
+        "active_streams": {"audio": True, "frames": True},
+        "voice_proxy": None,
+        "conv_proxy": None,
+        "motion_proxy": None,
+    }
+
+    vr_module._cleanup_session(session_id)
+
+    assert session_id in vr_module.session_store
+
+
+def test_cleanup_session_removes_when_no_streams_are_active():
+    session_id = str(uuid.uuid4())
+    vr_module.session_store[session_id] = {
+        "mode": 1,
+        "job": "tester",
+        "user_id": "test-user",
+        "active_streams": {"audio": False, "frames": False},
+        "voice_proxy": None,
+        "conv_proxy": None,
+        "motion_proxy": None,
+    }
+
+    vr_module._cleanup_session(session_id)
+
+    assert session_id not in vr_module.session_store

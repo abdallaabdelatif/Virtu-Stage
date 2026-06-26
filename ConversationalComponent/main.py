@@ -1,9 +1,11 @@
 import asyncio
 import json
+import os
 
 from fastapi import FastAPI
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
+from websockets.client import connect as ws_connect
 
 from config.settings import settings
 
@@ -13,6 +15,7 @@ from providers.elevenlabs_tts import ElevenLabsTTS
 
 from pipeline.voice_session import VoiceSession
 from pipeline.conversation_pipeline import ConversationPipeline
+from voice_analysis_bridge import build_transcript_ws_url, create_transcript_payload, resolve_session_id
 
 app = FastAPI()
 
@@ -24,6 +27,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
     mode = 1
     job = ""
+    session_id = os.getenv("VOICE_ANALYSIS_SESSION_ID", "") or "conversational-session"
     mode_message = await websocket.receive_text()
     mode_data = json.loads(mode_message)
 
@@ -35,6 +39,11 @@ async def websocket_endpoint(websocket: WebSocket):
         if job_data.get("type") == "set_job":
             job = job_data.get("job", "")
         print(f"Job selected: {job}")
+
+    if mode_data.get("session_id") or mode_data.get("sessionId"):
+        session_id = resolve_session_id(mode_data, session_id)
+    if mode == 1 and job_data is not None:
+        session_id = resolve_session_id(job_data, session_id)
 
     print(f"Mode selected: {mode}")
 
@@ -58,6 +67,14 @@ async def websocket_endpoint(websocket: WebSocket):
     tts = ElevenLabsTTS(settings.ELEVENLABS_API_KEY,settings.ELEVENLABS_VOICE_ID)
 
     pipeline = ConversationPipeline(llm,tts)
+
+    transcript_ws = None
+    transcript_ws_url = build_transcript_ws_url(settings.VOICE_ANALYSIS_WS_URL, session_id)
+    try:
+        transcript_ws = await ws_connect(transcript_ws_url)
+        print(f"Voice analysis transcript websocket connected: {transcript_ws_url}")
+    except Exception as exc:  # pragma: no cover - defensive runtime path
+        print(f"Could not connect to voice analysis transcript websocket: {exc}")
 
     await stt.connect()
 
@@ -125,6 +142,12 @@ Only output the question.
                 continue
 
             print("User:",transcript)
+            if transcript_ws is not None:
+                try:
+                    await transcript_ws.send(create_transcript_payload(transcript))
+                except Exception as exc:  # pragma: no cover - defensive runtime path
+                    print(f"Failed to forward transcript to voice analysis: {exc}")
+
             if session.mode == 1:
                 response = (
                     await pipeline.process_transcript(session,transcript)
@@ -144,5 +167,6 @@ Only output the question.
         print("Unity disconnected")
 
     finally:
-
+        if transcript_ws is not None:
+            await transcript_ws.close()
         await stt.close()

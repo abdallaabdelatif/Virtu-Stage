@@ -3,6 +3,29 @@
 ## Overview
 This document outlines the complete flow from VR client connection through session lifecycle, including audio/video streaming, voice analysis, conversational AI, and session persistence.
 
+## Current implementation status
+The following pieces are now implemented in the workspace:
+- The conversational service opens an outbound websocket to the voice-analysis transcript endpoint and forwards each recognized transcript.
+- The voice-analysis service accepts those transcript fragments and buffers them for the matching session ID.
+- The direct bridge currently targets the voice-analysis service on port 8001 using the endpoint `/ws/voice-analysis/transcript/{session_id}`.
+- The central backend already exposes the frame websocket endpoint and forwards frames to the motion-analysis service.
+- The motion-analysis service processes inbound JPEG batches and posts its result back to the central backend for CRUD persistence.
+- The conversational websocket remains on port 9000, and the motion-analysis service runs on port 9001.
+
+### Current runtime configuration
+- `VOICE_ANALYSIS_WS_URL` → defaults to `ws://localhost:8001`
+- `VOICE_ANALYSIS_SESSION_ID` → optional session override; otherwise a fallback session name is used
+- `MOTION_ANALYSIS_WS_URL` → defaults to `ws://localhost:9001`
+- `CENTRALIZED_BACKEND_URL` → used by the motion-analysis service to post results back to the central backend
+- `CRUD_BASE_URL` → used by the central backend to forward analysis results to CRUD
+- `VR_DEFAULT_USER_ID` → should point to a valid CRUD user ID so training sessions can be created for motion/voice analysis results
+- Existing service ports remain:
+  - `8000` → CRUD Module
+  - `8001` → Voice-Analysis-Service
+  - `9000` → Central Backend
+  - `9001` → Motion-Analysis-Service
+  - `9002` → ConversationalComponent
+
 ---
 
 ## Phase 1: Session Initialization
@@ -34,19 +57,29 @@ This document outlines the complete flow from VR client connection through sessi
   - Creates `ConversationalProxy` connection to ConversationalComponent
   - Spawns async task `forward_conv_to_vr()` for bidirectional relay
 
-### Step 2.3: Proxies Connect to Downstream Services
+### Step 2.3: Downstream Service Connections
 - **VoiceAnalysisProxy File:** `central-backend/app/clients/voice_analysis_proxy.py`
   - **Method:** `connect()`
-  - **Action:** Establishes WebSocket to Voice-Analysis-Service at configured endpoint
+  - **Action:** Establishes WebSocket to Voice-Analysis-Service at the configured audio endpoint
 
 - **ConversationalProxy File:** `central-backend/app/clients/conversational_proxy.py`
   - **Method:** `connect()`
-  - **Action:** Establishes WebSocket to ConversationalComponent, sends initialization (set_mode, set_job)
+  - **Action:** Establishes WebSocket to ConversationalComponent, sends initialization (`set_mode`, `set_job`)
+
+- **Implemented direct bridge:** `ConversationalComponent/main.py`
+  - **Action:** Opens a direct websocket to `ws://localhost:8001/ws/voice-analysis/transcript/{session_id}`
+  - **Payload:** Sends each recognized transcript as `{"type": "transcript", "text": "..."}`
+  - **Effect:** The voice-analysis service buffers the transcript fragments for later analysis
 
 ### Step 2.4: VR Frame Streamer Connects
 - **File:** `VR/FrameWebsocketStreamer.cs.txt`
-- **Method:** `InitializeWebSocket()`
+- **Method:** `InitializeWebsocket()`
 - **Action:** Waits for session ID, connects to `ws://backend:8082/ws/vr/frames/{session_id}`
+
+### Step 2.5: Backend Opens Motion Analysis Proxy
+- **File:** `central-backend/app/api/vr.py`
+- **Handler:** `vr_frame_socket()`
+- **Action:** Creates a `MotionAnalysisProxy` and opens a websocket to the motion-analysis service at `/ws/motion-analysis/frames/{session_id}`
 
 ---
 
@@ -82,14 +115,46 @@ Backend forwards audio to both services simultaneously:
 
 ### Step 3.5: Backend Receives Frame Data
 - **File:** `central-backend/app/api/vr.py`
-- **Handler:** `vr_frames_socket()` WebSocket endpoint
-- **Action:** Receives and stores frame batch data
+- **Handler:** `vr_frame_socket()` WebSocket endpoint
+- **Action:** Receives frame batches from VR and forwards them to the motion-analysis service
+
+### Step 3.6: Motion-Analysis-Service Processes Frame Batches
+- **File:** `Motion-Analysis-Service/app/websocket/frame_handler.py`
+- **Handler:** `frame_socket()`
+- **Action:** Buffers inbound JPEG batches, runs the analysis pipeline on disconnect, and posts the result back to the central backend
 
 ---
 
-## Phase 4: Voice Analysis Processing
+## Phase 4: Motion Analysis Processing and Persistence
 
-### Step 4.1: Voice-Analysis-Service Processes Audio
+### Step 4.1: Motion-Analysis-Service Receives VR Batches
+- **File:** `Motion-Analysis-Service/app/websocket/frame_handler.py`
+- **Handler:** `frame_socket()`
+- **Action:** Accepts binary frame batches from the central backend and stores them in `FrameBuffer`
+
+### Step 4.2: Motion Analysis Pipeline Runs
+- **File:** `Motion-Analysis-Service/app/analysis/motion_pipeline.py`
+- **Action:** Processes pose/hand landmarks to compute posture, gesture, stability, and composure scores
+
+### Step 4.3: Result Is Posted Back to Central Backend
+- **File:** `Motion-Analysis-Service/app/websocket/result_sender.py`
+- **Action:** Converts the analysis result into a CRUD-compatible payload and posts it to `POST /motion-analyses` on the central backend
+
+### Step 4.4: Central Backend Persists to CRUD
+- **File:** `central-backend/app/api/vr.py`
+- **Handler:** `ingest_motion_analysis()`
+- **Action:** Forwards the analysis payload to CRUD via `crud_client.create_motion_analysis()`
+
+### Step 4.5: CRUD Stores the Motion Analysis Record
+- **File:** `central-backend/app/clients/crud_client.py`
+- **Method:** `create_motion_analysis()`
+- **Action:** POSTs the payload to the CRUD module at `/motion-analysis`
+
+---
+
+## Phase 5: Voice Analysis Processing
+
+### Step 5.1: Voice-Analysis-Service Processes Audio
 - **File:** `Voice-Analysis-Service/app/main.py`
 - **Handler:** WebSocket audio endpoint
 - **Services:**
@@ -99,12 +164,12 @@ Backend forwards audio to both services simultaneously:
   - `Voice-Analysis-Service/app/analysis/transcript_metrics.py` - Text metrics
 - **Action:** Processes cumulative audio, generates analysis results
 
-### Step 4.2: Backend Receives Voice Analysis Results
+### Step 5.2: Backend Receives Voice Analysis Results
 - **File:** `central-backend/app/clients/voice_analysis_proxy.py`
 - **Method:** `receive_message()`
 - **Action:** Receives analysis results as WebSocket messages
 
-### Step 4.3: Voice Analysis Persisted to CRUD
+### Step 5.3: Voice Analysis Persisted to CRUD
 - **File:** `central-backend/app/api/vr.py`
 - **Handler:** `POST /voice-analyses`
 - **Action:** Receives analysis results from frontend, forwards to CRUD service
@@ -118,27 +183,28 @@ Backend forwards audio to both services simultaneously:
 
 ---
 
-## Phase 5: Conversational AI Processing & Relay
+## Phase 6: Conversational AI Processing & Relay
 
-### Step 5.1: ConversationalComponent Processes Input
+### Step 6.1: ConversationalComponent Processes Input
 - **File:** `ConversationalComponent/main.py`
 - **Pipeline:** `ConversationalComponent/pipeline/conversation_pipeline.py`
 - **Action:** 
-  - Receives audio/text from backend
+  - Receives audio/text from backend or direct websocket input
   - Generates conversational response
   - Produces TTS audio output and control messages
+  - Forwards each recognized transcript to the voice-analysis transcript websocket for buffering and later analysis
 
-### Step 5.2: Backend Receives Conversational Response
+### Step 6.2: Backend Receives Conversational Response
 - **File:** `central-backend/app/clients/conversational_proxy.py`
 - **Method:** `receive_message()`
 - **Action:** Receives TTS audio or text/control messages from ConversationalComponent
 
-### Step 5.3: Backend Relays to VR Client
+### Step 6.3: Backend Relays to VR Client
 - **File:** `central-backend/app/api/vr.py`
 - **Task:** `forward_conv_to_vr()` async function
 - **Action:** Continuously receives from ConversationalProxy and sends to VR client via WebSocket
 
-### Step 5.4: VR Client Handles Response
+### Step 6.4: VR Client Handles Response
 - **File:** `VR/BackendClient.cs.txt`
 - **Handler:** WebSocket message handler
 - **Action:**
@@ -147,25 +213,25 @@ Backend forwards audio to both services simultaneously:
 
 ---
 
-## Phase 6: Session End & Cleanup
+## Phase 7: Session End & Cleanup
 
-### Step 6.1: VR Client Initiates End
+### Step 7.1: VR Client Initiates End
 - **File:** `VR/BackendClient.cs.txt`
 - **Method:** `OnDestroy()` or manual disconnect
 - **Action:** Sends `audio_end` control message to signal session completion
 
-### Step 6.2: Backend Detects Session End
+### Step 7.2: Backend Detects Session End
 - **File:** `central-backend/app/api/vr.py`
 - **Handler:** `vr_audio_socket()` message handler
 - **Action:** 
   - Detects `audio_end` control message type
   - Closes `VoiceAnalysisProxy` connection
 
-### Step 6.3: Voice-Analysis Final Processing
+### Step 7.3: Voice-Analysis Final Processing
 - **File:** `Voice-Analysis-Service/app/main.py`
 - **Action:** WebSocket close triggers final analysis computation and result generation
 
-### Step 6.4: Session Cleanup
+### Step 7.4: Session Cleanup
 - **File:** `central-backend/app/api/vr.py`
 - **Handler:** `vr_audio_socket()` finally block
 - **Action:**
@@ -232,7 +298,12 @@ Backend forwards audio to both services simultaneously:
 ---
 
 ## Files Involved by Category
-
+### Motion Analysis Service
+- `Motion-Analysis-Service/app/main.py` - FastAPI entry point
+- `Motion-Analysis-Service/app/websocket/frame_handler.py` - Production websocket ingress
+- `Motion-Analysis-Service/app/websocket/result_sender.py` - Result posting to central backend
+- `Motion-Analysis-Service/app/analysis/motion_pipeline.py` - Pose/hand analysis pipeline
+- `Motion-Analysis-Service/app/models/motion_analysis_result.py` - Result model and CRUD payload mapping
 ### VR Client (Unity C#)
 - `VR/BackendClient.cs.txt` - Main session & audio client
 - `VR/FrameWebsocketStreamer.cs.txt` - Frame capture & streaming
