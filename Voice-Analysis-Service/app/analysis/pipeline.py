@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 import logging
-import tempfile
 from pathlib import Path
 import librosa
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from app.analysis.emotion_recognition import EmotionRecognizer
 from app.analysis.paralinguistic import ParalinguisticAnalyzer
 from app.analysis.pause_analysis import PauseAnalyzer
@@ -27,8 +28,11 @@ class AudioAnalysisPipeline:
         self.emotion_recognizer = EmotionRecognizer()
         self.paralinguistic_analyzer = ParalinguisticAnalyzer()
         self.pause_analyzer = PauseAnalyzer()
+        self.executor = ThreadPoolExecutor(max_workers=3)
 
-    def run(self, session_id: str, audio_buffer: AudioBuffer) -> AudioAnalysisResult:
+    async def run(
+        self, session_id: str, audio_buffer: AudioBuffer
+    ) -> AudioAnalysisResult:
         if not audio_buffer.has_audio:
             raise ValueError(f"No audio accumulated for session {session_id}")
 
@@ -36,19 +40,30 @@ class AudioAnalysisPipeline:
         wav_path = self.write_temp_wav(wav_bytes)
 
         try:
-            audio, sample_rate = librosa.load(wav_path, sr=SAMPLE_RATE_HZ, mono=True)
+            audio, sample_rate = await asyncio.get_event_loop().run_in_executor(
+                self.executor,
+                lambda: librosa.load(wav_path, sr=SAMPLE_RATE_HZ, mono=True),
+            )
             duration_seconds = len(audio) / sample_rate
 
-            logger.info("Running emotion recognition for session %s", session_id)
-            emotion_scores = self.emotion_recognizer.predict(wav_path)
-
-            logger.info("Running paralinguistic analysis for session %s", session_id)
-            paralinguistic_scores = self.paralinguistic_analyzer.analyze(
-                audio, sample_rate
+            logger.info(
+                "Running audio-based analysis branch in parallel for session %s",
+                session_id,
             )
 
-            logger.info("Running pause analysis for session %s", session_id)
-            pause_result = self.pause_analyzer.analyze(audio, sample_rate)
+            emotion_scores, paralinguistic_scores, pause_result = await asyncio.gather(
+                asyncio.get_event_loop().run_in_executor(
+                    self.executor, lambda: self.emotion_recognizer.predict(wav_path)
+                ),
+                asyncio.get_event_loop().run_in_executor(
+                    self.executor,
+                    lambda: self.paralinguistic_analyzer.analyze(audio, sample_rate),
+                ),
+                asyncio.get_event_loop().run_in_executor(
+                    self.executor,
+                    lambda: self.pause_analyzer.analyze(audio, sample_rate),
+                ),
+            )
 
             return AudioAnalysisResult(
                 emotions=EmotionScoresSchema(
@@ -74,13 +89,8 @@ class AudioAnalysisPipeline:
         finally:
             Path(wav_path).unlink(missing_ok=True)
 
-    # speech brain expect a file path to classify
-    @staticmethod
-    def write_temp_wav(wav_bytes: bytes) -> str:
-        tmp_file = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
-        tmp_file.write(wav_bytes)
-        tmp_file.close()
-        return tmp_file.name
+    def __del__(self):
+        self.executor.shutdown(wait=False)
 
 
 class TranscriptAnalysisPipeline:

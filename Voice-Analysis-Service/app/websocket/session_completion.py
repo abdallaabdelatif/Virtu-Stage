@@ -43,7 +43,7 @@ async def on_audio_socket_closed(session_id: str, audio_buffer: AudioBuffer) -> 
 
     if audio_buffer.has_audio:
         try:
-            result = audio_pipeline.run(session_id, audio_buffer)
+            result = await audio_pipeline.run(session_id, audio_buffer)
             state.audio_result = result
             sync.audio_duration_seconds = result.duration_seconds
         except Exception:
