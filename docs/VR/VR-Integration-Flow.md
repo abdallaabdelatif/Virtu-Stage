@@ -22,9 +22,9 @@ The following pieces are now implemented in the workspace:
 - Existing service ports remain:
   - `8000` → CRUD Module
   - `8001` → Voice-Analysis-Service
-  - `9000` → Central Backend
+  - `8082` → Central Backend
+  - `9000` → ConversationalComponent
   - `9001` → Motion-Analysis-Service
-  - `9002` → ConversationalComponent
 
 ---
 
