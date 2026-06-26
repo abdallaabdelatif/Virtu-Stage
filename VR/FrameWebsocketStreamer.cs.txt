@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using NativeWebSocket;
+using UnityEngine.Rendering;
+using Unity.Collections;
 
 [RequireComponent(typeof(Camera))]
 public class FrameWebSocketStreamer : MonoBehaviour
@@ -21,6 +23,7 @@ public class FrameWebSocketStreamer : MonoBehaviour
     private Camera cam;
     private RenderTexture rt;
     private Texture2D readTex;
+    private bool readbackPending = false;
 
     private WebSocket ws;
     private bool wsReady = false;
@@ -108,28 +111,53 @@ public class FrameWebSocketStreamer : MonoBehaviour
         {
             yield return new WaitForEndOfFrame();
 
-            // Capture
-            RenderTexture.active = rt;
-            readTex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-            readTex.Apply();
-            RenderTexture.active = null;
-
-            byte[] jpg = readTex.EncodeToJPG(jpgQuality);
-
-            buffer.Add(new FramePacket
+            if (!readbackPending)
             {
-                index = frameIndex++,
-                timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                jpg = jpg
-            });
-            if (buffer.Count >= framesPerBatch && !uploading)
-            {
-                var batch = buffer.ToArray();
-                buffer.Clear();
-                StartCoroutine(SendBatch(batch));
+                readbackPending = true;
+
+                AsyncGPUReadback.Request(
+                    rt,
+                    0,
+                    TextureFormat.RGB24,
+                    OnReadbackComplete);
             }
 
             yield return new WaitForSeconds(frameTime);
+        }
+    }
+
+    private void OnReadbackComplete(AsyncGPUReadbackRequest request)
+    {
+        readbackPending = false;
+
+        if (!wsReady)
+            return;
+
+        if (request.hasError)
+        {
+            Debug.LogWarning("GPU Readback failed.");
+            return;
+        }
+
+        NativeArray<byte> pixels = request.GetData<byte>();
+
+        readTex.LoadRawTextureData(pixels);
+        readTex.Apply(false, false);
+
+        byte[] jpg = readTex.EncodeToJPG(jpgQuality);
+
+        buffer.Add(new FramePacket
+        {
+            index = frameIndex++,
+            timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+            jpg = jpg
+        });
+
+        if (buffer.Count >= framesPerBatch && !uploading)
+        {
+            FramePacket[] batch = buffer.ToArray();
+            buffer.Clear();
+            StartCoroutine(SendBatch(batch));
         }
     }
 
@@ -178,6 +206,10 @@ public class FrameWebSocketStreamer : MonoBehaviour
             }
             catch { }
             ws = null;
+        }
+        if (readTex != null)
+        {
+            Destroy(readTex);
         }
     }
 }
