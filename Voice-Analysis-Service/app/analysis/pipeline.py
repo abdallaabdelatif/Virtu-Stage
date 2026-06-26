@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 import librosa
+import tempfile
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from app.analysis.emotion_recognition import EmotionRecognizer
@@ -88,6 +89,13 @@ class AudioAnalysisPipeline:
             )
         finally:
             Path(wav_path).unlink(missing_ok=True)
+
+    @staticmethod
+    def write_temp_wav(wav_bytes: bytes) -> str:
+        tmp_file = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+        tmp_file.write(wav_bytes)
+        tmp_file.close()
+        return tmp_file.name
 
     def __del__(self):
         self.executor.shutdown(wait=False)
