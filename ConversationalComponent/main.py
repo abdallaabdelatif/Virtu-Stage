@@ -27,7 +27,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
     mode = 1
     job = ""
-    session_id = os.getenv("VOICE_ANALYSIS_SESSION_ID", "") or "conversational-session"
+    session_id = None
     mode_message = await websocket.receive_text()
     mode_data = json.loads(mode_message)
 
@@ -40,10 +40,12 @@ async def websocket_endpoint(websocket: WebSocket):
             job = job_data.get("job", "")
         print(f"Job selected: {job}")
 
-    if mode_data.get("session_id") or mode_data.get("sessionId"):
-        session_id = resolve_session_id(mode_data, session_id)
-    if mode == 1 and job_data is not None:
-        session_id = resolve_session_id(job_data, session_id)
+    session_data = json.loads(await websocket.receive_text())
+    if session_data.get("type") == "set_session":
+        session_id = session_data.get("sessionId")
+
+    if not session_id:
+        raise RuntimeError("Missing session_id from client")
 
     print(f"Mode selected: {mode}")
 

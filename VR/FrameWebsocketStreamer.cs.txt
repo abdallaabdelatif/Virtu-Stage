@@ -73,7 +73,11 @@ public class FrameWebSocketStreamer : MonoBehaviour
             return;
         }
 
-        ws = new WebSocket($"{wsBaseUrl}/ws/vr/frames/{VRSessionContext.SessionId}");
+        var headers = new Dictionary<string, string>
+        {
+            { "Authorization", $"Bearer {VRSessionContext.AccessToken}" }
+        };
+        ws = new WebSocket($"{wsBaseUrl}/ws/vr/frames/{VRSessionContext.SessionId}",headers);
 
         ws.OnOpen += () =>
         {

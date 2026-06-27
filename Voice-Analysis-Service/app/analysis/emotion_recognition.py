@@ -50,7 +50,7 @@ class EmotionRecognizer:
         waveform, sr = torchaudio.load(wav_path)
         if sr != 16000:
             waveform = torchaudio.functional.resample(waveform, sr, 16000)
-        out_prob, _, _, text_lab = self._classifier.classify_file(waveform)
+        out_prob, _, _, text_lab = self._classifier.classify_batch(waveform)
         probs = torch.exp(out_prob).squeeze(0).tolist()
         label_map = {"ang": "angry", "hap": "happy", "neu": "neutral", "sad": "sad"}
         score_by_label = {}

@@ -16,6 +16,8 @@ class ConversationalProxy:
         await self.send_text(json.dumps({"type": "set_mode", "mode": self.mode}))
         if self.job:
             await self.send_text(json.dumps({"type": "set_job", "job": self.job}))
+        
+        await self.send_text(json.dumps({"type": "set_session", "sessionId": self.session_id}))
 
     async def send_text(self, data: str) -> None:
         if self.ws is None:

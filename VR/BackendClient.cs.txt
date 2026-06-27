@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using NativeWebSocket;
 using System.Text;
+using Unity.Jobs;
 
 public class BackendClient : MonoBehaviour
 {
@@ -29,6 +30,7 @@ public class BackendClient : MonoBehaviour
     [System.Serializable]
     private class SessionRequest
     {
+        public string user_id;
         public string session_id;
         public int mode;
         public string job;
@@ -38,6 +40,22 @@ public class BackendClient : MonoBehaviour
     private class SessionResponse
     {
         public string session_id;
+    }
+
+    [Serializable]
+    private class SetModeMessage
+    {
+        public string type = "set_mode";
+        public int mode;
+        public string sessionId;
+    }
+
+    [Serializable]
+    private class SetJobMessage
+    {
+        public string type = "set_job";
+        public string job;
+        public string sessionId;
     }
 
     private async void Start()
@@ -51,19 +69,37 @@ public class BackendClient : MonoBehaviour
             Debug.LogError("Failed to create session with central backend");
             return;
         }
-
-        ws = new WebSocket($"{wsBaseUrl}/ws/vr/audio/{sessionId}");
+        var headers = new Dictionary<string, string>
+        {
+            { "Authorization", $"Bearer {VRSessionContext.AccessToken}" }
+        };
+        ws = new WebSocket($"{wsBaseUrl}/ws/vr/audio/{sessionId}",headers);
 
         ws.OnOpen += () =>
         {
             connected = true;
             Debug.Log($"Connected to backend session {sessionId}");
-            ws.SendText($"{{\"type\":\"set_mode\",\"mode\":{selectedMode}}}");
+            //var modeMessage = new SetModeMessage{
+            //    mode = selectedMode,
+            //    sessionId = VRSessionContext.SessionId
+            //};
+
+            //ws.SendText(JsonUtility.ToJson(modeMessage));
+            //if (selectedMode == 1){
+            //    var jobMessage = new SetJobMessage{
+            //        job = VRMenuController.SelectedJob,
+            //        sessionId = VRSessionContext.SessionId
+            //    };
+
+            //    ws.SendText(JsonUtility.ToJson(jobMessage));
+            //}
+            ws.SendText($"{{\"type\":\"set_mode\",\"mode\":{selectedMode},\"sessionId\":\"{sessionId}\"}}");
             if (selectedMode == 1)
             {
                 string job = VRMenuController.SelectedJob;
                 ws.SendText($"{{\"type\":\"set_job\",\"job\":\"{job}\"}}");
             }
+            ws.SendText($"{{\"type\":\"set_session\",\"sessionId\":\"{sessionId}\"}}");
             StartCoroutine(SendAudioLoop());
         };
 
@@ -109,6 +145,7 @@ public class BackendClient : MonoBehaviour
 
         var request = new SessionRequest()
         {
+            user_id = VRSessionContext.user_id,
             session_id = sessionId,
             mode = selectedMode,
             job = selectedMode == 1 ? VRMenuController.SelectedJob : string.Empty
@@ -120,7 +157,15 @@ public class BackendClient : MonoBehaviour
         webRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
         webRequest.downloadHandler = new DownloadHandlerBuffer();
         webRequest.SetRequestHeader("Content-Type", "application/json");
-
+        if (!string.IsNullOrEmpty(VRSessionContext.AccessToken))
+        {
+            webRequest.SetRequestHeader("Authorization",$"Bearer {VRSessionContext.AccessToken}");
+        }
+        else
+        {
+            Debug.LogError("No access token available. User is not logged in.");
+            return false;
+        }
         var operation = webRequest.SendWebRequest();
 
         while (!operation.isDone)
