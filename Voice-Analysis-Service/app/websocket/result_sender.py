@@ -16,21 +16,21 @@ async def send_result_to_central_backend(result: VoiceAnalysisResult) -> None:
     payload = {
         "session_id": result.session_id,
         "emotions": {
-            "neutral": result.emotions.neutral,
-            "happy": result.emotions.happy,
-            "sad": result.emotions.sad,
-            "angry": result.emotions.angry,
+            "neutral": round(result.emotions.neutral, 4),
+            "happy": round(result.emotions.happy, 4),
+            "sad": round(result.emotions.sad, 4),
+            "angry": round(result.emotions.angry, 4),
             # "dominant": result.emotions.dominant,
         },
-        "anxiety_level": result.paralinguistic.anxiety_level,
-        "confidence_score": result.paralinguistic.confidence_score,
-        "clarity_level": result.paralinguistic.clarity_level,
-        "focus_score": result.paralinguistic.focus_score,
-        "pause_ratio": result.pauses.pause_ratio,
+        "anxiety_level": round(result.paralinguistic.anxiety_level, 4),
+        "confidence_score": round(result.paralinguistic.confidence_score, 4),
+        "clarity_level": round(result.paralinguistic.clarity_level, 4),
+        "focus_score": round(result.paralinguistic.focus_score, 4),
+        "pause_ratio": round(result.pauses.pause_ratio, 4),
         "pause_count": result.pauses.pause_count,
-        "longest_pause_sec": result.pauses.longest_pause_seconds,
+        "longest_pause_sec": round(result.pauses.longest_pause_seconds, 4),
         "filler_words_cnt": result.filler_word_count,
-        "speech_rate_wpm": result.speech_rate_wpm,
+        "speech_rate_wpm": round(result.speech_rate_wpm, 4),
     }
 
     async with httpx.AsyncClient() as client:
