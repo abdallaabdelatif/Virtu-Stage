@@ -20,7 +20,7 @@ async def send_result_to_central_backend(result: VoiceAnalysisResult) -> None:
             "happy": result.emotions.happy,
             "sad": result.emotions.sad,
             "angry": result.emotions.angry,
-            "dominant": result.emotions.dominant,
+            # "dominant": result.emotions.dominant,
         },
         "anxiety_level": result.paralinguistic.anxiety_level,
         "confidence_score": result.paralinguistic.confidence_score,
@@ -28,8 +28,8 @@ async def send_result_to_central_backend(result: VoiceAnalysisResult) -> None:
         "focus_score": result.paralinguistic.focus_score,
         "pause_ratio": result.pauses.pause_ratio,
         "pause_count": result.pauses.pause_count,
-        "longest_pause_second": result.pauses.longest_pause_seconds,
-        "filler_words_count": result.filler_word_count,
+        "longest_pause_sec": result.pauses.longest_pause_seconds,
+        "filler_words_cnt": result.filler_word_count,
         "speech_rate_wpm": result.speech_rate_wpm,
     }
 

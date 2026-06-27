@@ -51,44 +51,44 @@ class AudioAnalysisPipeline:
                 "Running audio-based analysis branch in parallel for session %s",
                 session_id,
             )
-            
-            def emotion_job():
-                logger.info("Emotion started")
-                result = self.emotion_recognizer.predict(wav_path)
-                logger.info("Emotion finished")
-                return result
 
-            def para_job():
-                logger.info("Paralinguistic started")
-                result = self.paralinguistic_analyzer.analyze(audio, sample_rate)
-                logger.info("Paralinguistic finished")
-                return result
+            # def emotion_job():
+            #     logger.info("Emotion started")
+            #     result = self.emotion_recognizer.predict(wav_path)
+            #     logger.info("Emotion finished")
+            #     return result
 
-            def pause_job():
-                logger.info("Pause analysis started")
-                result = self.pause_analyzer.analyze(audio, sample_rate)
-                logger.info("Pause analysis finished")
-                return result
+            # def para_job():
+            #     logger.info("Paralinguistic started")
+            #     result = self.paralinguistic_analyzer.analyze(audio, sample_rate)
+            #     logger.info("Paralinguistic finished")
+            #     return result
 
-            emotion_scores, paralinguistic_scores, pause_result = await asyncio.gather(
-                asyncio.get_event_loop().run_in_executor(self.executor, emotion_job),
-                asyncio.get_event_loop().run_in_executor(self.executor, para_job),
-                asyncio.get_event_loop().run_in_executor(self.executor, pause_job),
-            )
-            logger.info("Gather completed")
+            # def pause_job():
+            #     logger.info("Pause analysis started")
+            #     result = self.pause_analyzer.analyze(audio, sample_rate)
+            #     logger.info("Pause analysis finished")
+            #     return result
+
             # emotion_scores, paralinguistic_scores, pause_result = await asyncio.gather(
-            #     asyncio.get_event_loop().run_in_executor(
-            #         self.executor, lambda: self.emotion_recognizer.predict(wav_path)
-            #     ),
-            #     asyncio.get_event_loop().run_in_executor(
-            #         self.executor,
-            #         lambda: self.paralinguistic_analyzer.analyze(audio, sample_rate),
-            #     ),
-            #     asyncio.get_event_loop().run_in_executor(
-            #         self.executor,
-            #         lambda: self.pause_analyzer.analyze(audio, sample_rate),
-            #     ),
+            #     asyncio.get_event_loop().run_in_executor(self.executor, emotion_job),
+            #     asyncio.get_event_loop().run_in_executor(self.executor, para_job),
+            #     asyncio.get_event_loop().run_in_executor(self.executor, pause_job),
             # )
+            # logger.info("Gather completed")
+            emotion_scores, paralinguistic_scores, pause_result = await asyncio.gather(
+                asyncio.get_event_loop().run_in_executor(
+                    self.executor, lambda: self.emotion_recognizer.predict(wav_path)
+                ),
+                asyncio.get_event_loop().run_in_executor(
+                    self.executor,
+                    lambda: self.paralinguistic_analyzer.analyze(audio, sample_rate),
+                ),
+                asyncio.get_event_loop().run_in_executor(
+                    self.executor,
+                    lambda: self.pause_analyzer.analyze(audio, sample_rate),
+                ),
+            )
             logger.info("Building AudioAnalysisResult")
             result = AudioAnalysisResult(
                 emotions=EmotionScoresSchema(
