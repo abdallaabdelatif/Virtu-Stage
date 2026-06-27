@@ -98,7 +98,9 @@ class AudioAnalysisPipeline:
         return tmp_file.name
 
     def __del__(self):
-        self.executor.shutdown(wait=False)
+        executor = getattr(self, "executor", None)
+        if executor:
+            executor.shutdown(wait=False)
 
 
 class TranscriptAnalysisPipeline:

@@ -5,6 +5,7 @@
 from __future__ import annotations
 import logging
 from dataclasses import dataclass
+import torchaudio
 import torch
 from speechbrain.inference.interfaces import foreign_class
 
@@ -34,15 +35,22 @@ class EmotionScores:
 class EmotionRecognizer:
     def __init__(self) -> None:
         logger.info("Loading wav2vec2 emotion recognition model.")
-        self._classifier = foreign_class(
-            source="speechbrain/emotion-recognition-wav2vec2-IEMOCAP",
-            pymodule_file="custom_interface.py",
-            classname="CustomEncoderWav2vec2Classifier",
-        )
-        logger.info("Emotion recognition model loaded.")
+        try:
+            self._classifier = foreign_class(
+                source="speechbrain/emotion-recognition-wav2vec2-IEMOCAP",
+                pymodule_file="custom_interface.py",
+                classname="CustomEncoderWav2vec2Classifier",
+            )
+            logger.info("Emotion recognition model loaded.")
+        except Exception:
+            logger.exception("Failed to load emotion recognition model.")
+            raise
 
     def predict(self, wav_path: str) -> EmotionScores:
-        out_prob, _, _, text_lab = self._classifier.classify_file(wav_path)
+        waveform, sr = torchaudio.load(wav_path)
+        if sr != 16000:
+            waveform = torchaudio.functional.resample(waveform, sr, 16000)
+        out_prob, _, _, text_lab = self._classifier.classify_file(waveform)
         probs = torch.exp(out_prob).squeeze(0).tolist()
         label_map = {"ang": "angry", "hap": "happy", "neu": "neutral", "sad": "sad"}
         score_by_label = {}
