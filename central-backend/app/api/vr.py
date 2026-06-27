@@ -43,7 +43,9 @@ def _cleanup_session(session_id: str) -> None:
 async def create_session(payload: VRSessionCreate):
     session_id = payload.session_id
     if session_id in session_store:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Session already exists")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Session already exists"
+        )
 
     session_store[session_id] = {
         "mode": payload.mode,
@@ -75,7 +77,7 @@ async def create_session(payload: VRSessionCreate):
 
 @router.post("/voice-analyses", status_code=status.HTTP_201_CREATED)
 async def ingest_voice_analysis(payload: VoiceAnalysisResultPayload):
-    stored = await crud_client.create_voice_analysis(payload.model_dump())
+    stored = await crud_client.create_voice_analysis(payload.to_model_dict())
     return stored
 
 
@@ -98,7 +100,9 @@ async def vr_audio_socket(websocket: WebSocket, session_id: str):
     session["active_streams"]["audio"] = True
 
     voice_proxy = VoiceAnalysisProxy(session_id=session_id)
-    conv_proxy = ConversationalProxy(session_id=session_id, mode=session["mode"], job=session["job"])
+    conv_proxy = ConversationalProxy(
+        session_id=session_id, mode=session["mode"], job=session["job"]
+    )
 
     session["voice_proxy"] = voice_proxy
     session["conv_proxy"] = conv_proxy
