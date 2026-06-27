@@ -29,7 +29,13 @@ async def send_result_to_central_backend(result: VoiceAnalysisResult) -> None:
         "filler_words_cnt": result.filler_word_count,
         "speech_rate_wpm": round(result.speech_rate_wpm, 4),
     }
-
+    total = (
+        round(result.emotions.neutral, 4)
+        + round(result.emotions.happy, 4)
+        + round(result.emotions.sad, 4)
+        + round(result.emotions.angry, 4)
+    )
+    logger.info("Emotion scores sum: %f", total)
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(

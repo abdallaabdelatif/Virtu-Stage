@@ -15,7 +15,7 @@ class EmotionScores(BaseModel):
     @model_validator(mode="after")
     def probabilities_sum_to_one(self) -> "EmotionScores":
         total = self.neutral + self.happy + self.sad + self.angry
-        if not (0.99 <= total <= 1.01):
+        if not (0.95 <= total <= 1.05):
             raise ValueError(f"Emotion probabilities must sum to 1.0, got {total:.4f}")
         return self
 

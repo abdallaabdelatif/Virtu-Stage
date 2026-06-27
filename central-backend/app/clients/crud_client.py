@@ -32,14 +32,23 @@ class CRUDClient:
             return response.json()
 
     async def create_voice_analysis(self, payload: dict[str, Any]) -> dict[str, Any]:
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.info("sending to core backend: %s", payload)
         async with httpx.AsyncClient() as client:
-            r = await client.post(f"{self.base}/voice-analysis", json=payload, timeout=10.0)
+            r = await client.post(
+                f"{self.base}/voice-analysis", json=payload, timeout=10.0
+            )
+            logger.info("core backend response: %s %s", r.status_code, r.text)
             r.raise_for_status()
             return r.json()
 
     async def create_motion_analysis(self, payload: dict[str, Any]) -> dict[str, Any]:
         async with httpx.AsyncClient() as client:
-            r = await client.post(f"{self.base}/motion-analysis", json=payload, timeout=30.0)
+            r = await client.post(
+                f"{self.base}/motion-analysis", json=payload, timeout=30.0
+            )
             r.raise_for_status()
             return r.json()
 
@@ -51,17 +60,13 @@ class CRUDClient:
 
     async def get_user(self, user_id: str) -> dict[str, Any] | None:
         async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"{self.base}/users/{user_id}", timeout=10.0
-            )
+            response = await client.get(f"{self.base}/users/{user_id}", timeout=10.0)
             if response.status_code == 404:
                 return None
             response.raise_for_status()
             return response.json()
 
-    async def get_user_by_email(
-        self, email: str
-    ) -> dict[str, Any] | None:
+    async def get_user_by_email(self, email: str) -> dict[str, Any] | None:
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{self.base}/internal/users/by-email",
@@ -74,9 +79,7 @@ class CRUDClient:
             response.raise_for_status()
             return response.json()
 
-    async def store_password_reset_token(
-        self, payload: dict[str, Any]
-    ) -> None:
+    async def store_password_reset_token(self, payload: dict[str, Any]) -> None:
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{self.base}/internal/password-reset/request",
@@ -122,9 +125,7 @@ class CRUDClient:
             response.raise_for_status()
             return response.json()
 
-    async def update_user_status(
-        self, user_id: str, is_active: bool
-    ) -> dict[str, Any]:
+    async def update_user_status(self, user_id: str, is_active: bool) -> dict[str, Any]:
         async with httpx.AsyncClient() as client:
             response = await client.patch(
                 f"{self.base}/internal/users/{user_id}/status",
