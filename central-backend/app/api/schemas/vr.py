@@ -27,11 +27,44 @@ class VRFrameBatch(BaseModel):
 
 class VoiceAnalysisResultPayload(BaseModel):
     session_id: str
-    emotions: dict
+    neutral: float
+    happy: float
+    sad: float
+    angry: float
     anxiety_level: float
     confidence_score: float
     clarity_level: float
     focus_score: float
+    pause_ratio: float
+    pause_count: int
+    longest_pause_sec: float
+    filler_words_cnt: int
+    speech_rate_wpm: float
+
+    def to_model_dict(self) -> dict:
+        scores = {
+            "neutral": self.neutral,
+            "happy": self.happy,
+            "sad": self.sad,
+            "angry": self.angry,
+        }
+        return {
+            "session_id": self.session_id,
+            "emotion_neutral": self.neutral,
+            "emotion_happy": self.happy,
+            "emotion_sad": self.sad,
+            "emotion_angry": self.angry,
+            "dominant_emotion": max(scores, key=scores.get),
+            "anxiety_level": self.anxiety_level,
+            "confidence_score": self.confidence_score,
+            "clarity_level": self.clarity_level,
+            "focus_score": self.focus_score,
+            "pause_ratio": self.pause_ratio,
+            "pause_count": self.pause_count,
+            "longest_pause_seconds": self.longest_pause_sec,
+            "filler_words_count": self.filler_words_cnt,
+            "speech_rate_wpm": self.speech_rate_wpm,
+        }
 
 
 class MotionAnalysisResultPayload(BaseModel):

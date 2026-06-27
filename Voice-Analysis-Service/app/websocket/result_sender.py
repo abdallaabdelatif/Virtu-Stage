@@ -15,13 +15,10 @@ CENTRALIZED_BACKEND_URL = os.getenv("CENTRALIZED_BACKEND_URL", "http://localhost
 async def send_result_to_central_backend(result: VoiceAnalysisResult) -> None:
     payload = {
         "session_id": result.session_id,
-        "emotions": {
-            "neutral": round(result.emotions.neutral, 4),
-            "happy": round(result.emotions.happy, 4),
-            "sad": round(result.emotions.sad, 4),
-            "angry": round(result.emotions.angry, 4),
-            # "dominant": result.emotions.dominant,
-        },
+        "neutral": round(result.emotions.neutral, 4),
+        "happy": round(result.emotions.happy, 4),
+        "sad": round(result.emotions.sad, 4),
+        "angry": round(result.emotions.angry, 4),
         "anxiety_level": round(result.paralinguistic.anxiety_level, 4),
         "confidence_score": round(result.paralinguistic.confidence_score, 4),
         "clarity_level": round(result.paralinguistic.clarity_level, 4),
