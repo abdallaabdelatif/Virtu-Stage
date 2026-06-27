@@ -3,6 +3,7 @@
 This guide shows how to run the `CRUD-Module` service and the `central-backend` service locally, then test `register` and `login` using the Central Backend only.
 
 Prerequisites
+
 - Python 3.11+ installed
 - Windows PowerShell (commands below use PowerShell) or `curl.exe` available
 
@@ -50,7 +51,7 @@ $body = @{
   gender = "male"
 } | ConvertTo-Json
 
-Invoke-RestMethod -Method Post -Uri "http://localhost:9000/api/auth/register" -ContentType "application/json" -Body $body
+Invoke-RestMethod -Method Post -Uri "http://localhost:8082/api/auth/register" -ContentType "application/json" -Body $body
 ```
 
 Expected: HTTP 201 JSON response containing `access_token`, `token_type`, and
