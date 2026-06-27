@@ -12,11 +12,11 @@ Rule-based upper-body motion analysis for presentation coaching. Tracks pose (Me
 | central-backend → this service | `WS /ws/motion-analysis/frames/{session_id}` | Same batches forwarded |
 | This service → central-backend | `POST /motion-analyses` (on socket close) | CRUD-shaped JSON scores |
 
-Entry point: `uvicorn app.main:app` — see `app/websocket/frame_session.py`.
+Entry point: `uvicorn app.main:app` or `python -m app.main` — see `app/websocket/frame_session.py`.
 
-While frames stream in, a **live OpenCV preview** (same overlay as the video demo) opens on the machine running this service. Final scores are still computed and POSTed when the WebSocket closes. Set `MOTION_LIVE_PREVIEW=0` in `.env` on headless servers.
+Live OpenCV preview is **off by default**. Pass `--preview` when starting the service to show the same overlay as the video demo while frames stream in. Final scores are still POSTed when the WebSocket closes.
 
-`run_webcam_demo.py` is a **local dev tool** (offline video file). It uses the same `LivePreview` overlay.
+`run_webcam_demo.py` is a **local dev tool** (offline video file). It always shows the preview window.
 
 ## Architecture
 
@@ -61,7 +61,15 @@ Copy `.env.example` to `.env` and set `CENTRALIZED_BACKEND_URL` (default `http:/
 uvicorn app.main:app --host 0.0.0.0 --port 9001
 ```
 
-The service listens for WebSocket connections. Each batch updates the **live preview** window; on disconnect it runs the full session analysis and POSTs results to central-backend.
+With live preview (dev only — OpenCV window on this machine):
+
+```powershell
+python -m app.main --preview --host 0.0.0.0 --port 9001
+```
+
+Alternatively set `MOTION_LIVE_PREVIEW=1` in `.env` when using `uvicorn app.main:app`.
+
+The service buffers WebSocket frames, runs full analysis on disconnect, and POSTs results to central-backend.
 
 With the full stack running:
 
@@ -85,8 +93,8 @@ Press **Q** in the preview window to hide the overlay. Results save to `output/m
 ### Test WebSocket preview without VR
 
 ```powershell
-# Terminal 1
-uvicorn app.main:app --host 0.0.0.0 --port 9001
+# Terminal 1 — with preview
+python -m app.main --preview --port 9001
 
 # Terminal 2 — sends a video as fake VR batches
 python test_ws_frame_client.py --video "path\to\video.mp4"

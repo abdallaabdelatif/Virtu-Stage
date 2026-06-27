@@ -19,7 +19,7 @@ async def handle_frame_session(
     websocket: WebSocket,
     session_id: str,
     *,
-    live_preview: bool = True,
+    live_preview: bool = False,
     post_result: bool = True,
 ) -> None:
     await websocket.accept()
@@ -80,7 +80,7 @@ async def handle_frame_session(
         pipeline.close()
 
 
-def create_frame_router(*, live_preview: bool = True) -> APIRouter:
+def create_frame_router(*, live_preview: bool = False) -> APIRouter:
     router = APIRouter()
 
     @router.websocket("/ws/motion-analysis/frames/{session_id}")
