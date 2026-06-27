@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -12,6 +13,7 @@ from app.schemas.voice_analysis import (
     VoiceAnalysisUpdate,
 )
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/voice-analysis", tags=["voice-analysis"])
 
 
@@ -22,6 +24,8 @@ async def create_voice_analysis(
     payload: VoiceAnalysisCreate,
     db: AsyncSession = Depends(get_session),
 ) -> VoiceAnalysis:
+    logger.debug("Received voice analysis payload: %s", payload.model_dump())
+    logger.debug("to_model_dict output: %s", payload.to_model_dict())
     existing = await db.scalar(
         select(VoiceAnalysis).where(VoiceAnalysis.session_id == payload.session_id)
     )
