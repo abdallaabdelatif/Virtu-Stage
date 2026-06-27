@@ -77,7 +77,9 @@ async def create_session(payload: VRSessionCreate):
 
 @router.post("/voice-analyses", status_code=status.HTTP_201_CREATED)
 async def ingest_voice_analysis(payload: VoiceAnalysisResultPayload):
+    logger.info("received voice analysis payload: %s", payload.model_dump())
     stored = await crud_client.create_voice_analysis(payload.to_model_dict())
+    logger.info("voice analysis stored successfully: %s", stored)
     return stored
 
 
