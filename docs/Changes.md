@@ -16,7 +16,7 @@ register -> empty dashboard -> create VR session -> finish session
 
 The live release gate returned concurrent registration `201/409`, final session `completed`, report `complete`, overall score `78.75`, and dashboard session count `1`. It cleaned up its test account.
 
-The authenticated presentation library is also implemented end to end in code: PDF/PPTX upload, private R2 object storage, PostgreSQL metadata, owned listing, short-lived signed download, and permanent R2-plus-metadata deletion. Automated API tests use a mocked R2 boundary; a live R2 smoke test awaits newly rotated credentials.
+The authenticated presentation library and conversion pipeline are implemented end to end in code: PDF pages render to PNG; PPTX converts through Gotenberg and then renders to PNG; originals and generated images use private R2 storage; PostgreSQL stores ordered slide metadata; metadata listing does not download images; selecting a presentation returns short-lived signed slide URLs; deletion removes all generated images, the original, and metadata. Automated API tests use a mocked R2 boundary; a live R2 smoke test awaits newly rotated credentials.
 
 The project is not fully release-ready because Unity still does not call finish, timeout does not terminate polling, and the physical Quest/WebSocket flow has not passed the release gate.
 
@@ -32,7 +32,8 @@ Central backend (9000)
         +-> Voice analysis (8001)
         +-> Conversational component (8002)
         +-> Motion analysis (9001)
-        +-> Private Cloudflare R2 (presentation objects)
+        +-> Gotenberg (PPTX -> PDF)
+        +-> Private Cloudflare R2 (originals and generated PNG slides)
 ```
 
 - Browser traffic goes through central backend.
@@ -48,7 +49,7 @@ Central backend (9000)
 - Motion report: posture, gaze proxy, gestures, composure, stability, fidgeting, nervousness, and rule-generated recommendations.
 - Do not claim exact eye contact.
 - Remove unsupported pitch, volume, context, hardware, AI-engine, replay, and mock deltas.
-- Presentation library storage is implemented; associating a selected presentation with a VR session remains deferred until the VR consumption contract is defined.
+- Presentation library conversion and the VR on-selection image contract are implemented. Persisting a selected `file_id` on a training session remains a separate product decision.
 
 ## Implemented Changes
 
@@ -153,23 +154,32 @@ Files:
 
 ### Presentation library
 
-- Authenticated users can upload, list, open, and permanently delete their own presentations.
+- Authenticated users can upload, list, open, retry, and permanently delete their own presentations.
 - Upload accepts PDF/PPTX only, with a 50 MB limit and extension, MIME, and file-signature validation.
 - Server-generated keys follow `presentations/{user_id}/{file_id}/{safe_filename}`.
-- Objects remain private in R2; the database stores object keys rather than public URLs.
-- Downloads use five-minute signed URLs after ownership verification.
-- Deletion removes the R2 object and then its PostgreSQL metadata; retry remains safe because R2 deletion is idempotent.
+- PDF pages render to 1920-pixel-wide PNG files with PyMuPDF.
+- PPTX files convert to PDF through Gotenberg, then use the same rendering path.
+- Generated keys follow `presentations/{user_id}/{file_id}/slides/0001.png`.
+- Objects remain private in R2; the database stores ordered object keys and dimensions rather than public URLs.
+- Metadata lists contain no image URLs. The slide manifest signs URLs only after the user/VR client selects an owned, ready presentation.
+- Original and slide downloads use short-lived signed URLs after ownership verification.
+- Processing states are `queued`, `processing`, `ready`, and `failed`; the frontend polls active work and can retry failures.
+- Deletion removes every generated slide and the original in one R2 batch request, then removes PostgreSQL metadata. It also removes stale metadata when an object was manually deleted from R2, serializes against in-process conversion, and uses a 120-second frontend timeout.
 - Failed metadata persistence triggers compensating R2 deletion.
-- The frontend uses real upload progress, a 120-second upload timeout, DTO mapping, and an owned-download action.
+- Partial slide-upload failure removes images already written for that attempt.
+- The frontend uses real upload progress, a 120-second upload timeout, DTO mapping, processing state/count, retry, and an owned-download action.
+- Deletion keeps the card visible in a disabled `Deleting...` state and removes it only after backend confirmation; failed deletion restores the normal controls.
 
 Files:
 
 - `backend/CRUD-Module/app/models/library_file.py`
+- `backend/CRUD-Module/app/models/presentation_slide.py`
 - `backend/CRUD-Module/app/schemas/library_file.py`
 - `backend/CRUD-Module/app/routers/library_file.py`
 - `backend/central-backend/app/api/files.py`
 - `backend/central-backend/app/api/schemas/files.py`
 - `backend/central-backend/app/services/file_storage.py`
+- `backend/central-backend/app/services/presentation_processing.py`
 - `backend/central-backend/app/clients/crud_client.py`
 - `app/routes/library.tsx`
 - `app/services/libraryService.ts`
@@ -177,6 +187,7 @@ Files:
 - `app/types/library.ts`
 - `backend/CRUD-Module/tests/test_library_files.py`
 - `backend/central-backend/tests/test_api_files.py`
+- `backend/docs/VR/presentation-library-integration.md`
 
 ### VR defaults
 
@@ -239,9 +250,12 @@ Report top-level shape:
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/api/files` | List the current user's presentations |
-| `POST` | `/api/files` | Validate and upload one PDF/PPTX presentation |
-| `GET` | `/api/files/{file_id}/download` | Return a five-minute owned signed URL |
-| `DELETE` | `/api/files/{file_id}` | Permanently delete the owned R2 object and metadata |
+| `POST` | `/api/files` | Validate/upload PDF/PPTX and schedule conversion |
+| `GET` | `/api/files/{file_id}/status` | Get current conversion status |
+| `POST` | `/api/files/{file_id}/retry` | Retry queued/failed conversion |
+| `GET` | `/api/files/{file_id}/slides` | Return ordered signed PNG URLs after selection |
+| `GET` | `/api/files/{file_id}/download` | Return an owned signed URL for the original |
+| `DELETE` | `/api/files/{file_id}` | Delete generated PNGs, original, and metadata |
 
 ### VR/analysis
 
@@ -291,6 +305,7 @@ Tables:
 - `password_reset_tokens`
 - `schema_migrations`
 - `library_files`
+- `presentation_slides`
 
 Migrations:
 
@@ -299,6 +314,7 @@ Migrations:
 - `20260628_remove_voice_emotion_fields`
 - `20260628_session_processing_status`
 - `20260628_registration_identity_uniqueness`
+- `20260628_presentation_processing`
 
 Verified: analysis-per-session uniqueness, case-insensitive user identity, removed emotion columns, session timestamps/scores, and library-file ownership/metadata behavior. The `library_files` table is created by SQLAlchemy `create_all()` on CRUD startup; restart CRUD before a live PostgreSQL/R2 smoke test.
 
@@ -329,7 +345,7 @@ npm run dev
 
 Set the same `INTERNAL_API_KEY` in central and CRUD `.env` files.
 
-For presentation storage, also set `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, and optionally `R2_SIGNED_URL_EXPIRES_SECONDS` in the central backend `.env`. Use a private bucket and newly rotated bucket-scoped credentials.
+For presentation storage, also set `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, and optionally `R2_SIGNED_URL_EXPIRES_SECONDS` in the central backend `.env`. Use a private bucket and newly rotated bucket-scoped credentials. Run `docker compose up -d gotenberg` from `backend/central-backend`; local central uses `GOTENBERG_URL=http://localhost:3001`.
 
 ## Demo Dashboard Seed
 
@@ -395,12 +411,13 @@ Create users through the API. Direct SQL can support temporary rendering/read te
 
 | Check | Result |
 | --- | --- |
-| Central backend | 27 passed |
-| CRUD module | 16 passed |
+| Central backend | 32 passed |
+| CRUD module | 17 passed |
 | Conversational bridge | 3 passed |
 | Frontend typecheck/build | Passed |
-| Presentation API with mocked R2 | Passed (upload/list/download/delete, validation, ownership, cleanup) |
+| Presentation API with mocked R2 | 13 passed (PDF/PPTX branches, manifest, ordering, ownership, retry/cleanup, stale metadata deletion) |
 | Live R2 smoke test | Pending rotated credentials |
+| Real Gotenberg/PyMuPDF sample | Passed: 41 ordered 1920x1080 slides |
 | PostgreSQL migrations/indexes | Verified |
 | Flat motion mapper | Passed |
 | Register-to-dashboard API release gate | Passed |

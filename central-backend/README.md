@@ -1,11 +1,30 @@
 ## Local setup
 
 ```powershell
+docker compose up -d gotenberg
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 9000
 ```
+
+Gotenberg runs on `localhost:3001` for local development. PDF files are rendered
+directly with PyMuPDF; PPTX files are first converted to PDF by Gotenberg and are
+then rendered by the same PDF pipeline.
+
+Presentation-specific central-backend variables:
+
+```env
+GOTENBERG_URL=http://localhost:3001
+GOTENBERG_TIMEOUT_SECONDS=120
+PRESENTATION_MAX_SLIDES=100
+PRESENTATION_IMAGE_WIDTH=1920
+R2_SIGNED_URL_EXPIRES_SECONDS=3600
+```
+
+The R2 bucket stays private. `GET /api/files` returns metadata only. Call
+`GET /api/files/{file_id}/slides` after a user selects a presentation to receive
+ordered, short-lived URLs for the generated PNG files.
 
 ## Railway deployment
 
@@ -25,6 +44,7 @@ SECRET_KEY=<long-random-secret>
 FRONTEND_URL=https://virtu-stage-dashboard.vercel.app
 CORS_ORIGINS=https://virtu-stage-dashboard.vercel.app
 ENVIRONMENT=production
+GOTENBERG_URL=http://gotenberg:3000
 ```
 
 This service does not connect directly to PostgreSQL and does not need `DATABASE_URL`.

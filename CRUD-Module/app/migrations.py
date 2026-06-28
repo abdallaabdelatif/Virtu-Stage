@@ -9,6 +9,7 @@ VOICE_EMOTION_REMOVAL_MIGRATION_ID = "20260628_remove_voice_emotion_fields"
 REGISTRATION_IDENTITY_MIGRATION_ID = "20260628_registration_identity_uniqueness"
 VOICE_SCHEMA_MIGRATION_ID = "20260628_voice_analysis_flat_schema"
 VOICE_PAUSE_RATIO_NULLABLE_MIGRATION_ID = "20260628_voice_pause_ratio_nullable"
+PRESENTATION_PROCESSING_MIGRATION_ID = "20260628_presentation_processing"
 
 
 def _run_core_auth_migration(sync_connection) -> None:
@@ -84,6 +85,7 @@ async def run_migrations(connection: AsyncConnection) -> None:
     await connection.run_sync(_run_voice_analysis_flat_schema_migration)
     await connection.run_sync(_run_voice_pause_ratio_nullable_migration)
     await connection.run_sync(_run_registration_identity_migration)
+    await connection.run_sync(_run_presentation_processing_migration)
 
 
 def _run_motion_assessment_migration(sync_connection) -> None:
@@ -503,3 +505,30 @@ def _rebuild_sqlite_voice_analysis_with_nullable_pause_ratio(sync_connection) ->
             "ON voice_analysis (session_id)"
         )
     )
+
+
+def _run_presentation_processing_migration(sync_connection) -> None:
+    if _migration_already_applied(sync_connection, PRESENTATION_PROCESSING_MIGRATION_ID):
+        return
+
+    inspector = inspect(sync_connection)
+    if "library_files" not in inspector.get_table_names():
+        _record_migration(sync_connection, PRESENTATION_PROCESSING_MIGRATION_ID)
+        return
+
+    dialect = sync_connection.dialect.name
+    timestamp_type = "TIMESTAMP" if dialect == "postgresql" else "DATETIME"
+    columns = {column["name"] for column in inspector.get_columns("library_files")}
+    additions = {
+        "processing_status": "VARCHAR(20) NOT NULL DEFAULT 'queued'",
+        "slide_count": "INTEGER",
+        "processing_error": "TEXT",
+        "processed_at": timestamp_type,
+    }
+    for name, definition in additions.items():
+        if name not in columns:
+            sync_connection.execute(
+                text(f"ALTER TABLE library_files ADD COLUMN {name} {definition}")
+            )
+
+    _record_migration(sync_connection, PRESENTATION_PROCESSING_MIGRATION_ID)
