@@ -1,9 +1,15 @@
-version: '3.8'
 services:
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    ports:
+      - "3001:3000"
+
   central-backend:
     build: .
     ports:
       - "9000:9000"
     environment:
       - CRUD_BASE_URL=http://crud:8000
-    depends_on: []
+      - GOTENBERG_URL=http://gotenberg:3000
+    depends_on:
+      - gotenberg

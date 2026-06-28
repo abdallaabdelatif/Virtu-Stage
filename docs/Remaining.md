@@ -97,14 +97,15 @@ Run it twice, including voice-first and motion-first, with no manual SQL changes
 
 ## Presentation Upload
 
-Status: presentation library upload/storage is implemented. VR selection/consumption and live R2 verification remain.
+Status: upload/storage, PDF/PPTX conversion, generated slide metadata, and the VR selection-time image contract are implemented. Unity consumption and live R2 verification remain.
 
 Recommended flow:
 
 ```text
 Frontend multipart upload -> authenticated central backend
--> private Cloudflare R2 -> PostgreSQL metadata
--> owned session selection -> signed download or bounded extracted context
+-> private Cloudflare R2 original -> PDF/PPTX conversion
+-> ordered private PNG slides + PostgreSQL metadata
+-> VR metadata list -> owned selection -> signed slide URLs
 ```
 
 Object key:
@@ -117,7 +118,8 @@ Implemented metadata:
 
 ```text
 file_id, user_id, original_name, object_key, content_type, size_bytes,
-upload_status, created_at, updated_at
+upload_status, processing_status, slide_count, processing_error,
+processed_at, created_at, updated_at
 ```
 
 Central APIs:
@@ -125,6 +127,9 @@ Central APIs:
 ```http
 GET    /api/files
 POST   /api/files
+GET    /api/files/{file_id}/status
+POST   /api/files/{file_id}/retry
+GET    /api/files/{file_id}/slides
 GET    /api/files/{file_id}/download
 DELETE /api/files/{file_id}
 ```
@@ -139,6 +144,11 @@ Implemented:
 - Return short-lived signed URLs after ownership checks.
 - Clean up R2 objects when metadata persistence fails.
 - Permanently delete both the R2 object and metadata for an owned library deletion.
+- Convert PPTX to PDF through Gotenberg and render PDF pages through PyMuPDF.
+- Upload ordered PNG files and persist their dimensions, size, and object key.
+- Return metadata only for library listing and sign image URLs only after selection.
+- Delete all generated images with the original and metadata.
+- Track conversion state, show it in the dashboard, and retry failures.
 
 Still required:
 
@@ -146,7 +156,9 @@ Still required:
 - Configure new bucket-scoped credentials in the central backend `.env`.
 - Restart CRUD so `library_files` is created in the target PostgreSQL database.
 - Run one live smoke flow: upload, list, signed download, delete, and confirm the object is absent in R2.
-- Define how VR selects and consumes a file before adding `material_file_id` to sessions.
+- Implement the Unity client described by `backend/docs/VR/presentation-library-integration.md`.
+- Decide whether the selected `file_id` should also persist on a training session.
+- Replace FastAPI background conversion with a durable worker/startup recovery before production scale.
 - Decide whether conversational context needs bounded text extraction; it is not required for storage/download.
 
 Security:
@@ -155,7 +167,7 @@ Security:
 - Never hardcode account IDs, access keys, or secret keys.
 - Use environment variables and least-privilege bucket credentials.
 
-Automated coverage uses mocked R2 and verifies valid PDF/PPTX, invalid signatures/types, size limits, authentication/ownership, compensating cleanup, signed download, and permanent deletion.
+Automated coverage uses mocked R2 and verifies valid PDF/PPTX, invalid signatures/types, size limits, authentication/ownership, PDF rendering, the PPTX conversion branch, ordered slide manifests, compensating cleanup, signed downloads, and permanent deletion.
 
 ## Recording Pipeline
 

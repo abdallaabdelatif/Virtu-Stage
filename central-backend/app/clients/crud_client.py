@@ -250,5 +250,37 @@ class CRUDClient:
         response = await self._request("DELETE", f"/files/{file_id}", internal=True)
         response.raise_for_status()
 
+    async def update_library_file_processing(
+        self, file_id: str, payload: dict[str, Any]
+    ) -> dict[str, Any]:
+        response = await self._request(
+            "PATCH",
+            f"/files/{file_id}/processing",
+            json=payload,
+            internal=True,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def get_presentation_slides(self, file_id: str) -> list[dict[str, Any]]:
+        response = await self._request(
+            "GET", f"/files/{file_id}/slides", internal=True
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def replace_presentation_slides(
+        self, file_id: str, slides: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        response = await self._request(
+            "PUT",
+            f"/files/{file_id}/slides",
+            json={"slides": slides},
+            internal=True,
+            timeout=30.0,
+        )
+        response.raise_for_status()
+        return response.json()
+
 
 crud_client = CRUDClient()

@@ -19,6 +19,7 @@ from app.models import voice_analysis as voice_analysis_model
 from app.models import motion_analysis as motion_analysis_model
 from app.models import password_reset_token as password_reset_token_model
 from app.models import library_file as library_file_model
+from app.models import presentation_slide as presentation_slide_model
 
 
 @asynccontextmanager

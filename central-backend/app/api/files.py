@@ -8,14 +8,30 @@ from pathlib import Path
 
 import httpx
 from botocore.exceptions import BotoCoreError, ClientError
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    HTTPException,
+    UploadFile,
+    status,
+)
 from starlette.concurrency import run_in_threadpool
 
-from app.api.schemas.files import FileDownloadResponse, LibraryFileResponse
+from app.api.schemas.files import (
+    FileDownloadResponse,
+    LibraryFileResponse,
+    PresentationSlidesManifest,
+)
 from app.auth.deps import get_current_active_user
 from app.clients.crud_client import crud_client
 from app.config import R2_SIGNED_URL_EXPIRES_SECONDS
 from app.services.file_storage import StorageConfigurationError, file_storage
+from app.services.presentation_processing import (
+    presentation_operation,
+    process_presentation,
+)
 
 router = APIRouter(prefix="/api/files", tags=["files"])
 
@@ -113,6 +129,9 @@ def _public_file(record: dict) -> dict:
         "content_type": record["content_type"],
         "size_bytes": record["size_bytes"],
         "upload_status": record["upload_status"],
+        "processing_status": record.get("processing_status", "queued"),
+        "slide_count": record.get("slide_count"),
+        "processing_error": record.get("processing_error"),
         "created_at": record["created_at"],
     }
 
@@ -140,7 +159,9 @@ async def list_files(user=Depends(get_current_active_user)):
 
 @router.post("", response_model=LibraryFileResponse, status_code=status.HTTP_201_CREATED)
 async def upload_file(
-    file: UploadFile = File(...), user=Depends(get_current_active_user)
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    user=Depends(get_current_active_user),
 ):
     safe_name, content_type, size_bytes = await _validate_upload(file)
     file_id = str(uuid.uuid4())
@@ -159,6 +180,7 @@ async def upload_file(
                     "content_type": content_type,
                     "size_bytes": size_bytes,
                     "upload_status": "ready",
+                    "processing_status": "queued",
                 }
             )
         except httpx.HTTPError:
@@ -173,7 +195,85 @@ async def upload_file(
     finally:
         await file.close()
 
+    background_tasks.add_task(process_presentation, file_id)
     return _public_file(record)
+
+
+@router.get("/{file_id}/status", response_model=LibraryFileResponse)
+async def get_file_status(file_id: uuid.UUID, user=Depends(get_current_active_user)):
+    record = await _get_owned_file(str(file_id), user)
+    return _public_file(record)
+
+
+@router.post("/{file_id}/retry", response_model=LibraryFileResponse)
+async def retry_file_processing(
+    file_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    user=Depends(get_current_active_user),
+):
+    record = await _get_owned_file(str(file_id), user)
+    if record.get("processing_status") not in {"failed", "queued"}:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Only queued or failed presentations can be retried",
+        )
+    try:
+        record = await crud_client.update_library_file_processing(
+            str(file_id),
+            {
+                "processing_status": "queued",
+                "slide_count": None,
+                "processing_error": None,
+                "processed_at": None,
+            },
+        )
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="CRUD service is unavailable") from exc
+    background_tasks.add_task(process_presentation, str(file_id))
+    return _public_file(record)
+
+
+@router.get("/{file_id}/slides", response_model=PresentationSlidesManifest)
+async def get_file_slides(file_id: uuid.UUID, user=Depends(get_current_active_user)):
+    record = await _get_owned_file(str(file_id), user)
+    if record.get("processing_status") != "ready":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "processing_status": record.get("processing_status", "queued"),
+                "processing_error": record.get("processing_error"),
+            },
+        )
+    try:
+        slide_records = await crud_client.get_presentation_slides(str(file_id))
+        expires_at = datetime.now(timezone.utc) + timedelta(
+            seconds=R2_SIGNED_URL_EXPIRES_SECONDS
+        )
+        slides = []
+        for slide in slide_records:
+            slides.append(
+                {
+                    "number": slide["slide_number"],
+                    "width": slide["width"],
+                    "height": slide["height"],
+                    "size_bytes": slide["size_bytes"],
+                    "url": await file_storage.create_download_url(slide["object_key"]),
+                    "expires_at": expires_at,
+                }
+            )
+    except StorageConfigurationError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except (BotoCoreError, ClientError) as exc:
+        raise HTTPException(status_code=502, detail="File storage is unavailable") from exc
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="CRUD service is unavailable") from exc
+    return {
+        "file_id": str(file_id),
+        "original_name": record["original_name"],
+        "processing_status": "ready",
+        "slide_count": len(slides),
+        "slides": slides,
+    }
 
 
 @router.get("/{file_id}/download", response_model=FileDownloadResponse)
@@ -194,13 +294,20 @@ async def download_file(file_id: uuid.UUID, user=Depends(get_current_active_user
 
 @router.delete("/{file_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_file(file_id: uuid.UUID, user=Depends(get_current_active_user)):
-    record = await _get_owned_file(str(file_id), user)
-    try:
-        await file_storage.delete(record["object_key"])
-        await crud_client.delete_library_file(str(file_id))
-    except StorageConfigurationError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
-    except (BotoCoreError, ClientError) as exc:
-        raise HTTPException(status_code=502, detail="File storage is unavailable") from exc
-    except httpx.HTTPError as exc:
-        raise HTTPException(status_code=502, detail="Could not delete file metadata") from exc
+    file_id_text = str(file_id)
+    async with presentation_operation(file_id_text):
+        record = await _get_owned_file(file_id_text, user)
+        try:
+            slides = await crud_client.get_presentation_slides(file_id_text)
+            # S3/R2 DeleteObject is idempotent, so an object manually removed from
+            # Cloudflare does not prevent its stale database metadata being deleted.
+            await file_storage.delete_many(
+                [slide["object_key"] for slide in slides] + [record["object_key"]]
+            )
+            await crud_client.delete_library_file(file_id_text)
+        except StorageConfigurationError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except (BotoCoreError, ClientError) as exc:
+            raise HTTPException(status_code=502, detail="File storage is unavailable") from exc
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="Could not delete file metadata") from exc

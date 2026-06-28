@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import BinaryIO
 
 import boto3
 from botocore.config import Config
+from botocore.exceptions import ClientError
 from starlette.concurrency import run_in_threadpool
 
 from app.config import (
@@ -59,6 +61,54 @@ class R2FileStorage:
         client = self._get_client()
         await run_in_threadpool(
             client.delete_object, Bucket=R2_BUCKET_NAME, Key=object_key
+        )
+
+    async def delete_many(self, object_keys: list[str]) -> None:
+        """Delete a presentation and all of its slides in one R2 request."""
+        unique_keys = list(dict.fromkeys(object_keys))
+        if not unique_keys:
+            return
+        client = self._get_client()
+        response = await run_in_threadpool(
+            client.delete_objects,
+            Bucket=R2_BUCKET_NAME,
+            Delete={
+                "Objects": [{"Key": object_key} for object_key in unique_keys],
+                "Quiet": True,
+            },
+        )
+        errors = response.get("Errors", [])
+        if errors:
+            first = errors[0]
+            raise ClientError(
+                {
+                    "Error": {
+                        "Code": first.get("Code", "DeleteObjectsError"),
+                        "Message": first.get("Message", "R2 object deletion failed"),
+                    }
+                },
+                "DeleteObjects",
+            )
+
+    async def upload_path(
+        self, local_path: Path, object_key: str, content_type: str
+    ) -> None:
+        client = self._get_client()
+        await run_in_threadpool(
+            client.upload_file,
+            str(local_path),
+            R2_BUCKET_NAME,
+            object_key,
+            ExtraArgs={"ContentType": content_type},
+        )
+
+    async def download_to_path(self, object_key: str, local_path: Path) -> None:
+        client = self._get_client()
+        await run_in_threadpool(
+            client.download_file,
+            R2_BUCKET_NAME,
+            object_key,
+            str(local_path),
         )
 
     async def create_download_url(self, object_key: str) -> str:
