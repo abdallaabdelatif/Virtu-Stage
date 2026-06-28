@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, func
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import Uuid
 
@@ -22,16 +22,30 @@ class VoiceAnalysis(Base):
         index=True,
     )
 
-    anxiety_level: Mapped[float] = mapped_column(Float, nullable=False)
-    confidence_score: Mapped[float] = mapped_column(Float, nullable=False)
-    clarity_level: Mapped[float] = mapped_column(Float, nullable=False)
-    focus_score: Mapped[float] = mapped_column(Float, nullable=False)
+    confidence_level: Mapped[float | None] = mapped_column(Float, nullable=True)
+    anxiety_level: Mapped[float | None] = mapped_column(Float, nullable=True)
+    clarity_level: Mapped[float | None] = mapped_column(Float, nullable=True)
+    focus_level: Mapped[float | None] = mapped_column(Float, nullable=True)
 
-    pause_ratio: Mapped[float] = mapped_column(Float, nullable=False)
-    pause_count: Mapped[int] = mapped_column(Integer, nullable=False)
-    longest_pause_seconds: Mapped[float] = mapped_column(Float, nullable=False)
-    filler_words_count: Mapped[int] = mapped_column(Integer, nullable=False)
-    speech_rate_wpm: Mapped[float] = mapped_column(Float, nullable=False)
+    voice_quality_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    voice_quality_level: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    fluency_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    fluency_level: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    energy_control_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    energy_control_level: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    articulation_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    articulation_level: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
+    words_per_minute: Mapped[float | None] = mapped_column(Float, nullable=True)
+    pause_ratio: Mapped[float | None] = mapped_column(Float, nullable=True)
+    filler_word_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    pause_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    longest_pause_sec: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    confidence_feedback: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    anxiety_feedback: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    clarity_feedback: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    focus_feedback: Mapped[str] = mapped_column(Text, nullable=False, default="")
 
     analyzed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

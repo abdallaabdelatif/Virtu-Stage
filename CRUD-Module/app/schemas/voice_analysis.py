@@ -1,60 +1,48 @@
 import uuid
 from datetime import datetime
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
-
-
-class VoiceAnalysisCreate(BaseModel):
-    session_id: uuid.UUID
-    anxiety_level: float = Field(ge=0.0, le=1.0)
-    confidence_score: float = Field(ge=0.0, le=1.0)
-    clarity_level: float = Field(ge=0.0, le=1.0)
-    focus_score: float = Field(ge=0.0, le=1.0)
-    pause_ratio: float
-    pause_count: int
-    longest_pause_sec: float
-    filler_words_cnt: int
-    speech_rate_wpm: float
-
-    def to_model_dict(self) -> dict:
-        return {
-            "session_id": self.session_id,
-            "anxiety_level": self.anxiety_level,
-            "confidence_score": self.confidence_score,
-            "clarity_level": self.clarity_level,
-            "focus_score": self.focus_score,
-            "pause_ratio": self.pause_ratio,
-            "pause_count": self.pause_count,
-            "longest_pause_seconds": self.longest_pause_sec,
-            "filler_words_count": self.filler_words_cnt,
-            "speech_rate_wpm": self.speech_rate_wpm,
-        }
+from pydantic import BaseModel, ConfigDict
 
 
-class VoiceAnalysisUpdate(BaseModel):
-    anxiety_level: float | None = Field(default=None, ge=0.0, le=1.0)
-    confidence_score: float | None = Field(default=None, ge=0.0, le=1.0)
-    clarity_level: float | None = Field(default=None, ge=0.0, le=1.0)
-    focus_score: float | None = Field(default=None, ge=0.0, le=1.0)
+class VoiceAnalysisBase(BaseModel):
+    confidence_level: float | None = None
+    anxiety_level: float | None = None
+    clarity_level: float | None = None
+    focus_level: float | None = None
+    voice_quality_score: float | None = None
+    voice_quality_level: str | None = None
+    fluency_score: float | None = None
+    fluency_level: str | None = None
+    energy_control_score: float | None = None
+    energy_control_level: str | None = None
+    articulation_score: float | None = None
+    articulation_level: str | None = None
+    words_per_minute: float | None = None
     pause_ratio: float | None = None
+    filler_word_count: int | None = None
     pause_count: int | None = None
-    longest_pause_seconds: float | None = None
-    filler_words_count: int | None = None
-    speech_rate_wpm: float | None = None
+    longest_pause_sec: float | None = None
+    confidence_feedback: str = ""
+    anxiety_feedback: str = ""
+    clarity_feedback: str = ""
+    focus_feedback: str = ""
 
 
-class VoiceAnalysisResponse(BaseModel):
+class VoiceAnalysisCreate(VoiceAnalysisBase):
+    session_id: uuid.UUID
+
+    def to_model_dict(self) -> dict[str, Any]:
+        return self.model_dump()
+
+
+class VoiceAnalysisUpdate(VoiceAnalysisBase):
+    pass
+
+
+class VoiceAnalysisResponse(VoiceAnalysisBase):
     model_config = ConfigDict(from_attributes=True)
 
     voice_analysis_id: uuid.UUID
     session_id: uuid.UUID
-    anxiety_level: float
-    confidence_score: float
-    clarity_level: float
-    focus_score: float
-    pause_ratio: float
-    pause_count: int
-    longest_pause_seconds: float
-    filler_words_count: int
-    speech_rate_wpm: float
     analyzed_at: datetime

@@ -1,6 +1,8 @@
 from __future__ import annotations
+from urllib.parse import urlencode
+
 import websockets
-from app.config import VOICE_ANALYSIS_WS_URL
+from app.config import VOICE_ANALYSIS_RESULT_CALLBACK_URL, VOICE_ANALYSIS_WS_URL
 
 
 class VoiceAnalysisProxy:
@@ -9,7 +11,11 @@ class VoiceAnalysisProxy:
         self.ws = None
 
     async def connect(self) -> None:
-        url = f"{VOICE_ANALYSIS_WS_URL.rstrip('/')}/ws/voice-analysis/audio/{self.session_id}"
+        query = urlencode({"result_callback_url": VOICE_ANALYSIS_RESULT_CALLBACK_URL})
+        url = (
+            f"{VOICE_ANALYSIS_WS_URL.rstrip('/')}/ws/voice-analysis/audio/"
+            f"{self.session_id}?{query}"
+        )
         self.ws = await websockets.connect(url)
 
     async def send_bytes(self, data: bytes) -> None:

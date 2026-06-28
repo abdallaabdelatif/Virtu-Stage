@@ -33,15 +33,15 @@ def client(monkeypatch):
     }
 
     voice_record = {
-        "anxiety_level": 0.2,
-        "confidence_score": 0.82,
-        "clarity_level": 0.79,
-        "focus_score": 0.85,
+        "anxiety_level": 20.0,
+        "confidence_level": 82.0,
+        "clarity_level": 79.0,
+        "focus_level": 85.0,
         "pause_ratio": 0.12,
         "pause_count": 8,
-        "longest_pause_seconds": 2.4,
-        "filler_words_count": 5,
-        "speech_rate_wpm": 137.0,
+        "longest_pause_sec": 2.4,
+        "filler_word_count": 5,
+        "words_per_minute": 137.0,
         "analyzed_at": datetime.now(timezone.utc).isoformat(),
     }
 

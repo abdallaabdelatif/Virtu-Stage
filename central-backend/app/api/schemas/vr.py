@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import uuid
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -28,29 +29,30 @@ class VRFrameBatch(BaseModel):
 
 class VoiceAnalysisResultPayload(BaseModel):
     session_id: str
-    anxiety_level: float
-    confidence_score: float
-    clarity_level: float
-    focus_score: float
-    pause_ratio: float
-    pause_count: int
-    longest_pause_sec: float
-    filler_words_cnt: int
-    speech_rate_wpm: float
+    confidence_level: float | None = None
+    anxiety_level: float | None = None
+    clarity_level: float | None = None
+    focus_level: float | None = None
+    voice_quality_score: float | None = None
+    voice_quality_level: str | None = None
+    fluency_score: float | None = None
+    fluency_level: str | None = None
+    energy_control_score: float | None = None
+    energy_control_level: str | None = None
+    articulation_score: float | None = None
+    articulation_level: str | None = None
+    words_per_minute: float | None = None
+    pause_ratio: float | None = None
+    filler_word_count: int | None = None
+    pause_count: int | None = None
+    longest_pause_sec: float | None = None
+    confidence_feedback: str = ""
+    anxiety_feedback: str = ""
+    clarity_feedback: str = ""
+    focus_feedback: str = ""
 
-    def to_model_dict(self) -> dict:
-        return {
-            "session_id": self.session_id,
-            "anxiety_level": self.anxiety_level,
-            "confidence_score": self.confidence_score,
-            "clarity_level": self.clarity_level,
-            "focus_score": self.focus_score,
-            "pause_ratio": self.pause_ratio,
-            "pause_count": self.pause_count,
-            "longest_pause_sec": self.longest_pause_sec,
-            "filler_words_cnt": self.filler_words_cnt,
-            "speech_rate_wpm": self.speech_rate_wpm,
-        }
+    def to_model_dict(self) -> dict[str, Any]:
+        return self.model_dump()
 
 
 class MotionAnalysisResultPayload(BaseModel):

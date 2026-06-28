@@ -12,12 +12,22 @@ from app.models.voice_analysis import VoiceAnalysis
 
 
 def calculate_voice_score(
-    confidence: float,
-    clarity: float,
-    focus: float,
-    anxiety: float,
+    confidence: float | None,
+    clarity: float | None,
+    focus: float | None,
+    anxiety: float | None,
 ) -> float:
-    return round(mean([confidence, clarity, focus, 1.0 - anxiety]) * 100, 2)
+    values = [_score_or_default(confidence), _score_or_default(clarity), _score_or_default(focus)]
+    anxiety_score = _score_or_default(anxiety)
+    values.append(100.0 - anxiety_score)
+    return round(mean(values), 2)
+
+
+def _score_or_default(value: float | None) -> float:
+    if value is None:
+        return 50.0
+    value = float(value)
+    return value * 100.0 if 0.0 <= value <= 1.0 else value
 
 
 def calculate_overall_score(voice_score: float, motion_score: float) -> float:
@@ -30,9 +40,9 @@ async def apply_voice_score_to_session(
     voice_analysis: VoiceAnalysis,
 ) -> None:
     session.voice_analysis_score = calculate_voice_score(
-        voice_analysis.confidence_score,
+        voice_analysis.confidence_level,
         voice_analysis.clarity_level,
-        voice_analysis.focus_score,
+        voice_analysis.focus_level,
         voice_analysis.anxiety_level,
     )
 

@@ -1,21 +1,27 @@
 # Transcript websocket endpoint which receives streamed transcript text fragments for a session
-# Transcript analysis (filler words + speech rate) starts immediately once socket closes
-# Speech rate calculation needs the audio file duration, so it may wait for audio buffer to complete handled in session_completion.py
 
 from __future__ import annotations
 import json
 import logging
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from app.audio.transcript_buffer import TranscriptBuffer
-from app.websocket.session_completion import on_transcript_socket_closed
+from app.websocket.session_completion import (
+    on_transcript_socket_closed,
+    register_result_callback,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
 @router.websocket("/ws/voice-analysis/transcript/{session_id}")
-async def transcript_socket(websocket: WebSocket, session_id: str) -> None:
+async def transcript_socket(
+    websocket: WebSocket,
+    session_id: str,
+    result_callback_url: str | None = None,
+) -> None:
     await websocket.accept()
+    await register_result_callback(session_id, result_callback_url)
     buffer = TranscriptBuffer(session_id=session_id)
     logger.info("Transcript websocket opened for session %s", session_id)
 

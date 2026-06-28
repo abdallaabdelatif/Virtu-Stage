@@ -14,6 +14,10 @@ MOTION_ANALYSIS_WS_URL = os.getenv(
 )
 VR_DEFAULT_USER_ID = os.getenv("VR_DEFAULT_USER_ID", "")
 CENTRALIZED_BACKEND_URL = os.getenv("CENTRALIZED_BACKEND_URL", "http://localhost:9000")
+VOICE_ANALYSIS_RESULT_CALLBACK_URL = os.getenv(
+    "VOICE_ANALYSIS_RESULT_CALLBACK_URL",
+    f"{CENTRALIZED_BACKEND_URL.rstrip('/')}/voice-analyses",
+)
 ANALYSIS_TIMEOUT_SECONDS = int(os.getenv("ANALYSIS_TIMEOUT_SECONDS", "600"))
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me-super-secret")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")

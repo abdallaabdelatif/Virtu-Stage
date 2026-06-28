@@ -65,15 +65,15 @@ def test_ingest_voice_analysis_forwards_to_crud(monkeypatch):
     client = TestClient(app)
     payload = {
         "session_id": str(uuid.uuid4()),
-        "anxiety_level": 0.3,
-        "confidence_score": 0.8,
-        "clarity_level": 0.75,
-        "focus_score": 0.7,
+        "anxiety_level": 30.0,
+        "confidence_level": 80.0,
+        "clarity_level": 75.0,
+        "focus_level": 70.0,
         "pause_ratio": 0.12,
         "pause_count": 5,
         "longest_pause_sec": 1.5,
-        "filler_words_cnt": 3,
-        "speech_rate_wpm": 130.0,
+        "filler_word_count": 3,
+        "words_per_minute": 130.0,
     }
 
     response = client.post("/voice-analyses", json=payload)

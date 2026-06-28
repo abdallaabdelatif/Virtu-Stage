@@ -1,43 +1,54 @@
-# sends the completed voice analysis result to the central Backend through
-# voice-analyses endpoint once batch processing finishes.
-
+from __future__ import annotations
+import asyncio
+import json
 import logging
-import os
+from typing import Any
+from urllib import error, request
 
-import httpx
-from app.schemas.result import VoiceAnalysisResult
-from dotenv import load_dotenv
 
-load_dotenv()
 logger = logging.getLogger(__name__)
-CENTRALIZED_BACKEND_URL = os.getenv("CENTRALIZED_BACKEND_URL", "http://localhost:9000")
 
 
-async def send_result_to_central_backend(result: VoiceAnalysisResult) -> None:
-    payload = {
-        "session_id": result.session_id,
-        "anxiety_level": round(result.paralinguistic.anxiety_level, 4),
-        "confidence_score": round(result.paralinguistic.confidence_score, 4),
-        "clarity_level": round(result.paralinguistic.clarity_level, 4),
-        "focus_score": round(result.paralinguistic.focus_score, 4),
-        "pause_ratio": round(result.pauses.pause_ratio, 4),
-        "pause_count": result.pauses.pause_count,
-        "longest_pause_sec": round(result.pauses.longest_pause_seconds, 4),
-        "filler_words_cnt": result.filler_word_count,
-        "speech_rate_wpm": round(result.speech_rate_wpm, 4),
-    }
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(
-                f"{CENTRALIZED_BACKEND_URL.rstrip('/')}/voice-analyses",
-                json=payload,
-                timeout=10.0,
+# assigned the blocking http request to a background thread so as to not to block the event loop
+async def post_result(
+    callback_url: str,
+    payload: dict[str, Any],
+    timeout_sec: float = 10.0,
+) -> bool:
+    return await asyncio.to_thread(
+        _post_result_sync,
+        callback_url,
+        payload,
+        timeout_sec,
+    )
+
+
+def _post_result_sync(
+    callback_url: str,
+    payload: dict[str, Any],
+    timeout_sec: float,
+) -> bool:
+    body = json.dumps(payload).encode("utf-8")
+    http_request = request.Request(
+        callback_url,
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+
+    try:
+        with request.urlopen(http_request, timeout=timeout_sec) as response:
+            status = int(response.status)
+            if 200 <= status < 300:
+                logger.info("Posted analysis result to %s", callback_url)
+                return True
+
+            logger.warning(
+                "Result callback returned status %s for %s",
+                status,
+                callback_url,
             )
-            response.raise_for_status()
-            logger.info(
-                "Voice analysis result posted for session %s", result.session_id
-            )
-        except httpx.HTTPError:
-            logger.exception(
-                "Failed to post voice analysis result for session %s", result.session_id
-            )
+            return False
+    except (error.URLError, TimeoutError, OSError) as exc:
+        logger.warning("Failed to post analysis result to %s: %s", callback_url, exc)
+        return False

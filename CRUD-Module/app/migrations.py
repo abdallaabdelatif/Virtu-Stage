@@ -7,6 +7,7 @@ MOTION_ASSESSMENT_MIGRATION_ID = "20260625_motion_presentation_assessment"
 SESSION_PROCESSING_MIGRATION_ID = "20260628_session_processing_status"
 VOICE_EMOTION_REMOVAL_MIGRATION_ID = "20260628_remove_voice_emotion_fields"
 REGISTRATION_IDENTITY_MIGRATION_ID = "20260628_registration_identity_uniqueness"
+VOICE_SCHEMA_MIGRATION_ID = "20260628_voice_analysis_flat_schema"
 
 
 def _run_core_auth_migration(sync_connection) -> None:
@@ -79,6 +80,7 @@ async def run_migrations(connection: AsyncConnection) -> None:
     await connection.run_sync(_run_motion_assessment_migration)
     await connection.run_sync(_run_session_processing_migration)
     await connection.run_sync(_run_voice_emotion_removal_migration)
+    await connection.run_sync(_run_voice_analysis_flat_schema_migration)
     await connection.run_sync(_run_registration_identity_migration)
 
 
@@ -272,3 +274,101 @@ def _run_registration_identity_migration(sync_connection) -> None:
         )
     )
     _record_migration(sync_connection, REGISTRATION_IDENTITY_MIGRATION_ID)
+
+
+def _run_voice_analysis_flat_schema_migration(sync_connection) -> None:
+    if _migration_already_applied(sync_connection, VOICE_SCHEMA_MIGRATION_ID):
+        return
+
+    inspector = inspect(sync_connection)
+    if "voice_analysis" not in inspector.get_table_names():
+        _record_migration(sync_connection, VOICE_SCHEMA_MIGRATION_ID)
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("voice_analysis")}
+    dialect = sync_connection.dialect.name
+
+    def add_column(name: str, definition: str) -> None:
+        if name not in columns:
+            sync_connection.execute(
+                text(f"ALTER TABLE voice_analysis ADD COLUMN {name} {definition}")
+            )
+            columns.add(name)
+
+    add_column("confidence_level", "FLOAT")
+    add_column("focus_level", "FLOAT")
+    add_column("voice_quality_score", "FLOAT")
+    add_column("voice_quality_level", "VARCHAR(32)")
+    add_column("fluency_score", "FLOAT")
+    add_column("fluency_level", "VARCHAR(32)")
+    add_column("energy_control_score", "FLOAT")
+    add_column("energy_control_level", "VARCHAR(32)")
+    add_column("articulation_score", "FLOAT")
+    add_column("articulation_level", "VARCHAR(32)")
+    add_column("words_per_minute", "FLOAT")
+    add_column("filler_word_count", "INTEGER")
+    add_column("longest_pause_sec", "FLOAT")
+    add_column("confidence_feedback", "TEXT NOT NULL DEFAULT ''")
+    add_column("anxiety_feedback", "TEXT NOT NULL DEFAULT ''")
+    add_column("clarity_feedback", "TEXT NOT NULL DEFAULT ''")
+    add_column("focus_feedback", "TEXT NOT NULL DEFAULT ''")
+
+    if "confidence_score" in columns:
+        sync_connection.execute(
+            text(
+                "UPDATE voice_analysis SET confidence_level = "
+                "CASE WHEN confidence_score BETWEEN 0 AND 1 "
+                "THEN confidence_score * 100 ELSE confidence_score END "
+                "WHERE confidence_level IS NULL"
+            )
+        )
+    if "focus_score" in columns:
+        sync_connection.execute(
+            text(
+                "UPDATE voice_analysis SET focus_level = "
+                "CASE WHEN focus_score BETWEEN 0 AND 1 "
+                "THEN focus_score * 100 ELSE focus_score END "
+                "WHERE focus_level IS NULL"
+            )
+        )
+    if "speech_rate_wpm" in columns:
+        sync_connection.execute(
+            text(
+                "UPDATE voice_analysis SET words_per_minute = speech_rate_wpm "
+                "WHERE words_per_minute IS NULL"
+            )
+        )
+    if "filler_words_count" in columns:
+        sync_connection.execute(
+            text(
+                "UPDATE voice_analysis SET filler_word_count = filler_words_count "
+                "WHERE filler_word_count IS NULL"
+            )
+        )
+    if "longest_pause_seconds" in columns:
+        sync_connection.execute(
+            text(
+                "UPDATE voice_analysis SET longest_pause_sec = longest_pause_seconds "
+                "WHERE longest_pause_sec IS NULL"
+            )
+        )
+
+    legacy_columns = [
+        "confidence_score",
+        "focus_score",
+        "speech_rate_wpm",
+        "filler_words_count",
+        "longest_pause_seconds",
+    ]
+    for column in legacy_columns:
+        if column in columns:
+            if dialect == "postgresql":
+                sync_connection.execute(
+                    text(f"ALTER TABLE voice_analysis DROP COLUMN IF EXISTS {column}")
+                )
+            else:
+                sync_connection.execute(
+                    text(f"ALTER TABLE voice_analysis DROP COLUMN {column}")
+                )
+
+    _record_migration(sync_connection, VOICE_SCHEMA_MIGRATION_ID)

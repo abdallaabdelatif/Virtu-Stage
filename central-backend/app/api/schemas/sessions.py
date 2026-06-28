@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class TrainingSessionResponse(BaseModel):
@@ -48,15 +48,27 @@ ReportStatus = Literal["processing", "complete", "partial", "failed"]
 
 
 class VoiceAnalysisReport(BaseModel):
-    anxiety_level: float
-    confidence_score: float
-    clarity_level: float
-    focus_score: float
-    pause_ratio: float
-    pause_count: int
-    longest_pause_seconds: float
-    filler_words_count: int
-    speech_rate_wpm: float
+    confidence_level: float | None = None
+    anxiety_level: float | None = None
+    clarity_level: float | None = None
+    focus_level: float | None = None
+    voice_quality_score: float | None = None
+    voice_quality_level: str | None = None
+    fluency_score: float | None = None
+    fluency_level: str | None = None
+    energy_control_score: float | None = None
+    energy_control_level: str | None = None
+    articulation_score: float | None = None
+    articulation_level: str | None = None
+    words_per_minute: float | None = None
+    pause_ratio: float | None = None
+    filler_word_count: int | None = None
+    pause_count: int | None = None
+    longest_pause_sec: float | None = None
+    confidence_feedback: str = ""
+    anxiety_feedback: str = ""
+    clarity_feedback: str = ""
+    focus_feedback: str = ""
     analyzed_at: datetime
 
 

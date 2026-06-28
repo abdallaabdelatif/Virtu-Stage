@@ -33,15 +33,15 @@ async def test_session_lifecycle_and_scoring(client, user_id):
 
     voice_payload = {
         "session_id": session_id,
-        "anxiety_level": 0.2,
-        "confidence_score": 0.82,
-        "clarity_level": 0.79,
-        "focus_score": 0.85,
+        "anxiety_level": 20.0,
+        "confidence_level": 82.0,
+        "clarity_level": 79.0,
+        "focus_level": 85.0,
         "pause_ratio": 0.12,
         "pause_count": 8,
         "longest_pause_sec": 2.4,
-        "filler_words_cnt": 5,
-        "speech_rate_wpm": 137.0,
+        "filler_word_count": 5,
+        "words_per_minute": 137.0,
     }
     voice_response = await client.post(
         "/voice-analysis",
@@ -106,15 +106,15 @@ async def test_voice_analysis_ingestion_is_idempotent(client, user_id):
 
     payload = {
         "session_id": session_id,
-        "anxiety_level": 0.2,
-        "confidence_score": 0.8,
-        "clarity_level": 0.75,
-        "focus_score": 0.7,
+        "anxiety_level": 20.0,
+        "confidence_level": 80.0,
+        "clarity_level": 75.0,
+        "focus_level": 70.0,
         "pause_ratio": 0.1,
         "pause_count": 4,
         "longest_pause_sec": 1.0,
-        "filler_words_cnt": 2,
-        "speech_rate_wpm": 120.0,
+        "filler_word_count": 2,
+        "words_per_minute": 120.0,
     }
     first = await client.post(
         "/voice-analysis",
@@ -228,15 +228,15 @@ async def test_motion_first_completion(client, user_id):
 
     voice_payload = {
         "session_id": session_id,
-        "anxiety_level": 0.2,
-        "confidence_score": 0.82,
-        "clarity_level": 0.79,
-        "focus_score": 0.85,
+        "anxiety_level": 20.0,
+        "confidence_level": 82.0,
+        "clarity_level": 79.0,
+        "focus_level": 85.0,
         "pause_ratio": 0.12,
         "pause_count": 8,
         "longest_pause_sec": 2.4,
-        "filler_words_cnt": 5,
-        "speech_rate_wpm": 137.0,
+        "filler_word_count": 5,
+        "words_per_minute": 137.0,
     }
     voice_response = await client.post(
         "/voice-analysis",
