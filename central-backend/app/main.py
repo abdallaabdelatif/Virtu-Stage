@@ -6,6 +6,9 @@ from app.auth.routes import router as auth_router
 from app.api.protected import router as protected_router
 from app.api.account import router as account_router
 from app.api.admin import router as admin_router
+from app.api.dashboard import router as dashboard_router
+from app.api.sessions import router as sessions_router
+from app.api.files import router as files_router
 from app.api.vr import router as vr_router
 from app.auth.jwt import verify_token
 from app.clients.crud_client import crud_client
@@ -25,6 +28,7 @@ app.add_middleware(
 # Exact paths that do not require authentication.
 _PUBLIC_PATHS = {
     "/",
+    "/docs",
     "/api/auth/login",
     "/api/auth/register",
     "/api/auth/forgot-password",
@@ -33,16 +37,17 @@ _PUBLIC_PATHS = {
     "/voice-analyses",
     "/motion-analyses",
     "/openapi.json",
-    "/sessions",
 }
 
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
     path = request.url.path
-    if (
+    is_public = (
         request.method == "OPTIONS"
         or path in _PUBLIC_PATHS
-    ):
+        or (path.startswith("/sessions/") and path.endswith("/finish"))
+    )
+    if is_public:
         return await call_next(request)
 
     auth = request.headers.get("authorization")
@@ -73,6 +78,9 @@ async def auth_middleware(request: Request, call_next):
 
 app.include_router(auth_router, prefix="")
 app.include_router(vr_router)
+app.include_router(sessions_router)
+app.include_router(files_router)
+app.include_router(dashboard_router)
 app.include_router(protected_router)
 app.include_router(account_router)
 app.include_router(admin_router)

@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
 import uuid
+from datetime import datetime, timezone
 
 import pytest
 from fastapi.testclient import TestClient
@@ -11,12 +12,15 @@ from app.main import app
 from app.api import vr as vr_module
 
 
+INTERNAL_HEADERS = {"X-Internal-API-Key": "development-internal-key-change-me"}
+
+
 @pytest.fixture(autouse=True)
 def fake_auth(monkeypatch):
     monkeypatch.setattr("app.main.verify_token", lambda token: {"sub": "test-user"})
 
     async def fake_get_user(user_id: str):
-        return {"user_id": user_id}
+        return {"user_id": user_id, "role": "user", "is_active": True}
 
     monkeypatch.setattr("app.main.crud_client.get_user", fake_get_user)
     yield
@@ -61,11 +65,15 @@ def test_ingest_voice_analysis_forwards_to_crud(monkeypatch):
     client = TestClient(app)
     payload = {
         "session_id": str(uuid.uuid4()),
-        "emotions": {"neutral": 0.25, "happy": 0.25, "sad": 0.25, "angry": 0.25},
         "anxiety_level": 0.3,
         "confidence_score": 0.8,
         "clarity_level": 0.75,
         "focus_score": 0.7,
+        "pause_ratio": 0.12,
+        "pause_count": 5,
+        "longest_pause_sec": 1.5,
+        "filler_words_cnt": 3,
+        "speech_rate_wpm": 130.0,
     }
 
     response = client.post("/voice-analyses", json=payload)

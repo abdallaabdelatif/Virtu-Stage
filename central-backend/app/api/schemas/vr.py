@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import uuid
 from pydantic import BaseModel, Field
 
@@ -27,10 +28,6 @@ class VRFrameBatch(BaseModel):
 
 class VoiceAnalysisResultPayload(BaseModel):
     session_id: str
-    neutral: float
-    happy: float
-    sad: float
-    angry: float
     anxiety_level: float
     confidence_score: float
     clarity_level: float
@@ -44,12 +41,6 @@ class VoiceAnalysisResultPayload(BaseModel):
     def to_model_dict(self) -> dict:
         return {
             "session_id": self.session_id,
-            "emotions": {
-                "neutral": self.neutral,
-                "happy": self.happy,
-                "sad": self.sad,
-                "angry": self.angry,
-            },
             "anxiety_level": self.anxiety_level,
             "confidence_score": self.confidence_score,
             "clarity_level": self.clarity_level,

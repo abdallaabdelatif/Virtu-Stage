@@ -1,6 +1,7 @@
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_session
 from app.models.user import User
@@ -11,13 +12,42 @@ from app.dependencies.internal import require_internal_api_key
 router = APIRouter(prefix="/users", tags=["users"])
 
 
+async def _raise_identity_conflict(
+    session: AsyncSession, username: str, email: str
+) -> None:
+    username_exists = await session.scalar(
+        select(User.user_id).where(func.lower(User.username) == username.lower())
+    )
+    if username_exists:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Username is already taken",
+        )
+
+    email_exists = await session.scalar(
+        select(User.user_id).where(func.lower(User.email) == email.lower())
+    )
+    if email_exists:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An account with this email already exists",
+        )
+
+    raise HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail="Username or email is already registered",
+    )
+
+
 @router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
     payload: UserCreate,
     session: AsyncSession = Depends(get_session),
 ) -> User:
     username_exists = await session.scalar(
-        select(User.user_id).where(User.username == payload.username)
+        select(User.user_id).where(
+            func.lower(User.username) == payload.username.lower()
+        )
     )
     if username_exists:
         raise HTTPException(
@@ -25,7 +55,7 @@ async def create_user(
             detail="Username is already taken",
         )
     email_exists = await session.scalar(
-        select(User.user_id).where(User.email == payload.email)
+        select(User.user_id).where(func.lower(User.email) == str(payload.email).lower())
     )
     if email_exists:
         raise HTTPException(
@@ -39,21 +69,16 @@ async def create_user(
     data["is_active"] = True
     user = User(**data)
     session.add(user)
-    await session.commit()
-    await session.refresh(user)
-    return user
-
-
-@router.get("/{user_id}", response_model=UserResponse)
-async def get_user(
-    user_id: uuid.UUID,
-    session: AsyncSession = Depends(get_session),
-) -> User:
-    user = await session.get(User, user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+    try:
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        await _raise_identity_conflict(
+            session,
+            username=payload.username,
+            email=str(payload.email),
         )
+    await session.refresh(user)
     return user
 
 
@@ -75,6 +100,19 @@ async def list_users_paginated(
         select(User).order_by(User.created_at.desc()).offset(skip).limit(limit)
     )
     return list(result.scalars().all())
+
+
+@router.get("/{user_id}", response_model=UserResponse)
+async def get_user(
+    user_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+) -> User:
+    user = await session.get(User, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+    return user
 
 
 @router.put("/{user_id}", response_model=UserResponse)

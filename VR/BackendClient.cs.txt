@@ -10,10 +10,10 @@ using Unity.Jobs;
 public class BackendClient : MonoBehaviour
 {
     [SerializeField]
-    private string backendApiBaseUrl = "http://192.168.0.165:8082";
+    private string backendApiBaseUrl = "http://192.168.0.165:9000";
 
     [SerializeField]
-    private string wsBaseUrl = "ws://192.168.0.165:8082";
+    private string wsBaseUrl = "ws://192.168.0.165:9000";
 
     [SerializeField]
     private int selectedMode = 1;

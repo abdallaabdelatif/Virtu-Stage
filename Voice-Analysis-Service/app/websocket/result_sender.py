@@ -3,22 +3,19 @@
 
 import logging
 import os
+
 import httpx
 from app.schemas.result import VoiceAnalysisResult
 from dotenv import load_dotenv
 
 load_dotenv()
 logger = logging.getLogger(__name__)
-CENTRALIZED_BACKEND_URL = os.getenv("CENTRALIZED_BACKEND_URL", "http://localhost:8082")
+CENTRALIZED_BACKEND_URL = os.getenv("CENTRALIZED_BACKEND_URL", "http://localhost:9000")
 
 
 async def send_result_to_central_backend(result: VoiceAnalysisResult) -> None:
     payload = {
         "session_id": result.session_id,
-        "neutral": round(result.emotions.neutral, 4),
-        "happy": round(result.emotions.happy, 4),
-        "sad": round(result.emotions.sad, 4),
-        "angry": round(result.emotions.angry, 4),
         "anxiety_level": round(result.paralinguistic.anxiety_level, 4),
         "confidence_score": round(result.paralinguistic.confidence_score, 4),
         "clarity_level": round(result.paralinguistic.clarity_level, 4),
@@ -29,17 +26,10 @@ async def send_result_to_central_backend(result: VoiceAnalysisResult) -> None:
         "filler_words_cnt": result.filler_word_count,
         "speech_rate_wpm": round(result.speech_rate_wpm, 4),
     }
-    total = (
-        round(result.emotions.neutral, 4)
-        + round(result.emotions.happy, 4)
-        + round(result.emotions.sad, 4)
-        + round(result.emotions.angry, 4)
-    )
-    logger.info("Emotion scores sum: %f", total)
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(
-                f"{CENTRALIZED_BACKEND_URL}/voice-analyses",
+                f"{CENTRALIZED_BACKEND_URL.rstrip('/')}/voice-analyses",
                 json=payload,
                 timeout=10.0,
             )

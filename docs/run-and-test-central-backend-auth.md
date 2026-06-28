@@ -51,7 +51,7 @@ $body = @{
   gender = "male"
 } | ConvertTo-Json
 
-Invoke-RestMethod -Method Post -Uri "http://localhost:8082/api/auth/register" -ContentType "application/json" -Body $body
+Invoke-RestMethod -Method Post -Uri "http://localhost:9000/api/auth/register" -ContentType "application/json" -Body $body
 ```
 
 Expected: HTTP 201 JSON response containing `access_token`, `token_type`, and

@@ -10,7 +10,7 @@ The following pieces are now implemented in the workspace:
 - The direct bridge currently targets the voice-analysis service on port 8001 using the endpoint `/ws/voice-analysis/transcript/{session_id}`.
 - The central backend already exposes the frame websocket endpoint and forwards frames to the motion-analysis service.
 - The motion-analysis service processes inbound JPEG batches and posts its result back to the central backend for CRUD persistence.
-- The conversational websocket remains on port 9000, and the motion-analysis service runs on port 9001.
+- The conversational websocket runs on port 8002, and the motion-analysis service runs on port 9001.
 
 ### Current runtime configuration
 - `VOICE_ANALYSIS_WS_URL` → defaults to `ws://localhost:8001`
@@ -20,10 +20,12 @@ The following pieces are now implemented in the workspace:
 - `CRUD_BASE_URL` → used by the central backend to forward analysis results to CRUD
 - `VR_DEFAULT_USER_ID` → should point to a valid CRUD user ID so training sessions can be created for motion/voice analysis results
 - Existing service ports remain:
+  - `5432` → PostgreSQL
+  - `5173` → Frontend
   - `8000` → CRUD Module
   - `8001` → Voice-Analysis-Service
-  - `8082` → Central Backend
-  - `9000` → ConversationalComponent
+  - `8002` → ConversationalComponent (`/ws`)
+  - `9000` → Central Backend
   - `9001` → Motion-Analysis-Service
 
 ---
@@ -47,7 +49,7 @@ The following pieces are now implemented in the workspace:
 ### Step 2.1: VR Client Connects to Audio WebSocket
 - **File:** `VR/BackendClient.cs.txt`
 - **Method:** `OnOpen()` (BackendClient Unity callback)
-- **Action:** Connects to `ws://backend:8082/ws/vr/audio/{session_id}`
+- **Action:** Connects to `ws://backend:9000/ws/vr/audio/{session_id}`
 
 ### Step 2.2: Backend Creates Dual-Proxy Setup
 - **File:** `central-backend/app/api/vr.py`
@@ -74,7 +76,7 @@ The following pieces are now implemented in the workspace:
 ### Step 2.4: VR Frame Streamer Connects
 - **File:** `VR/FrameWebsocketStreamer.cs.txt`
 - **Method:** `InitializeWebsocket()`
-- **Action:** Waits for session ID, connects to `ws://backend:8082/ws/vr/frames/{session_id}`
+- **Action:** Waits for session ID, connects to `ws://backend:9000/ws/vr/frames/{session_id}`
 
 ### Step 2.5: Backend Opens Motion Analysis Proxy
 - **File:** `central-backend/app/api/vr.py`

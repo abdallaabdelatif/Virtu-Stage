@@ -24,7 +24,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--session-id", type=str, default="")
     parser.add_argument("--url", type=str, default="")
     parser.add_argument("--motion-host", type=str, default="ws://localhost:9001")
-    parser.add_argument("--central-backend", type=str, default="http://localhost:8082")
+    parser.add_argument("--central-backend", type=str, default="http://localhost:9000")
     parser.add_argument("--via-central-backend", action="store_true")
     parser.add_argument("--batch-size", type=int, default=10)
     parser.add_argument("--jpg-quality", type=int, default=70)

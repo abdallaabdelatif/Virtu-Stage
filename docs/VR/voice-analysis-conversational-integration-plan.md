@@ -15,7 +15,7 @@ Wire the conversational service to the voice-analysis transcript websocket so ev
 In [ConversationalComponent/config/settings.py](../ConversationalComponent/config/settings.py), add environment-driven settings such as:
 - `VOICE_ANALYSIS_WS_URL` defaulting to `ws://localhost:8001`
 - `VOICE_ANALYSIS_TRANSCRIPT_PATH` defaulting to `/ws/voice-analysis/transcript/{session_id}`
-- `CONVERSATIONAL_WS_PORT` defaulting to `9000` for the existing conversational websocket endpoint
+- `CONVERSATIONAL_WS_PORT` defaulting to `8002` for the conversational websocket endpoint
 
 ### 2. Reuse or create a session identifier
 The conversation should be associated with the same session id used by the VR flow.
@@ -53,17 +53,20 @@ The conversational service should send this JSON payload to the voice-analysis t
 The `session_id` is already part of the websocket path, so it does not need to be repeated in the message body.
 
 ## Porting / Configuration Notes
-- Existing ports should remain unchanged:
+- Local service ports:
+  - `5432` → PostgreSQL
+  - `5173` → Frontend
   - `8000` → CRUD Module
   - `8001` → Voice-Analysis-Service
-  - `9000` → ConversationalComponent
-  - `8082` → Central Backend
+  - `8002` → ConversationalComponent (`/ws`)
+  - `9000` → Central Backend
+  - `9001` → Motion-Analysis-Service
 - The direct conversational → voice-analysis transcript websocket should use port `8001` because that is the voice-analysis service endpoint.
 - If a temporary local bridge or proxy is introduced later for debugging, use `9100` as a new unused port.
 
 ## Validation Steps
 1. Start the voice-analysis service on port `8001`.
-2. Start the conversational component on port `9000`.
+2. Start the conversational component on port `8002`.
 3. Connect the Unity/VR client to the conversational websocket.
 4. Send audio/transcript content through the conversational path.
 5. Confirm that the voice-analysis transcript websocket receives the fragments and that the buffer grows for the same `session_id`.

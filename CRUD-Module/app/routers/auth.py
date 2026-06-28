@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
@@ -29,10 +29,11 @@ async def internal_login(
     payload: InternalLoginRequest,
     session: AsyncSession = Depends(get_session),
 ) -> User:
+    identity = payload.username_or_email.strip().lower()
     result = await session.execute(
         select(User).where(
-            (User.username == payload.username_or_email)
-            | (User.email == payload.username_or_email)
+            (func.lower(User.username) == identity)
+            | (func.lower(User.email) == identity)
         )
     )
     user = result.scalar_one_or_none()
@@ -55,7 +56,7 @@ async def get_user_by_email(
     session: AsyncSession = Depends(get_session),
 ) -> User:
     user = await session.scalar(
-        select(User).where(User.email == payload.email)
+        select(User).where(func.lower(User.email) == str(payload.email).strip().lower())
     )
     if not user:
         raise HTTPException(

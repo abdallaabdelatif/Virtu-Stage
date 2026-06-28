@@ -1,19 +1,11 @@
 import uuid
-import enum
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, func, Integer
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import Uuid
-from sqlalchemy import Enum as SAEnum
+
 from app.database import Base
-
-
-class DominantEmotion(str, enum.Enum):
-    neutral = "neutral"
-    happy = "happy"
-    sad = "sad"
-    angry = "angry"
 
 
 class VoiceAnalysis(Base):
@@ -30,15 +22,6 @@ class VoiceAnalysis(Base):
         index=True,
     )
 
-    emotion_neutral: Mapped[float] = mapped_column(Float, nullable=False)
-    emotion_happy: Mapped[float] = mapped_column(Float, nullable=False)
-    emotion_sad: Mapped[float] = mapped_column(Float, nullable=False)
-    emotion_angry: Mapped[float] = mapped_column(Float, nullable=False)
-
-    dominant_emotion: Mapped[DominantEmotion] = mapped_column(
-        SAEnum(DominantEmotion), nullable=False
-    )
-
     anxiety_level: Mapped[float] = mapped_column(Float, nullable=False)
     confidence_score: Mapped[float] = mapped_column(Float, nullable=False)
     clarity_level: Mapped[float] = mapped_column(Float, nullable=False)
@@ -48,7 +31,7 @@ class VoiceAnalysis(Base):
     pause_count: Mapped[int] = mapped_column(Integer, nullable=False)
     longest_pause_seconds: Mapped[float] = mapped_column(Float, nullable=False)
     filler_words_count: Mapped[int] = mapped_column(Integer, nullable=False)
-    speech_rate_wpm: Mapped[Float] = mapped_column(Float, nullable=False)
+    speech_rate_wpm: Mapped[float] = mapped_column(Float, nullable=False)
 
     analyzed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

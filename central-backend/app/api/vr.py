@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import contextlib
 import json
@@ -75,17 +77,50 @@ async def create_session(payload: VRSessionCreate):
     return {"session_id": session_id}
 
 
+@router.post("/sessions/{session_id}/finish", status_code=status.HTTP_200_OK)
+async def finish_session(session_id: str):
+    if session_id not in session_store:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
+        )
+    try:
+        stored = await crud_client.finish_training_session(session_id)
+    except Exception:
+        logger.exception("Could not finish CRUD training session %s", session_id)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Could not finish session",
+        )
+    return stored
+
+
 @router.post("/voice-analyses", status_code=status.HTTP_201_CREATED)
 async def ingest_voice_analysis(payload: VoiceAnalysisResultPayload):
     logger.info("received voice analysis payload: %s", payload.model_dump())
-    stored = await crud_client.create_voice_analysis(payload.to_model_dict())
+    try:
+        stored = await crud_client.create_voice_analysis(payload.to_model_dict())
+    except Exception:
+        logger.exception("Failed to store voice analysis for session %s", payload.session_id)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Could not store voice analysis",
+        )
     logger.info("voice analysis stored successfully: %s", stored)
     return stored
 
 
 @router.post("/motion-analyses", status_code=status.HTTP_201_CREATED)
 async def ingest_motion_analysis(payload: MotionAnalysisResultPayload):
-    stored = await crud_client.create_motion_analysis(payload.model_dump())
+    try:
+        stored = await crud_client.create_motion_analysis(payload.model_dump())
+    except Exception:
+        logger.exception(
+            "Failed to store motion analysis for session %s", payload.session_id
+        )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Could not store motion analysis",
+        )
     return stored
 
 

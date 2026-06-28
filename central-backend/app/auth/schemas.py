@@ -1,9 +1,34 @@
 from datetime import datetime
+import re
 from typing import Literal, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 from app.auth.passwords import validate_password_strength
+
+
+USERNAME_MIN_LENGTH = 3
+USERNAME_MAX_LENGTH = 30
+USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._]*$")
+
+
+def validate_and_normalize_username(value: str) -> str:
+    value = value.strip()
+    if not USERNAME_MIN_LENGTH <= len(value) <= USERNAME_MAX_LENGTH:
+        raise ValueError(
+            f"username must be between {USERNAME_MIN_LENGTH} and "
+            f"{USERNAME_MAX_LENGTH} characters"
+        )
+    if not USERNAME_PATTERN.fullmatch(value):
+        raise ValueError(
+            "username must start with a letter or number and contain only "
+            "letters, numbers, dots, or underscores"
+        )
+    return value
+
+
+def normalize_email(value: EmailStr) -> str:
+    return str(value).strip().lower()
 
 
 class UserRegister(BaseModel):
@@ -16,7 +41,17 @@ class UserRegister(BaseModel):
     last_name: str
     gender: Optional[Literal["male", "female"]] = None
 
-    @field_validator("username", "first_name", "last_name")
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, value: str) -> str:
+        return validate_and_normalize_username(value)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: EmailStr) -> str:
+        return normalize_email(value)
+
+    @field_validator("first_name", "last_name")
     @classmethod
     def strip_required_text(cls, value: str) -> str:
         value = value.strip()

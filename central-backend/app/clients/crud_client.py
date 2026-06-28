@@ -12,98 +12,147 @@ class CRUDClient:
         self.base = CRUD_BASE_URL.rstrip("/")
         self.internal_headers = {"X-Internal-API-Key": INTERNAL_API_KEY}
 
-    async def create_user(self, payload: dict[str, Any]) -> dict[str, Any]:
+    async def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        json: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        internal: bool = False,
+        timeout: float = 10.0,
+    ) -> httpx.Response:
+        headers = self.internal_headers if internal else None
         async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{self.base}/users", json=payload, timeout=10.0
+            response = await client.request(
+                method,
+                f"{self.base}{path}",
+                json=json,
+                params=params,
+                headers=headers,
+                timeout=timeout,
             )
-            response.raise_for_status()
-            return response.json()
+            return response
+
+    async def create_user(self, payload: dict[str, Any]) -> dict[str, Any]:
+        response = await self._request("POST", "/users", json=payload)
+        response.raise_for_status()
+        return response.json()
 
     async def login_verify(self, payload: dict[str, Any]) -> dict[str, Any]:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{self.base}/internal/auth/login",
-                json=payload,
-                headers=self.internal_headers,
-                timeout=10.0,
-            )
-            response.raise_for_status()
-            return response.json()
+        response = await self._request(
+            "POST", "/internal/auth/login", json=payload, internal=True
+        )
+        response.raise_for_status()
+        return response.json()
 
     async def create_voice_analysis(self, payload: dict[str, Any]) -> dict[str, Any]:
-        import logging
-
-        logger = logging.getLogger(__name__)
-        logger.info("sending to core backend: %s", payload)
-        async with httpx.AsyncClient() as client:
-            r = await client.post(
-                f"{self.base}/voice-analysis", json=payload, timeout=10.0
-            )
-            logger.info("core backend response: %s %s", r.status_code, r.text)
-            r.raise_for_status()
-            return r.json()
+        response = await self._request(
+            "POST", "/voice-analysis", json=payload, internal=True
+        )
+        response.raise_for_status()
+        return response.json()
 
     async def create_motion_analysis(self, payload: dict[str, Any]) -> dict[str, Any]:
-        async with httpx.AsyncClient() as client:
-            r = await client.post(
-                f"{self.base}/motion-analysis", json=payload, timeout=30.0
-            )
-            r.raise_for_status()
-            return r.json()
+        response = await self._request(
+            "POST", "/motion-analysis", json=payload, internal=True, timeout=30.0
+        )
+        response.raise_for_status()
+        return response.json()
 
     async def create_training_session(self, payload: dict[str, Any]) -> dict[str, Any]:
-        async with httpx.AsyncClient() as client:
-            r = await client.post(f"{self.base}/sessions", json=payload, timeout=10.0)
-            r.raise_for_status()
-            return r.json()
+        response = await self._request(
+            "POST", "/sessions", json=payload, internal=True
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def finish_training_session(self, session_id: str) -> dict[str, Any]:
+        response = await self._request(
+            "POST", f"/sessions/{session_id}/finish", internal=True
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def get_training_session(self, session_id: str) -> dict[str, Any] | None:
+        response = await self._request(
+            "GET", f"/sessions/{session_id}", internal=True
+        )
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        return response.json()
+
+    async def list_training_sessions_by_user(
+        self, user_id: str
+    ) -> list[dict[str, Any]]:
+        response = await self._request(
+            "GET", f"/sessions/user/{user_id}", internal=True
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def get_voice_analysis_by_session(
+        self, session_id: str
+    ) -> dict[str, Any] | None:
+        response = await self._request(
+            "GET", f"/voice-analysis/session/{session_id}", internal=True
+        )
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        return response.json()
+
+    async def get_motion_analysis_by_session(
+        self, session_id: str
+    ) -> dict[str, Any] | None:
+        response = await self._request(
+            "GET", f"/motion-analysis/session/{session_id}", internal=True
+        )
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        return response.json()
 
     async def get_user(self, user_id: str) -> dict[str, Any] | None:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(f"{self.base}/users/{user_id}", timeout=10.0)
-            if response.status_code == 404:
-                return None
-            response.raise_for_status()
-            return response.json()
+        response = await self._request("GET", f"/users/{user_id}")
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        return response.json()
 
     async def get_user_by_email(self, email: str) -> dict[str, Any] | None:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{self.base}/internal/users/by-email",
-                json={"email": email},
-                headers=self.internal_headers,
-                timeout=10.0,
-            )
-            if response.status_code == 404:
-                return None
-            response.raise_for_status()
-            return response.json()
+        response = await self._request(
+            "POST",
+            "/internal/users/by-email",
+            json={"email": email},
+            internal=True,
+        )
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        return response.json()
 
     async def store_password_reset_token(self, payload: dict[str, Any]) -> None:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{self.base}/internal/password-reset/request",
-                json=payload,
-                headers=self.internal_headers,
-                timeout=10.0,
-            )
-            response.raise_for_status()
+        response = await self._request(
+            "POST",
+            "/internal/password-reset/request",
+            json=payload,
+            internal=True,
+        )
+        response.raise_for_status()
 
     async def reset_password(
         self, token_hash: str, new_password: str
     ) -> dict[str, Any]:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{self.base}/internal/password-reset/reset",
-                json={
-                    "token_hash": token_hash,
-                    "new_password": new_password,
-                },
-                headers=self.internal_headers,
-                timeout=10.0,
-            )
-            response.raise_for_status()
-            return response.json()
+        response = await self._request(
+            "POST",
+            "/internal/password-reset/reset",
+            json={"token_hash": token_hash, "new_password": new_password},
+            internal=True,
+        )
+        response.raise_for_status()
+        return response.json()
 
     async def change_password(
         self,
@@ -111,30 +160,28 @@ class CRUDClient:
         current_password: str,
         new_password: str,
     ) -> dict[str, Any]:
-        async with httpx.AsyncClient() as client:
-            response = await client.patch(
-                f"{self.base}/internal/auth/change-password",
-                json={
-                    "user_id": user_id,
-                    "current_password": current_password,
-                    "new_password": new_password,
-                },
-                headers=self.internal_headers,
-                timeout=10.0,
-            )
-            response.raise_for_status()
-            return response.json()
+        response = await self._request(
+            "PATCH",
+            "/internal/auth/change-password",
+            json={
+                "user_id": user_id,
+                "current_password": current_password,
+                "new_password": new_password,
+            },
+            internal=True,
+        )
+        response.raise_for_status()
+        return response.json()
 
     async def update_user_status(self, user_id: str, is_active: bool) -> dict[str, Any]:
-        async with httpx.AsyncClient() as client:
-            response = await client.patch(
-                f"{self.base}/internal/users/{user_id}/status",
-                json={"is_active": is_active},
-                headers=self.internal_headers,
-                timeout=10.0,
-            )
-            response.raise_for_status()
-            return response.json()
+        response = await self._request(
+            "PATCH",
+            f"/internal/users/{user_id}/status",
+            json={"is_active": is_active},
+            internal=True,
+        )
+        response.raise_for_status()
+        return response.json()
 
     async def update_user_profile(
         self,
@@ -142,27 +189,66 @@ class CRUDClient:
         first_name: str,
         last_name: str,
     ) -> dict[str, Any]:
-        async with httpx.AsyncClient() as client:
-            response = await client.patch(
-                f"{self.base}/internal/users/{user_id}/profile",
-                json={
-                    "first_name": first_name,
-                    "last_name": last_name,
-                },
-                headers=self.internal_headers,
-                timeout=10.0,
-            )
-            response.raise_for_status()
-            return response.json()
+        response = await self._request(
+            "PATCH",
+            f"/internal/users/{user_id}/profile",
+            json={"first_name": first_name, "last_name": last_name},
+            internal=True,
+        )
+        response.raise_for_status()
+        return response.json()
 
     async def delete_user(self, user_id: str) -> None:
-        async with httpx.AsyncClient() as client:
-            response = await client.delete(
-                f"{self.base}/users/{user_id}",
-                headers=self.internal_headers,
-                timeout=10.0,
-            )
-            response.raise_for_status()
+        response = await self._request(
+            "DELETE", f"/users/{user_id}", internal=True
+        )
+        response.raise_for_status()
+
+    async def get_user_dashboard(self, user_id: str) -> dict[str, Any]:
+        response = await self._request(
+            "GET", f"/aggregates/users/{user_id}/dashboard", internal=True
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def get_admin_dashboard(self) -> dict[str, Any]:
+        response = await self._request(
+            "GET", "/aggregates/admin/dashboard", internal=True
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def list_admin_users(self) -> list[dict[str, Any]]:
+        response = await self._request(
+            "GET", "/aggregates/admin/users", internal=True
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def create_library_file(self, payload: dict[str, Any]) -> dict[str, Any]:
+        response = await self._request(
+            "POST", "/files", json=payload, internal=True, timeout=30.0
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def list_library_files(self, user_id: str) -> list[dict[str, Any]]:
+        response = await self._request(
+            "GET", f"/files/user/{user_id}", internal=True
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def get_library_file(self, file_id: str) -> dict[str, Any] | None:
+        response = await self._request("GET", f"/files/{file_id}", internal=True)
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        return response.json()
+
+    async def delete_library_file(self, file_id: str) -> None:
+        response = await self._request("DELETE", f"/files/{file_id}", internal=True)
+        response.raise_for_status()
 
 
 crud_client = CRUDClient()

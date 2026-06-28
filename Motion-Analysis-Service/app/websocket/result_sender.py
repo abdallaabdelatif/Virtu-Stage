@@ -12,7 +12,7 @@ from app.schemas.crud_payload import build_motion_analysis_create
 load_dotenv()
 logger = logging.getLogger(__name__)
 
-CENTRALIZED_BACKEND_URL = os.getenv("CENTRALIZED_BACKEND_URL", "http://localhost:8082")
+CENTRALIZED_BACKEND_URL = os.getenv("CENTRALIZED_BACKEND_URL", "http://localhost:9000")
 
 
 async def send_result_to_central_backend(result: MotionAnalysisResult) -> None:

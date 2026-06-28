@@ -24,6 +24,7 @@ class DifficultyLevel(str, enum.Enum):
 class SessionStatus(str, enum.Enum):
     pending = "pending"
     in_progress = "in_progress"
+    processing = "processing"
     completed = "completed"
     failed = "failed"
     cancelled = "cancelled"
