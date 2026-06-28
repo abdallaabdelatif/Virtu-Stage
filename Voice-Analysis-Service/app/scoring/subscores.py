@@ -111,7 +111,6 @@ def _fluency_score(features: dict[str, Any]) -> SubscoreResult:
     filler_rate = _num(features, "filler_rate_per_minute")
     filler_ratio = _num(features, "filler_ratio")
     repeated = _num(features, "repeated_word_count")
-    utterance_words = _num(features, "average_words_per_utterance")
 
     parts = {
         "speaking_rate": _target_range_score(wpm, 90.0, 115.0, 165.0, 200.0),
@@ -125,16 +124,14 @@ def _fluency_score(features: dict[str, Any]) -> SubscoreResult:
             _inverse_range(filler_ratio, 0.02, 0.12),
         ),
         "repetition_control": _inverse_range(repeated, 1.0, 8.0),
-        "utterance_flow": _target_range_score(utterance_words, 4.0, 8.0, 25.0, 40.0),
     }
     score, available = _weighted(
         parts,
         {
-            "speaking_rate": 0.25,
-            "pause_control": 0.25,
+            "speaking_rate": 0.30,
+            "pause_control": 0.30,
             "filler_control": 0.25,
             "repetition_control": 0.15,
-            "utterance_flow": 0.10,
         },
     )
 

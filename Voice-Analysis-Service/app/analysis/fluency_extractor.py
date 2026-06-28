@@ -3,6 +3,8 @@ from dataclasses import dataclass, field
 import math
 import re
 from typing import Iterable, Optional
+import numpy as np
+from app.analysis.audio_loader import AudioBundle
 
 
 FILLER_WORDS = {
@@ -18,6 +20,9 @@ FILLER_WORDS = {
     "i mean",
 }
 
+PAUSE_DB_MARGIN = 10.0
+MIN_PAUSE_SEC = 0.5
+
 
 @dataclass
 class FluencyInput:
@@ -27,13 +32,11 @@ class FluencyInput:
     pause_ratio: float = field(default=float("nan"))
     longest_pause_sec: float = field(default=float("nan"))
     filler_words: Optional[list[str]] = None
-    word_timestamps: Optional[list[dict]] = None
 
 
 @dataclass
 class FluencyFeatures:
     words_per_minute: float = field(default=float("nan"))
-    characters_per_second: float = field(default=float("nan"))
     pause_ratio: float = field(default=float("nan"))
     pause_count: int = 0
     longest_pause_sec: float = field(default=float("nan"))
@@ -41,7 +44,13 @@ class FluencyFeatures:
     filler_rate_per_minute: float = field(default=float("nan"))
     filler_ratio: float = field(default=float("nan"))
     repeated_word_count: int = 0
-    average_words_per_utterance: float = field(default=float("nan"))
+
+
+@dataclass
+class PauseFeatures:
+    pause_ratio: float = field(default=float("nan"))
+    pause_count: int = 0
+    longest_pause_sec: float = field(default=float("nan"))
 
 
 def extract(data: FluencyInput) -> FluencyFeatures:
@@ -55,7 +64,6 @@ def extract(data: FluencyInput) -> FluencyFeatures:
 
         if duration > 0:
             result.words_per_minute = float(word_count / duration * 60.0)
-            result.characters_per_second = float(len(transcript.strip()) / duration)
 
         result.pause_ratio = data.pause_ratio
         result.pause_count = int(data.pause_count or 0)
@@ -71,9 +79,6 @@ def extract(data: FluencyInput) -> FluencyFeatures:
         )
 
         result.repeated_word_count = _count_repeated_words(words)
-        result.average_words_per_utterance = _average_words_per_utterance(
-            transcript, words
-        )
     except Exception:
         pass
 
@@ -87,7 +92,6 @@ def extract_from_values(
     pause_ratio: float = float("nan"),
     longest_pause_sec: float = float("nan"),
     filler_words: Optional[list[str]] = None,
-    word_timestamps: Optional[list[dict]] = None,
 ) -> FluencyFeatures:
     return extract(
         FluencyInput(
@@ -97,15 +101,54 @@ def extract_from_values(
             pause_ratio=pause_ratio,
             longest_pause_sec=longest_pause_sec,
             filler_words=filler_words,
-            word_timestamps=word_timestamps,
         )
     )
+
+
+def extract_pauses_from_audio(bundle: AudioBundle) -> PauseFeatures:
+    result = PauseFeatures()
+
+    try:
+        if bundle.n_samples == 0 or bundle.duration <= 0:
+            return result
+
+        frame_length = 2048
+        hop_length = 512
+        rms = _frame_rms(bundle.y, frame_length, hop_length)
+        if rms.size == 0:
+            return result
+
+        rms_floor = np.maximum(rms, 1e-10)
+        db = 20.0 * np.log10(rms_floor / np.max(rms_floor))
+        speech_threshold_db = max(
+            float(np.percentile(db, 20)),
+            float(np.median(db) - PAUSE_DB_MARGIN),
+        )
+        silent_frames = db <= speech_threshold_db
+        frame_duration = float(hop_length / bundle.sr)
+        min_pause_frames = max(1, int(round(MIN_PAUSE_SEC / frame_duration)))
+
+        pauses = _silent_runs_to_durations(
+            silent_frames,
+            frame_duration,
+            min_pause_frames,
+        )
+        result.pause_count = len(pauses)
+        result.longest_pause_sec = float(max(pauses)) if pauses else 0.0
+        result.pause_ratio = (
+            float(sum(pauses) / bundle.duration)
+            if bundle.duration > 0
+            else float("nan")
+        )
+    except Exception:
+        pass
+
+    return result
 
 
 def to_dict(features: FluencyFeatures) -> dict:
     return {
         "words_per_minute": _safe(features.words_per_minute),
-        "characters_per_second": _safe(features.characters_per_second),
         "pause_ratio": _safe(features.pause_ratio),
         "pause_count": features.pause_count,
         "longest_pause_sec": _safe(features.longest_pause_sec),
@@ -113,7 +156,14 @@ def to_dict(features: FluencyFeatures) -> dict:
         "filler_rate_per_minute": _safe(features.filler_rate_per_minute),
         "filler_ratio": _safe(features.filler_ratio),
         "repeated_word_count": features.repeated_word_count,
-        "average_words_per_utterance": _safe(features.average_words_per_utterance),
+    }
+
+
+def pauses_to_dict(features: PauseFeatures) -> dict:
+    return {
+        "pause_ratio": _safe(features.pause_ratio),
+        "pause_count": features.pause_count,
+        "longest_pause_sec": _safe(features.longest_pause_sec),
     }
 
 
@@ -143,23 +193,43 @@ def _count_repeated_words(words: list[str]) -> int:
     )
 
 
-def _average_words_per_utterance(transcript: str, words: list[str]) -> float:
-    if not words:
-        return 0.0
+def _silent_runs_to_durations(
+    silent_frames: np.ndarray,
+    frame_duration: float,
+    min_pause_frames: int,
+) -> list[float]:
+    pauses = []
+    run_length = 0
 
-    utterances = [part for part in re.split(r"[.!?;:\n]+", transcript) if part.strip()]
-    if not utterances:
-        return float(len(words))
+    for is_silent in silent_frames:
+        if bool(is_silent):
+            run_length += 1
+            continue
 
-    utterance_word_counts = [
-        len(_tokenize_words(utterance)) for utterance in utterances
+        if run_length >= min_pause_frames:
+            pauses.append(float(run_length * frame_duration))
+        run_length = 0
+
+    if run_length >= min_pause_frames:
+        pauses.append(float(run_length * frame_duration))
+
+    return pauses
+
+
+def _frame_rms(y: np.ndarray, frame_length: int, hop_length: int) -> np.ndarray:
+    if y.size == 0 or frame_length <= 0 or hop_length <= 0:
+        return np.asarray([], dtype=float)
+
+    if y.size < frame_length:
+        frame = np.pad(y, (0, frame_length - y.size))
+        return np.asarray([float(np.sqrt(np.mean(np.square(frame))))])
+
+    starts = range(0, y.size - frame_length + 1, hop_length)
+    values = [
+        float(np.sqrt(np.mean(np.square(y[start : start + frame_length]))))
+        for start in starts
     ]
-    utterance_word_counts = [count for count in utterance_word_counts if count > 0]
-    return (
-        float(sum(utterance_word_counts) / len(utterance_word_counts))
-        if utterance_word_counts
-        else 0.0
-    )
+    return np.asarray(values, dtype=float)
 
 
 def _safe(value):
