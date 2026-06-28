@@ -8,6 +8,7 @@ SESSION_PROCESSING_MIGRATION_ID = "20260628_session_processing_status"
 VOICE_EMOTION_REMOVAL_MIGRATION_ID = "20260628_remove_voice_emotion_fields"
 REGISTRATION_IDENTITY_MIGRATION_ID = "20260628_registration_identity_uniqueness"
 VOICE_SCHEMA_MIGRATION_ID = "20260628_voice_analysis_flat_schema"
+VOICE_PAUSE_RATIO_NULLABLE_MIGRATION_ID = "20260628_voice_pause_ratio_nullable"
 
 
 def _run_core_auth_migration(sync_connection) -> None:
@@ -81,6 +82,7 @@ async def run_migrations(connection: AsyncConnection) -> None:
     await connection.run_sync(_run_session_processing_migration)
     await connection.run_sync(_run_voice_emotion_removal_migration)
     await connection.run_sync(_run_voice_analysis_flat_schema_migration)
+    await connection.run_sync(_run_voice_pause_ratio_nullable_migration)
     await connection.run_sync(_run_registration_identity_migration)
 
 
@@ -372,3 +374,132 @@ def _run_voice_analysis_flat_schema_migration(sync_connection) -> None:
                 )
 
     _record_migration(sync_connection, VOICE_SCHEMA_MIGRATION_ID)
+
+
+def _run_voice_pause_ratio_nullable_migration(sync_connection) -> None:
+    if _migration_already_applied(
+        sync_connection, VOICE_PAUSE_RATIO_NULLABLE_MIGRATION_ID
+    ):
+        return
+
+    inspector = inspect(sync_connection)
+    if "voice_analysis" not in inspector.get_table_names():
+        _record_migration(sync_connection, VOICE_PAUSE_RATIO_NULLABLE_MIGRATION_ID)
+        return
+
+    pause_ratio_column = next(
+        (
+            column
+            for column in inspector.get_columns("voice_analysis")
+            if column["name"] == "pause_ratio"
+        ),
+        None,
+    )
+    if pause_ratio_column is None or pause_ratio_column.get("nullable", True):
+        _record_migration(sync_connection, VOICE_PAUSE_RATIO_NULLABLE_MIGRATION_ID)
+        return
+
+    dialect = sync_connection.dialect.name
+    if dialect == "postgresql":
+        sync_connection.execute(
+            text("ALTER TABLE voice_analysis ALTER COLUMN pause_ratio DROP NOT NULL")
+        )
+    elif dialect == "sqlite":
+        _rebuild_sqlite_voice_analysis_with_nullable_pause_ratio(sync_connection)
+    else:
+        raise RuntimeError(
+            "Unsupported database dialect for pause_ratio nullability migration: "
+            f"{dialect}"
+        )
+
+    _record_migration(sync_connection, VOICE_PAUSE_RATIO_NULLABLE_MIGRATION_ID)
+
+
+def _rebuild_sqlite_voice_analysis_with_nullable_pause_ratio(sync_connection) -> None:
+    inspector = inspect(sync_connection)
+    existing_columns = {
+        column["name"] for column in inspector.get_columns("voice_analysis")
+    }
+    target_columns = [
+        "voice_analysis_id",
+        "session_id",
+        "confidence_level",
+        "anxiety_level",
+        "clarity_level",
+        "focus_level",
+        "voice_quality_score",
+        "voice_quality_level",
+        "fluency_score",
+        "fluency_level",
+        "energy_control_score",
+        "energy_control_level",
+        "articulation_score",
+        "articulation_level",
+        "words_per_minute",
+        "pause_ratio",
+        "filler_word_count",
+        "pause_count",
+        "longest_pause_sec",
+        "confidence_feedback",
+        "anxiety_feedback",
+        "clarity_feedback",
+        "focus_feedback",
+        "analyzed_at",
+    ]
+    copied_columns = [
+        column for column in target_columns if column in existing_columns
+    ]
+    copied_column_sql = ", ".join(copied_columns)
+
+    sync_connection.execute(text("ALTER TABLE voice_analysis RENAME TO voice_analysis_old"))
+    sync_connection.execute(
+        text(
+            """
+            CREATE TABLE voice_analysis (
+                voice_analysis_id CHAR(32) NOT NULL,
+                session_id CHAR(32) NOT NULL,
+                confidence_level FLOAT,
+                anxiety_level FLOAT,
+                clarity_level FLOAT,
+                focus_level FLOAT,
+                voice_quality_score FLOAT,
+                voice_quality_level VARCHAR(32),
+                fluency_score FLOAT,
+                fluency_level VARCHAR(32),
+                energy_control_score FLOAT,
+                energy_control_level VARCHAR(32),
+                articulation_score FLOAT,
+                articulation_level VARCHAR(32),
+                words_per_minute FLOAT,
+                pause_ratio FLOAT,
+                filler_word_count INTEGER,
+                pause_count INTEGER,
+                longest_pause_sec FLOAT,
+                confidence_feedback TEXT NOT NULL DEFAULT '',
+                anxiety_feedback TEXT NOT NULL DEFAULT '',
+                clarity_feedback TEXT NOT NULL DEFAULT '',
+                focus_feedback TEXT NOT NULL DEFAULT '',
+                analyzed_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                PRIMARY KEY (voice_analysis_id),
+                FOREIGN KEY(session_id) REFERENCES training_sessions (session_id)
+                    ON DELETE CASCADE,
+                UNIQUE (session_id)
+            )
+            """
+        )
+    )
+    sync_connection.execute(
+        text(
+            f"""
+            INSERT INTO voice_analysis ({copied_column_sql})
+            SELECT {copied_column_sql} FROM voice_analysis_old
+            """
+        )
+    )
+    sync_connection.execute(text("DROP TABLE voice_analysis_old"))
+    sync_connection.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_voice_analysis_session_id "
+            "ON voice_analysis (session_id)"
+        )
+    )
