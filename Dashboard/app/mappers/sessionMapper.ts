@@ -5,6 +5,11 @@ import type {
   SessionListItem,
   SessionStatus,
 } from '../types/session';
+import {
+  formatPlatformDate,
+  formatPlatformTime,
+  platformTimestampMs,
+} from '../utils/dateTime';
 
 export function mapSessionStatus(status: BackendSessionStatus): SessionStatus {
   const statuses: Record<BackendSessionStatus, SessionStatus> = {
@@ -24,14 +29,13 @@ export function mapScenario(scenario: BackendSessionDto['scenario_type']) {
 
 function formatDate(value: string | null) {
   if (!value) return { date: 'Not started', time: '' };
-  const date = new Date(value);
   return {
-    date: date.toLocaleDateString('en-US', {
+    date: formatPlatformDate(value, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
     }),
-    time: date.toLocaleTimeString('en-US', {
+    time: formatPlatformTime(value, {
       hour: '2-digit',
       minute: '2-digit',
     }),
@@ -42,7 +46,7 @@ function formatDuration(start: string | null, end: string | null) {
   if (!start || !end) return 'N/A';
   const seconds = Math.max(
     0,
-    Math.floor((new Date(end).getTime() - new Date(start).getTime()) / 1000),
+    Math.floor((platformTimestampMs(end) - platformTimestampMs(start)) / 1000),
   );
   const minutes = Math.floor(seconds / 60);
   return `${minutes}:${String(seconds % 60).padStart(2, '0')}`;

@@ -1,5 +1,11 @@
 import type { SessionAnalytics, FeedbackItem } from '../types/analytics';
 import type { SessionReportDto, VoiceAnalysisDto } from '../types/report.dto';
+import {
+  formatPlatformDate,
+  formatPlatformTime,
+  parseApiDateTime,
+  platformTimestampMs,
+} from '../utils/dateTime';
 import { mapScenario, mapSessionStatus } from './sessionMapper';
 
 function pct(value: number | null | undefined): string {
@@ -254,7 +260,7 @@ export function mapSessionReport(
     : [];
 
   const startValue = session.start_time ?? session.created_at;
-  const startDate = startValue ? new Date(startValue) : null;
+  const startDate = startValue ? parseApiDateTime(startValue) : null;
   const combinedStrengths = uniqueRanked(
     [...voiceInsights.strengths, ...motionStrengths],
     3,
@@ -278,18 +284,18 @@ export function mapSessionReport(
     id: session.session_id ?? fallbackId,
     title: `${mapScenario(session.scenario_type)} Session`,
     date: startDate
-      ? startDate.toLocaleDateString()
+      ? formatPlatformDate(startValue)
       : 'N/A',
     time: startDate
-      ? startDate.toLocaleTimeString()
+      ? formatPlatformTime(startValue)
       : 'N/A',
     duration:
       session.start_time && session.end_time
         ? `${Math.max(
             0,
             Math.round(
-              (new Date(session.end_time).getTime() -
-                new Date(session.start_time).getTime()) /
+              (platformTimestampMs(session.end_time) -
+                platformTimestampMs(session.start_time)) /
                 60000,
             ),
           )} mins`

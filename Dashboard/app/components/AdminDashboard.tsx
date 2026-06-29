@@ -86,8 +86,8 @@ export function AdminDashboard({ name, data }: AdminDashboardProps) {
           value={sessionsToday.toString()}
           change={
             sessionsToday === 0
-              ? 'No sessions started today'
-              : 'Sessions created today (UTC)'
+              ? 'No sessions started today (Cairo time)'
+              : 'Sessions started today (Cairo time)'
           }
           color="#f472b6"
           icon={<CalendarDays className="w-5 h-5" />}

@@ -8,9 +8,13 @@ import type {
   UserDashboardData,
 } from '../types/dashboard';
 import type { ManagedUser } from '../types/admin';
+import {
+  formatPlatformCalendarDay,
+  formatPlatformDate,
+} from '../utils/dateTime';
 
 function formatDateTime(value: string) {
-  return new Date(value).toLocaleDateString('en-US', {
+  return formatPlatformDate(value, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -18,8 +22,10 @@ function formatDateTime(value: string) {
 }
 
 function formatChartDay(value: string) {
-  const date = new Date(`${value}T00:00:00Z`);
-  return date.toLocaleDateString('en-US', { weekday: 'short' });
+  return formatPlatformCalendarDay(value, {
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
 function formatChartMonth(value: string) {

@@ -1,6 +1,9 @@
 import uuid
+from datetime import datetime, timezone
 
 import pytest
+
+import app.services.dashboard_aggregates as dashboard_aggregates
 
 
 @pytest.mark.asyncio
@@ -84,3 +87,51 @@ async def test_admin_dashboard_and_users_aggregate(client, user_id):
     assert any(user["user_id"] == user_id for user in users)
     target = next(user for user in users if user["user_id"] == user_id)
     assert target["session_count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_admin_dashboard_uses_cairo_day_boundaries(
+    client, user_id, monkeypatch
+):
+    monkeypatch.setattr(
+        dashboard_aggregates,
+        "_utc_now",
+        lambda: datetime(2026, 6, 29, 12, 0, tzinfo=timezone.utc),
+    )
+    start_times = [
+        "2026-06-28T20:59:59+00:00",  # Jun 28, 11:59:59 PM in Cairo
+        "2026-06-28T21:00:00+00:00",  # Jun 29, 12:00 AM in Cairo
+        "2026-06-29T20:59:59+00:00",  # Jun 29, 11:59:59 PM in Cairo
+    ]
+
+    for start_time in start_times:
+        session_id = str(uuid.uuid4())
+        response = await client.post(
+            "/sessions",
+            json={
+                "session_id": session_id,
+                "user_id": user_id,
+                "scenario_type": "interview",
+                "difficulty_level": "medium",
+            },
+            headers={"X-Internal-API-Key": "test-internal-key"},
+        )
+        assert response.status_code == 201
+        response = await client.put(
+            f"/sessions/{session_id}",
+            json={"start_time": start_time},
+            headers={"X-Internal-API-Key": "test-internal-key"},
+        )
+        assert response.status_code == 200
+
+    response = await client.get(
+        "/aggregates/admin/dashboard",
+        headers={"X-Internal-API-Key": "test-internal-key"},
+    )
+    assert response.status_code == 200
+    dashboard = response.json()
+    assert dashboard["sessions_today"] == 2
+    assert {point["date"]: point["count"] for point in dashboard["sessions_by_day"]} == {
+        "2026-06-28": 1,
+        "2026-06-29": 2,
+    }

@@ -4,6 +4,7 @@ import uuid
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from statistics import mean
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,6 +23,9 @@ from app.schemas.dashboard import (
 )
 
 
+PLATFORM_TIME_ZONE = ZoneInfo("Africa/Cairo")
+
+
 def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -32,8 +36,12 @@ def _as_utc(value: datetime) -> datetime:
     return value.astimezone(timezone.utc)
 
 
+def _as_platform_time(value: datetime) -> datetime:
+    return _as_utc(value).astimezone(PLATFORM_TIME_ZONE)
+
+
 def _format_label(value: datetime) -> str:
-    return _as_utc(value).strftime("%b %d")
+    return _as_platform_time(value).strftime("%b %d")
 
 
 def _calculate_improvement(scores: list[float]) -> float | None:
@@ -85,7 +93,9 @@ async def get_user_dashboard(
     score_history = [
         ScoreHistoryPoint(
             session_id=session.session_id,
-            date=_as_utc(session.end_time or session.created_at).date().isoformat(),
+            date=_as_platform_time(
+                session.end_time or session.created_at
+            ).date().isoformat(),
             score=float(session.overall_score),
         )
         for session in completed_sessions[:30]
@@ -141,27 +151,36 @@ async def get_admin_dashboard(db: AsyncSession) -> AdminDashboardAggregate:
         else None
     )
 
-    today = _utc_now().date()
-    today_start = datetime.combine(today, datetime.min.time(), tzinfo=timezone.utc)
-    tomorrow_start = today_start + timedelta(days=1)
+    today = _as_platform_time(_utc_now()).date()
+    today_start = datetime.combine(
+        today, datetime.min.time(), tzinfo=PLATFORM_TIME_ZONE
+    ).astimezone(timezone.utc)
+    tomorrow_start = datetime.combine(
+        today + timedelta(days=1),
+        datetime.min.time(),
+        tzinfo=PLATFORM_TIME_ZONE,
+    ).astimezone(timezone.utc)
+    session_started_at = func.coalesce(
+        TrainingSession.start_time, TrainingSession.created_at
+    )
     sessions_today = int(
         await db.scalar(
             select(func.count())
             .select_from(TrainingSession)
             .where(
-                TrainingSession.created_at >= today_start,
-                TrainingSession.created_at < tomorrow_start,
+                session_started_at >= today_start,
+                session_started_at < tomorrow_start,
             )
         )
         or 0
     )
 
     sessions_result = await db.execute(
-        select(TrainingSession.created_at).order_by(TrainingSession.created_at.desc())
+        select(session_started_at).order_by(session_started_at.desc())
     )
     day_counts: dict[str, int] = defaultdict(int)
-    for (created_at,) in sessions_result.all():
-        day_counts[_as_utc(created_at).date().isoformat()] += 1
+    for (started_at,) in sessions_result.all():
+        day_counts[_as_platform_time(started_at).date().isoformat()] += 1
     sessions_by_day = [
         SessionsByDayPoint(date=day, count=count)
         for day, count in sorted(day_counts.items(), reverse=True)[:14]
@@ -177,7 +196,7 @@ async def get_admin_dashboard(db: AsyncSession) -> AdminDashboardAggregate:
     month_scores: dict[str, list[float]] = defaultdict(list)
     for end_time, created_at, overall_score in completed_result.all():
         timestamp = end_time or created_at
-        month_key = _as_utc(timestamp).strftime("%Y-%m")
+        month_key = _as_platform_time(timestamp).strftime("%Y-%m")
         month_scores[month_key].append(float(overall_score))
     average_score_by_month = [
         AverageScoreByMonthPoint(
