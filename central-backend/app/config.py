@@ -35,9 +35,18 @@ R2_ACCOUNT_ID = os.getenv("R2_ACCOUNT_ID", "")
 R2_ACCESS_KEY_ID = os.getenv("R2_ACCESS_KEY_ID", "")
 R2_SECRET_ACCESS_KEY = os.getenv("R2_SECRET_ACCESS_KEY", "")
 R2_BUCKET_NAME = os.getenv("R2_BUCKET_NAME", "")
+R2_AVATAR_BUCKET_NAME = os.getenv(
+    "R2_AVATAR_BUCKET_NAME", R2_BUCKET_NAME
+)
 R2_SIGNED_URL_EXPIRES_SECONDS = int(
     os.getenv("R2_SIGNED_URL_EXPIRES_SECONDS", "3600")
 )
+PUBLIC_API_URL = os.getenv(
+    "PUBLIC_API_URL", "http://localhost:9000"
+).rstrip("/")
+AVATAR_PUBLIC_BASE_URL = os.getenv("AVATAR_PUBLIC_BASE_URL", "").rstrip("/")
+AVATAR_MAX_BYTES = int(os.getenv("AVATAR_MAX_BYTES", "1048576"))
+AVATAR_SIZE = int(os.getenv("AVATAR_SIZE", "512"))
 GOTENBERG_URL = os.getenv("GOTENBERG_URL", "http://localhost:3001").rstrip("/")
 GOTENBERG_TIMEOUT_SECONDS = int(os.getenv("GOTENBERG_TIMEOUT_SECONDS", "120"))
 PRESENTATION_MAX_SLIDES = int(os.getenv("PRESENTATION_MAX_SLIDES", "100"))
