@@ -1,5 +1,5 @@
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.api.schemas.dashboard import AdminDashboardResponse, AdminUserResponse
 from app.auth.deps import require_admin
@@ -67,3 +67,48 @@ async def update_user_status(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="CRUD service is unavailable",
         ) from exc
+
+
+@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(
+    user_id: str,
+    admin=Depends(require_admin),
+) -> Response:
+    if str(admin["user_id"]) == user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Administrators cannot delete their own account",
+        )
+
+    try:
+        target = await crud_client.get_user(user_id)
+        if target is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+        if target.get("role") != "user":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Administrator accounts cannot be deleted here",
+            )
+        await crud_client.delete_user(user_id)
+    except HTTPException:
+        raise
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code in (404, 422):
+            raise HTTPException(
+                status_code=exc.response.status_code,
+                detail=_http_error_detail(exc, "Unable to delete user"),
+            ) from exc
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="CRUD service is unavailable",
+        ) from exc
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="CRUD service is unavailable",
+        ) from exc
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

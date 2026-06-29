@@ -27,7 +27,6 @@ export const API_ENDPOINTS = {
     delete: (id: string) => `/api/files/${id}`,
   },
   settings: {
-    me: "/api/users/me/settings",
     profile: "/api/users/me",
     avatar: "/api/users/me/avatar",
     account: "/api/users/me",
@@ -36,7 +35,6 @@ export const API_ENDPOINTS = {
     data: "/api/admin",
     users: "/api/admin/users",
     userStatus: (id: string) => `/api/admin/users/${id}/status`,
-    scenarios: "/api/admin/scenarios",
-    scenario: (id: string) => `/api/admin/scenarios/${id}`,
+    deleteUser: (id: string) => `/api/admin/users/${id}`,
   },
 } as const;

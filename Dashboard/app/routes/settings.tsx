@@ -1,28 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  AlertCircle,
-  Bell,
-  CheckCircle,
-  LogOut,
-  Shield,
-  User,
-} from 'lucide-react';
+import { AlertCircle, CheckCircle, LogOut, Shield, User } from 'lucide-react';
 import { PageLayout } from '../components/PageLayout';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { useAuth } from '../context/AuthContext';
-import {
-  deleteAccount,
-  getSettings,
-  saveSettings,
-  updateUserProfile,
-  uploadAvatar,
-} from '../services/settingsService';
+import { deleteAccount, updateUserProfile, uploadAvatar } from '../services/settingsService';
 import { changePasswordCall } from '../services/authService';
 import { isStrongPassword } from '../utils/accountValidation';
 import { getApiErrorMessage } from '../utils/apiError';
 import { confirmDeletion } from '../utils/confirmDeletion';
 
-type SettingsTab = 'profile' | 'notifications' | 'account';
+type SettingsTab = 'profile' | 'account';
 
 export default function Settings() {
   const { user, logout, updateUser } = useAuth();
@@ -31,12 +18,6 @@ export default function Settings() {
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [firstName, setFirstName] = useState(user?.firstName ?? '');
   const [lastName, setLastName] = useState(user?.lastName ?? '');
-  const [sessionAnalysisNotifications, setSessionAnalysisNotifications] =
-    useState(true);
-  const [weeklyDigest, setWeeklyDigest] = useState(false);
-  const [settingsLoadError, setSettingsLoadError] = useState<string | null>(
-    null,
-  );
   const [avatar, setAvatar] = useState<string | null>(user?.avatar ?? null);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -51,25 +32,6 @@ export default function Settings() {
     setLastName(user?.lastName ?? '');
     setAvatar(user?.avatar ?? null);
   }, [user?.id]);
-
-  const loadNotificationSettings = async () => {
-    try {
-      setSettingsLoadError(null);
-      const settings = await getSettings();
-      setSessionAnalysisNotifications(
-        settings.sessionAnalysisNotifications ?? true,
-      );
-      setWeeklyDigest(settings.weeklyDigest ?? false);
-    } catch (error) {
-      setSettingsLoadError(
-        getApiErrorMessage(error, 'Failed to load notification settings'),
-      );
-    }
-  };
-
-  useEffect(() => {
-    void loadNotificationSettings();
-  }, []);
 
   const showToast = (
     message: string,
@@ -131,11 +93,6 @@ export default function Settings() {
           lastName: trimmedLastName,
           name: `${trimmedFirstName} ${trimmedLastName}`,
         });
-      } else if (activeTab === 'notifications') {
-        await saveSettings({
-          sessionAnalysisNotifications,
-          weeklyDigest,
-        });
       }
 
       showToast('Settings saved successfully');
@@ -147,21 +104,9 @@ export default function Settings() {
     }
   };
 
-  const handleDiscard = async () => {
-    if (activeTab === 'profile') {
-      setFirstName(user?.firstName ?? '');
-      setLastName(user?.lastName ?? '');
-      return;
-    }
-
-    try {
-      await loadNotificationSettings();
-    } catch (error) {
-      showToast(
-        getApiErrorMessage(error, 'Failed to reload settings'),
-        'error',
-      );
-    }
+  const handleDiscard = () => {
+    setFirstName(user?.firstName ?? '');
+    setLastName(user?.lastName ?? '');
   };
 
   const handleDeleteAccount = async () => {
@@ -245,7 +190,7 @@ export default function Settings() {
         <div className="mb-8">
           <h1 className="text-3xl font-black tracking-tight">Settings</h1>
           <p className="text-[#9aa1bc] mt-1">
-            Manage your profile, notifications, and account security.
+            Manage your profile and account security.
           </p>
         </div>
 
@@ -256,12 +201,6 @@ export default function Settings() {
               label="Profile Information"
               active={activeTab === 'profile'}
               onClick={() => setActiveTab('profile')}
-            />
-            <TabButton
-              icon={<Bell size={18} />}
-              label="Notifications"
-              active={activeTab === 'notifications'}
-              onClick={() => setActiveTab('notifications')}
             />
             <TabButton
               icon={<Shield size={18} />}
@@ -349,50 +288,6 @@ export default function Settings() {
                     />
                   </div>
 
-                </div>
-              )}
-
-              {activeTab === 'notifications' && (
-                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <h2 className="text-xl font-black text-white mb-6">
-                    Notification Preferences
-                  </h2>
-                  {settingsLoadError && (
-                    <div className="mb-6 flex items-start justify-between gap-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4">
-                      <div className="flex items-start gap-3">
-                        <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
-                        <div>
-                          <p className="text-sm font-bold text-red-300">
-                            Could not load notification settings
-                          </p>
-                          <p className="mt-1 text-xs text-red-200/80">
-                            {settingsLoadError}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => void loadNotificationSettings()}
-                        className="shrink-0 text-sm font-bold text-red-300 hover:text-white"
-                      >
-                        Retry
-                      </button>
-                    </div>
-                  )}
-                  <div className="space-y-6">
-                    <ToggleRow
-                      title="Session Processing Analysis"
-                      desc="Get notified when AI finishes analyzing your VR session."
-                      checked={sessionAnalysisNotifications}
-                      onChange={setSessionAnalysisNotifications}
-                    />
-                    <ToggleRow
-                      title="Weekly Digest"
-                      desc="Receive a weekly email summarizing your performance progression."
-                      checked={weeklyDigest}
-                      onChange={setWeeklyDigest}
-                    />
-                  </div>
                 </div>
               )}
 
@@ -575,37 +470,5 @@ function TabButton({
       </span>
       {label}
     </button>
-  );
-}
-
-function ToggleRow({
-  title,
-  desc,
-  checked,
-  onChange,
-}: {
-  title: string;
-  desc: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-6 p-4 rounded-xl bg-[#1b1d28] border border-[#272b3a]">
-      <div>
-        <h4 className="text-white font-bold text-sm mb-1">{title}</h4>
-        <p className="text-[#5c6484] text-xs">{desc}</p>
-      </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${checked ? 'bg-[#5c7cff]' : 'bg-[#393f56]'}`}
-      >
-        <span
-          className={`absolute left-0 top-1 w-4 h-4 rounded-full bg-white transition-transform ${checked ? 'translate-x-7' : 'translate-x-1'}`}
-        />
-      </button>
-    </div>
   );
 }

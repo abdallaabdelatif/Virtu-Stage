@@ -9,7 +9,6 @@ import {
   Shield,
   LogOut,
   Menu,
-  Bell,
   Users,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -192,14 +191,6 @@ export function PageLayout({ children }: PageLayoutProps) {
           </button>
           <div className="flex-1" />
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              aria-label="Open notifications"
-              className="relative p-2 rounded-xl hover:bg-white/5 transition-colors"
-            >
-              <Bell className="w-5 h-5 text-[#9aa1bc]" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#5c7cff] rounded-full" />
-            </button>
             <Link
               to="/settings"
               className="w-8 h-8 rounded-full bg-[#5c7cff]/30 flex items-center justify-center text-[#5c7cff] font-bold text-sm overflow-hidden flex-shrink-0"

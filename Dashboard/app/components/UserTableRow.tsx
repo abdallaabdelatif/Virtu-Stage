@@ -1,5 +1,6 @@
-// app/components/UserTableRow.tsx
-import { MoreVertical } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { LoaderCircle, MoreVertical } from 'lucide-react';
 import { styles } from '../utils/styles';
 import type { ManagedUser } from '../types/admin';
 
@@ -8,6 +9,8 @@ interface UserTableRowProps {
   openMenu: string | null;
   onToggleMenu: (id: string | null) => void;
   onDisable: (id: string) => void;
+  onDelete: (id: string) => void;
+  isBusy: boolean;
 }
 
 export function UserTableRow({
@@ -15,7 +18,60 @@ export function UserTableRow({
   openMenu,
   onToggleMenu,
   onDisable,
+  onDelete,
+  isBusy,
 }: UserTableRowProps) {
+  const actionButtonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  const isMenuOpen = openMenu === user.id;
+
+  const toggleMenu = () => {
+    if (isMenuOpen) {
+      onToggleMenu(null);
+      return;
+    }
+
+    const bounds = actionButtonRef.current?.getBoundingClientRect();
+    if (bounds) {
+      const menuWidth = 176;
+      const menuHeight = 94;
+      const gap = 6;
+      const top = bounds.bottom + gap + menuHeight <= window.innerHeight
+        ? bounds.bottom + gap
+        : bounds.top - menuHeight - gap;
+      setMenuPosition({
+        top: Math.max(8, top),
+        left: Math.max(8, Math.min(bounds.right - menuWidth, window.innerWidth - menuWidth - 8)),
+      });
+    }
+    onToggleMenu(user.id);
+  };
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (
+        !actionButtonRef.current?.contains(target) &&
+        !menuRef.current?.contains(target)
+      ) {
+        onToggleMenu(null);
+      }
+    };
+    const closeMenu = () => onToggleMenu(null);
+
+    document.addEventListener('pointerdown', closeOnOutsideClick);
+    window.addEventListener('resize', closeMenu);
+    window.addEventListener('scroll', closeMenu, true);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsideClick);
+      window.removeEventListener('resize', closeMenu);
+      window.removeEventListener('scroll', closeMenu, true);
+    };
+  }, [isMenuOpen, onToggleMenu]);
+
   return (
     <tr className={styles.tableRow}>
       <td className="py-4 pr-4">
@@ -27,24 +83,31 @@ export function UserTableRow({
       <td className="py-4 text-[#9aa1bc]">{user.sessions}</td>
       <td className="py-4 text-[#9aa1bc]">{user.joinedAt}</td>
       <td className="py-4">
-        <span className={`px-2 py-1 rounded-lg text-xs font-bold ${
-          user.role === "admin"
-            ? "bg-[#5c7cff]/20 text-[#5c7cff]"
-            : "bg-[#272b3a] text-[#9aa1bc]"
-        }`}>
-          {user.role}
-        </span>
-      </td>
-      <td className="py-4 relative">
         <button
-          onClick={() => onToggleMenu(openMenu === user.id ? null : user.id)}
-          className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+          ref={actionButtonRef}
+          type="button"
+          aria-label={`Actions for ${user.name}`}
+          aria-expanded={isMenuOpen}
+          disabled={isBusy}
+          onClick={toggleMenu}
+          className="p-1 hover:bg-white/10 rounded-lg transition-colors disabled:cursor-wait disabled:opacity-60"
         >
-          <MoreVertical className="w-4 h-4 text-[#9aa1bc]" />
+          {isBusy ? (
+            <LoaderCircle className="w-4 h-4 animate-spin text-[#5c7cff]" />
+          ) : (
+            <MoreVertical className="w-4 h-4 text-[#9aa1bc]" />
+          )}
         </button>
-        {openMenu === user.id && (
-          <div className="absolute right-0 top-10 z-10 bg-[#1b1d28] border border-[#393f56] rounded-xl shadow-xl w-44 overflow-hidden">
+        {isMenuOpen && typeof document !== 'undefined' && createPortal(
+          <div
+            ref={menuRef}
+            role="menu"
+            style={{ top: menuPosition.top, left: menuPosition.left }}
+            className="fixed z-[100] w-44 overflow-hidden rounded-xl border border-[#393f56] bg-[#1b1d28] shadow-xl"
+          >
             <button
+              type="button"
+              role="menuitem"
               onClick={() => onDisable(user.id)}
               className={`w-full text-left px-4 py-2.5 text-sm hover:bg-white/5 ${
                 user.disabled ? "text-[#0bda62]" : "text-red-400"
@@ -52,7 +115,16 @@ export function UserTableRow({
             >
               {user.disabled ? "Enable User" : "Disable User"}
             </button>
-          </div>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => onDelete(user.id)}
+              className="w-full border-t border-[#393f56] px-4 py-2.5 text-left text-sm text-red-400 hover:bg-red-500/10"
+            >
+              Delete User
+            </button>
+          </div>,
+          document.body,
         )}
       </td>
     </tr>

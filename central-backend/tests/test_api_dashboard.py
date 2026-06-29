@@ -123,3 +123,50 @@ def test_admin_users_endpoint(admin_client):
     assert response.status_code == 200
     assert len(response.json()) == 1
     assert response.json()[0]["session_count"] == 3
+
+
+def test_admin_can_delete_regular_user(admin_client, monkeypatch):
+    client, _ = admin_client
+    target_id = client.get(
+        "/api/admin/users",
+        headers={"Authorization": "Bearer test-token"},
+    ).json()[0]["user_id"]
+    deleted_ids = []
+
+    async def fake_delete_user(user_id: str):
+        deleted_ids.append(user_id)
+
+    monkeypatch.setattr(
+        "app.api.admin.crud_client.delete_user",
+        fake_delete_user,
+    )
+
+    response = client.delete(
+        f"/api/admin/users/{target_id}",
+        headers={"Authorization": "Bearer test-token"},
+    )
+
+    assert response.status_code == 204
+    assert deleted_ids == [target_id]
+
+
+def test_admin_cannot_delete_self(admin_client, monkeypatch):
+    client, admin_id = admin_client
+
+    async def fail_if_called(_user_id: str):
+        raise AssertionError("CRUD delete should not be called")
+
+    monkeypatch.setattr(
+        "app.api.admin.crud_client.delete_user",
+        fail_if_called,
+    )
+
+    response = client.delete(
+        f"/api/admin/users/{admin_id}",
+        headers={"Authorization": "Bearer test-token"},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == (
+        "Administrators cannot delete their own account"
+    )

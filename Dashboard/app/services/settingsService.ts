@@ -2,24 +2,9 @@ import { API_ENDPOINTS } from '../config/api';
 import type {
   AvatarUploadResponse,
   UpdateProfileRequest,
-  UpdateSettingsRequest,
-  UserSettings,
 } from '../types/settings';
 import type { BackendUserDto } from '../types/auth';
 import api from '../utils/api';
-
-export const getSettings = async () => {
-  const { data } = await api.get<UserSettings>(API_ENDPOINTS.settings.me);
-  return data;
-};
-
-export const saveSettings = async (settings: UpdateSettingsRequest) => {
-  const { data } = await api.patch<UserSettings>(
-    API_ENDPOINTS.settings.me,
-    settings,
-  );
-  return data;
-};
 
 export const updateUserProfile = async (
   firstName: string,

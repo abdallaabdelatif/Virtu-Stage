@@ -18,9 +18,3 @@ export interface PlatformActivity {
   desc: string;
   time: string;
 }
-
-export interface TrainingScenario {
-  id: string;
-  name: string;
-  enabled: boolean;
-}

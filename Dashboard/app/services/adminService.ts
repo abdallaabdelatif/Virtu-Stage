@@ -26,3 +26,7 @@ export const updateManagedUser = async (
   );
   return data;
 };
+
+export const deleteManagedUser = async (id: string): Promise<void> => {
+  await api.delete(API_ENDPOINTS.admin.deleteUser(id));
+};
