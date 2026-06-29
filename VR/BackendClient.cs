@@ -67,6 +67,8 @@ public class BackendClient : MonoBehaviour
     [SerializeField] public InputActionReference nextSlideAction;
     [SerializeField] public InputActionReference previousSlideAction;
 
+    [SerializeField] public LoadingScreen loadingScreen;
+
     private async void Start()
     {
         var mic = FindObjectOfType<MicCapture>();
@@ -91,6 +93,10 @@ public class BackendClient : MonoBehaviour
 
         ws.OnOpen += () =>
         {
+            if(selectedMode == 1)
+            {
+                loadingScreen.Hide();
+            }
             connected = true;
             Debug.Log($"Connected to backend session {sessionId}");
             //var modeMessage = new SetModeMessage{
@@ -142,11 +148,14 @@ public class BackendClient : MonoBehaviour
         ws.OnClose += (code) =>
         {
             connected = false;
+            loadingScreen.Hide();
             Debug.Log($"Backend websocket closed: {code}");
         };
 
         ws.OnError += (err) =>
         {
+            if (!connected)
+                loadingScreen.Hide();
             Debug.LogError(err);
         };
 
@@ -284,6 +293,7 @@ public class BackendClient : MonoBehaviour
             currentSlide = 0;
             presentationImage.texture = slideTextures[0];
         }
+        loadingScreen.Hide();
     }
 
     private IEnumerator DownloadSlide(string imageUrl)
@@ -294,6 +304,7 @@ public class BackendClient : MonoBehaviour
 
         if (request.result != UnityWebRequest.Result.Success)
         {
+            loadingScreen.Hide();
             Debug.LogError(request.error);
             yield break;
         }

@@ -17,6 +17,7 @@ public class VRMenuController : MonoBehaviour
     public GameObject mainMenuPanel;
     public GameObject interviewMenuPanel;
     public GameObject presentationMenuPanel;
+    public LoadingScreen loadingScreen;
 
     [Header("Job Menu")]
     public TMP_Dropdown jobDropdown;
@@ -115,7 +116,7 @@ public class VRMenuController : MonoBehaviour
         if (!string.IsNullOrEmpty(StageSceneName))
         {
             Debug.Log("Loading scene: " + StageSceneName);
-            SceneManager.LoadScene(StageSceneName);
+            StartCoroutine(LoadSpeakingScene());
         }
     }
 
@@ -131,7 +132,9 @@ public class VRMenuController : MonoBehaviour
         if (!string.IsNullOrEmpty(MainMenuSceneName))
         {
             Debug.Log("Loading scene: " + MainMenuSceneName);
+            loadingScreen.Show();
             SceneManager.LoadScene(MainMenuSceneName);
+            loadingScreen.Hide();
         }
     }
     public void OpenJobMenu()
@@ -170,10 +173,30 @@ public class VRMenuController : MonoBehaviour
 
         if (!string.IsNullOrEmpty(interviewSceneName))
         {
-            SceneManager.LoadScene(interviewSceneName);
+            StartCoroutine(LoadInterviewScene());
         }
     }
+    public IEnumerator LoadInterviewScene()
+    {
+        loadingScreen.Show();
 
+        yield return null;
+
+        AsyncOperation op = SceneManager.LoadSceneAsync(interviewSceneName);
+
+        while (!op.isDone)
+            yield return null;
+    }
+
+    public IEnumerator LoadSpeakingScene()
+    {
+        loadingScreen.Show();
+        yield return null;
+        AsyncOperation op = SceneManager.LoadSceneAsync(StageSceneName);
+
+        while (!op.isDone)
+            yield return null;
+    }
     private void OnPresentationSelected(int index)
     {
         if (index < 0 || index >= presentations.Count)
