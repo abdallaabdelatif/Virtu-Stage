@@ -9,7 +9,7 @@ class Settings:
     DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
     ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
     ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID")
-    CENTRAL_BACKEND_WS_URL = os.getenv("CENTRAL_BACKEND_WS_URL", "ws://localhost:9000")
+    CENTRAL_BACKEND_WS_URL = os.getenv("CENTRAL_BACKEND_WS_URL", "ws://localhost:8082")
     INTERNAL_API_KEY = os.getenv(
         "INTERNAL_API_KEY", "development-internal-key-change-me"
     )
