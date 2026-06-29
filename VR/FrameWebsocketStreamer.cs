@@ -17,7 +17,7 @@ public class FrameWebSocketStreamer : MonoBehaviour
     [Range(40, 90)] public int jpgQuality = 70;
 
     [Header("WebSocket")]
-    public string wsBaseUrl = "ws://192.168.0.165:9000";
+    public string wsBaseUrl = "ws://192.168.0.165:8082";
     public int framesPerBatch = 30;
 
     private Camera cam;

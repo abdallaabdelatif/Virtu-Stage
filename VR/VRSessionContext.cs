@@ -6,11 +6,13 @@ public static class VRSessionContext
     public static bool IsLoggedIn => !string.IsNullOrEmpty(AccessToken);
 
     public static string SessionId = string.Empty;
+    public static string PresentationId = string.Empty;
     public static void Clear()
     {
         AccessToken = string.Empty;
         Username = string.Empty;
         user_id = string.Empty;
         SessionId = string.Empty;
+        PresentationId = string.Empty;
     }
 }

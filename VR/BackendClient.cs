@@ -6,14 +6,16 @@ using UnityEngine.Networking;
 using NativeWebSocket;
 using System.Text;
 using Unity.Jobs;
+using UnityEngine.UI;
+using UnityEngine.InputSystem;
 
 public class BackendClient : MonoBehaviour
 {
     [SerializeField]
-    private string backendApiBaseUrl = "http://192.168.0.165:9000";
+    private string backendApiBaseUrl = "http://192.168.0.165:8082";
 
     [SerializeField]
-    private string wsBaseUrl = "ws://192.168.0.165:9000";
+    private string wsBaseUrl = "ws://192.168.0.165:8082";
 
     [SerializeField]
     private int selectedMode = 1;
@@ -58,6 +60,13 @@ public class BackendClient : MonoBehaviour
         public string sessionId;
     }
 
+    [SerializeField] public RawImage presentationImage;
+
+    private readonly List<Texture2D> slideTextures = new();
+    private int currentSlide = 0;
+    [SerializeField] public InputActionReference nextSlideAction;
+    [SerializeField] public InputActionReference previousSlideAction;
+
     private async void Start()
     {
         var mic = FindObjectOfType<MicCapture>();
@@ -69,10 +78,15 @@ public class BackendClient : MonoBehaviour
             Debug.LogError("Failed to create session with central backend");
             return;
         }
+        if (selectedMode == 2)
+        {
+            StartCoroutine(LoadPresentationSlides());
+        }
         var headers = new Dictionary<string, string>
         {
             { "Authorization", $"Bearer {VRSessionContext.AccessToken}" }
         };
+
         ws = new WebSocket($"{wsBaseUrl}/ws/vr/audio/{sessionId}",headers);
 
         ws.OnOpen += () =>
@@ -221,6 +235,175 @@ public class BackendClient : MonoBehaviour
         Debug.Log("Requested presentation question from backend");
     }
 
+    [Serializable]
+    private class SlideInfo
+    {
+        public int number;
+        public int width;
+        public int height;
+        public int size_bytes;
+        public string url;
+        public string expires_at;
+    }
+
+    [Serializable]
+    private class PresentationSlides
+    {
+        public string file_id;
+        public string original_name;
+        public string processing_status;
+        public int slide_count;
+        public SlideInfo[] slides;
+    }
+    private IEnumerator LoadPresentationSlides()
+    {
+        slideTextures.Clear();
+
+        string url = $"{backendApiBaseUrl}/api/files/{VRSessionContext.PresentationId}/slides";
+        using UnityWebRequest request = UnityWebRequest.Get(url);
+
+        request.SetRequestHeader("Authorization", $"Bearer {VRSessionContext.AccessToken}");
+
+        yield return request.SendWebRequest();
+
+        if (request.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError(request.error);
+            yield break;
+        }
+
+        PresentationSlides manifest = JsonUtility.FromJson<PresentationSlides>(request.downloadHandler.text);
+
+        foreach (SlideInfo slide in manifest.slides)
+        {
+            yield return StartCoroutine(DownloadSlide(slide.url));
+        }
+
+        if (slideTextures.Count > 0)
+        {
+            currentSlide = 0;
+            presentationImage.texture = slideTextures[0];
+        }
+    }
+
+    private IEnumerator DownloadSlide(string imageUrl)
+    {
+        using UnityWebRequest request = UnityWebRequestTexture.GetTexture(imageUrl);
+
+        yield return request.SendWebRequest();
+
+        if (request.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError(request.error);
+            yield break;
+        }
+
+        Texture2D tex = DownloadHandlerTexture.GetContent(request);
+
+        slideTextures.Add(tex);
+    }
+
+    private void OnEnable()
+    {
+        nextSlideAction.action.performed += OnNextSlide;
+        previousSlideAction.action.performed += OnPreviousSlide;
+
+        nextSlideAction.action.Enable();
+        previousSlideAction.action.Enable();
+    }
+
+    private void OnDisable()
+    {
+        nextSlideAction.action.performed -= OnNextSlide;
+        previousSlideAction.action.performed -= OnPreviousSlide;
+
+        nextSlideAction.action.Disable();
+        previousSlideAction.action.Disable();
+    }
+
+    private void OnNextSlide(InputAction.CallbackContext ctx)
+    {
+        NextSlide();
+    }
+
+    private void OnPreviousSlide(InputAction.CallbackContext ctx)
+    {
+        PreviousSlide();
+    }
+    private void ShowSlide(int index)
+    {
+        if (index < 0 || index >= slideTextures.Count)
+            return;
+
+        currentSlide = index;
+        presentationImage.texture = slideTextures[currentSlide];
+    }
+    public void NextSlide()
+    {
+        if (currentSlide < slideTextures.Count - 1)
+        {
+            ShowSlide(currentSlide + 1);
+        }
+    }
+
+    public void PreviousSlide()
+    {
+        if (currentSlide > 0)
+        {
+            ShowSlide(currentSlide - 1);
+        }
+    }
+    public async System.Threading.Tasks.Task<bool> FinishSession()
+    {
+        if (string.IsNullOrEmpty(sessionId))
+        {
+            Debug.LogError("No active session to finish.");
+            return false;
+        }
+
+        using var webRequest = new UnityWebRequest($"{backendApiBaseUrl}/sessions/{sessionId}/finish",UnityWebRequest.kHttpVerbPOST);
+
+        webRequest.downloadHandler = new DownloadHandlerBuffer();
+
+        if (!string.IsNullOrEmpty(VRSessionContext.AccessToken))
+        {
+            webRequest.SetRequestHeader("Authorization",$"Bearer {VRSessionContext.AccessToken}");
+        }
+
+        var operation = webRequest.SendWebRequest();
+
+        while (!operation.isDone)
+        {
+            await System.Threading.Tasks.Task.Yield();
+        }
+
+        if (webRequest.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError($"FinishSession failed: {webRequest.error}");
+            return false;
+        }
+
+        Debug.Log("Session finished successfully.");
+        return true;
+    }
+
+    public async System.Threading.Tasks.Task Disconnect()
+    {
+        await FinishSession();
+        VRSessionContext.SessionId = string.Empty;
+        sessionId = string.Empty;
+        if (ws != null)
+        {
+            if (connected)
+            {
+                ws.SendText("{\"type\":\"audio_end\"}");
+            }
+
+            await ws.Close();
+        }
+
+        connected = false;
+    }
     private async void OnDestroy()
     {
         if (ws != null)
