@@ -14,6 +14,7 @@ __pycache__/
 .Python
 **/___pycache__/
 Voice-Analysis-Service/wav2vec2_checkpoints
+
 # Database Files 
 *.db
 *.sqlite
