@@ -46,3 +46,8 @@ app.include_router(library_file_router.router)
 @app.get("/")
 async def root() -> dict[str, str]:
     return {"message": "Server started successfully"}
+
+
+@app.get("/health")
+async def health() -> dict[str, str]:
+    return {"status": "ok"}

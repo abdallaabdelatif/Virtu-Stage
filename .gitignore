@@ -13,7 +13,6 @@ __pycache__/
 *.pyd
 .Python
 **/___pycache__/
-*wav2vec2_checkpoints
 
 # Database Files 
 *.db

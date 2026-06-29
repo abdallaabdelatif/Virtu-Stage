@@ -1,24 +1,14 @@
 fastapi==0.138.1
 uvicorn[standard]==0.49.0
-python-multipart==0.0.32   
-aiofiles==25.1.0          
+python-dotenv>=1.0.0,<2
 
-numpy==1.26.4             
-scipy==1.14.1         
+numpy==1.26.4
+scipy==1.14.1
 
-soundfile==0.14.0        
-ffmpeg-python==0.2.0      
+soundfile==0.14.0
 
-librosa==0.10.2.post1      
+librosa==0.10.2.post1
 
-praat-parselmouth==0.4.7  
-
-openai-whisper==20250625   
-
-# PyTorch
-# Install separately before installing the requirements.txt file
-# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-# Then run: pip install -r requirements.txt
-torch>=2.0.0
+praat-parselmouth==0.4.7
 
 pydantic==2.13.4

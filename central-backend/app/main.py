@@ -33,7 +33,7 @@ _PUBLIC_PATHS = {
     "/api/auth/register",
     "/api/auth/forgot-password",
     "/api/auth/reset-password",
-    "/sessions",
+    "/health",
     "/voice-analyses",
     "/motion-analyses",
     "/openapi.json",
@@ -45,7 +45,6 @@ async def auth_middleware(request: Request, call_next):
     is_public = (
         request.method == "OPTIONS"
         or path in _PUBLIC_PATHS
-        or (path.startswith("/sessions/") and path.endswith("/finish"))
     )
     if is_public:
         return await call_next(request)
@@ -89,3 +88,8 @@ app.include_router(admin_router)
 @app.get("/")
 async def root():
     return {"message": "central-backend running"}
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}

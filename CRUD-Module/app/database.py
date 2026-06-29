@@ -7,6 +7,12 @@ import os
 
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./app.db")
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
+
+if ENVIRONMENT == "production" and not DATABASE_URL.startswith(
+    ("postgresql://", "postgres://", "postgresql+asyncpg://")
+):
+    raise RuntimeError("Production CRUD requires a PostgreSQL DATABASE_URL")
 
 if DATABASE_URL.startswith("postgresql://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)

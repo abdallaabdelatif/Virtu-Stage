@@ -1,11 +1,10 @@
 import asyncio
 import json
-import os
 
 from fastapi import FastAPI
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
-from websockets.client import connect as ws_connect
+from websockets.asyncio.client import connect as ws_connect
 
 from config.settings import settings
 
@@ -19,8 +18,15 @@ from voice_analysis_bridge import build_transcript_ws_url, create_transcript_pay
 
 app = FastAPI()
 
+
+@app.get("/health")
+async def health() -> dict[str, str]:
+    return {"status": "ok"}
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
+
+    settings.validate_runtime()
 
     await websocket.accept()
     print("Unity connected")
@@ -71,12 +77,17 @@ async def websocket_endpoint(websocket: WebSocket):
     pipeline = ConversationPipeline(llm,tts)
 
     transcript_ws = None
-    transcript_ws_url = build_transcript_ws_url(settings.VOICE_ANALYSIS_WS_URL, session_id)
+    transcript_ws_url = build_transcript_ws_url(
+        settings.CENTRAL_BACKEND_WS_URL, session_id
+    )
     try:
-        transcript_ws = await ws_connect(transcript_ws_url)
-        print(f"Voice analysis transcript websocket connected: {transcript_ws_url}")
+        transcript_ws = await ws_connect(
+            transcript_ws_url,
+            additional_headers={"X-Internal-API-Key": settings.INTERNAL_API_KEY},
+        )
+        print(f"Central backend transcript websocket connected: {transcript_ws_url}")
     except Exception as exc:  # pragma: no cover - defensive runtime path
-        print(f"Could not connect to voice analysis transcript websocket: {exc}")
+        print(f"Could not connect to central backend transcript websocket: {exc}")
 
     await stt.connect()
 

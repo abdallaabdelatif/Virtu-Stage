@@ -8,15 +8,8 @@ VOICE_ANALYSIS_WS_URL = os.getenv("VOICE_ANALYSIS_WS_URL", "ws://localhost:8001"
 CONVERSATIONAL_COMPONENT_WS_URL = os.getenv(
     "CONVERSATIONAL_COMPONENT_WS_URL", "ws://localhost:8002/ws"
 )
-VIDEO_ANALYSIS_WS_URL = os.getenv("VIDEO_ANALYSIS_WS_URL", "ws://localhost:9001")
 MOTION_ANALYSIS_WS_URL = os.getenv(
-    "MOTION_ANALYSIS_WS_URL", VIDEO_ANALYSIS_WS_URL
-)
-VR_DEFAULT_USER_ID = os.getenv("VR_DEFAULT_USER_ID", "")
-CENTRALIZED_BACKEND_URL = os.getenv("CENTRALIZED_BACKEND_URL", "http://localhost:9000")
-VOICE_ANALYSIS_RESULT_CALLBACK_URL = os.getenv(
-    "VOICE_ANALYSIS_RESULT_CALLBACK_URL",
-    f"{CENTRALIZED_BACKEND_URL.rstrip('/')}/voice-analyses",
+    "MOTION_ANALYSIS_WS_URL", "ws://localhost:9001"
 )
 ANALYSIS_TIMEOUT_SECONDS = int(os.getenv("ANALYSIS_TIMEOUT_SECONDS", "600"))
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me-super-secret")
@@ -49,3 +42,10 @@ GOTENBERG_URL = os.getenv("GOTENBERG_URL", "http://localhost:3001").rstrip("/")
 GOTENBERG_TIMEOUT_SECONDS = int(os.getenv("GOTENBERG_TIMEOUT_SECONDS", "120"))
 PRESENTATION_MAX_SLIDES = int(os.getenv("PRESENTATION_MAX_SLIDES", "100"))
 PRESENTATION_IMAGE_WIDTH = int(os.getenv("PRESENTATION_IMAGE_WIDTH", "1920"))
+
+
+if ENVIRONMENT == "production":
+    if SECRET_KEY == "change-me-super-secret" or len(SECRET_KEY) < 32:
+        raise RuntimeError("SECRET_KEY must be a unique secret of at least 32 characters")
+    if INTERNAL_API_KEY == "development-internal-key-change-me" or len(INTERNAL_API_KEY) < 32:
+        raise RuntimeError("INTERNAL_API_KEY must be a unique secret of at least 32 characters")

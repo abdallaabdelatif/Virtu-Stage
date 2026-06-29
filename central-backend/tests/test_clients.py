@@ -46,8 +46,7 @@ async def test_voice_analysis_proxy_connect_url(monkeypatch):
     await proxy.connect()
 
     connect_mock.assert_awaited_once_with(
-        "ws://localhost:8001/ws/voice-analysis/audio/session-456?"
-        "result_callback_url=http%3A%2F%2Flocalhost%3A9000%2Fvoice-analyses"
+        "ws://localhost:8001/ws/voice-analysis/audio/session-456"
     )
     await proxy.close()
     dummy_ws.close.assert_awaited_once()

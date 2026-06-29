@@ -31,14 +31,15 @@ ordered, short-lived URLs for the generated PNG files.
 Deploy this folder as the central backend service:
 
 ```text
-Root Directory: /central-backend
-Railway Config File: /central-backend/railway.toml
+Railway service: central-backend
+Root Directory: /backend/central-backend
+Railway Config File: /backend/central-backend/railway.toml
 ```
 
 Required service variables:
 
 ```env
-CRUD_BASE_URL=https://<crud-service-domain>.up.railway.app
+CRUD_BASE_URL=http://<crud-private-domain>:<crud-port>
 INTERNAL_API_KEY=<same-secret-used-by-crud-service>
 SECRET_KEY=<long-random-secret>
 FRONTEND_URL=https://virtu-stage-dashboard.vercel.app
@@ -49,3 +50,6 @@ GOTENBERG_URL=http://gotenberg:3000
 
 This service does not connect directly to PostgreSQL and does not need `DATABASE_URL`.
 The frontend should call this central backend URL, not the CRUD service URL.
+Voice, Motion, and Conversational AI URLs should use their Railway private
+domains. See [`../RAILWAY_DEPLOYMENT.md`](../RAILWAY_DEPLOYMENT.md) for exact
+service names, config paths, variable references, CORS, and networking.

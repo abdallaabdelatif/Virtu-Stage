@@ -5,6 +5,8 @@ import logging
 from typing import Any
 from urllib import error, request
 
+from app.config import INTERNAL_API_KEY
+
 
 logger = logging.getLogger(__name__)
 
@@ -15,12 +17,18 @@ async def post_result(
     payload: dict[str, Any],
     timeout_sec: float = 10.0,
 ) -> bool:
-    return await asyncio.to_thread(
-        _post_result_sync,
-        callback_url,
-        payload,
-        timeout_sec,
-    )
+    for attempt in range(1, 4):
+        posted = await asyncio.to_thread(
+            _post_result_sync,
+            callback_url,
+            payload,
+            timeout_sec,
+        )
+        if posted:
+            return True
+        if attempt < 3:
+            await asyncio.sleep(2 ** (attempt - 1))
+    return False
 
 
 def _post_result_sync(
@@ -32,7 +40,10 @@ def _post_result_sync(
     http_request = request.Request(
         callback_url,
         data=body,
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            "X-Internal-API-Key": INTERNAL_API_KEY,
+        },
         method="POST",
     )
 

@@ -12,8 +12,10 @@ from voice_analysis_bridge import (  # noqa: E402
 
 
 def test_build_transcript_ws_url_uses_session_id() -> None:
-    url = build_transcript_ws_url("ws://localhost:8001", "session-123")
-    assert url == "ws://localhost:8001/ws/voice-analysis/transcript/session-123"
+    url = build_transcript_ws_url("ws://localhost:9000", "session-123")
+    assert url == (
+        "ws://localhost:9000/ws/internal/voice-analysis/transcript/session-123"
+    )
 
 
 def test_create_transcript_payload_formats_expected_message() -> None:

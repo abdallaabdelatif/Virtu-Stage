@@ -19,8 +19,9 @@ INTERNAL_API_KEY=development-internal-key-change-me
 Deploy this folder as the CRUD service:
 
 ```text
-Root Directory: /CRUD-Module
-Railway Config File: /CRUD-Module/railway.toml
+Railway service: crud-module
+Root Directory: /backend/CRUD-Module
+Railway Config File: /backend/CRUD-Module/railway.toml
 ```
 
 Add a Railway PostgreSQL service and set these variables on the CRUD service:
@@ -28,6 +29,8 @@ Add a Railway PostgreSQL service and set these variables on the CRUD service:
 ```env
 DATABASE_URL=${{Postgres.DATABASE_URL}}
 INTERNAL_API_KEY=<same-secret-used-by-central-backend>
+ENVIRONMENT=production
+PORT=8080
 ```
 
 The app creates its tables and runs its lightweight migrations on startup.
@@ -47,3 +50,7 @@ Then run:
 ```bash
 python -m scripts.bootstrap_admin
 ```
+
+CRUD should have private networking only. See
+[`../RAILWAY_DEPLOYMENT.md`](../RAILWAY_DEPLOYMENT.md) for the complete production
+variable and networking matrix.

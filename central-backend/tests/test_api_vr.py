@@ -13,6 +13,7 @@ from app.api import vr as vr_module
 
 
 INTERNAL_HEADERS = {"X-Internal-API-Key": "development-internal-key-change-me"}
+AUTH_HEADERS = {"Authorization": "Bearer test-token"}
 
 
 @pytest.fixture(autouse=True)
@@ -22,7 +23,13 @@ def fake_auth(monkeypatch):
     async def fake_get_user(user_id: str):
         return {"user_id": user_id, "role": "user", "is_active": True}
 
+    async def fake_create_training_session(payload):
+        return payload
+
     monkeypatch.setattr("app.main.crud_client.get_user", fake_get_user)
+    monkeypatch.setattr(
+        vr_module.crud_client, "create_training_session", fake_create_training_session
+    )
     yield
     vr_module.session_store.clear()
 
@@ -34,10 +41,20 @@ def test_create_session():
     response = client.post(
         "/sessions",
         json={"session_id": session_id, "mode": 1, "job": "tester", "user_id": "test-user"},
+        headers=AUTH_HEADERS,
     )
 
     assert response.status_code == 201
     assert response.json() == {"session_id": session_id}
+
+
+def test_create_session_requires_bearer_token():
+    response = TestClient(app).post(
+        "/sessions",
+        json={"session_id": str(uuid.uuid4()), "mode": 1, "job": "tester"},
+    )
+
+    assert response.status_code == 401
 
 
 def test_create_session_duplicate():
@@ -47,10 +64,12 @@ def test_create_session_duplicate():
     client.post(
         "/sessions",
         json={"session_id": session_id, "mode": 1, "job": "tester", "user_id": "test-user"},
+        headers=AUTH_HEADERS,
     )
     response = client.post(
         "/sessions",
         json={"session_id": session_id, "mode": 1, "job": "tester", "user_id": "test-user"},
+        headers=AUTH_HEADERS,
     )
 
     assert response.status_code == 409
@@ -76,11 +95,30 @@ def test_ingest_voice_analysis_forwards_to_crud(monkeypatch):
         "words_per_minute": 130.0,
     }
 
-    response = client.post("/voice-analyses", json=payload)
+    response = client.post("/voice-analyses", json=payload, headers=INTERNAL_HEADERS)
 
     assert response.status_code == 201
     assert response.json()["success"] is True
     assert response.json()["session_id"] == payload["session_id"]
+
+
+def test_ingest_voice_analysis_requires_internal_key():
+    payload = {
+        "session_id": str(uuid.uuid4()),
+        "anxiety_level": 30.0,
+        "confidence_level": 80.0,
+        "clarity_level": 75.0,
+        "focus_level": 70.0,
+        "pause_ratio": 0.12,
+        "pause_count": 5,
+        "longest_pause_sec": 1.5,
+        "filler_word_count": 3,
+        "words_per_minute": 130.0,
+    }
+
+    response = TestClient(app).post("/voice-analyses", json=payload)
+
+    assert response.status_code == 401
 
 
 def test_cleanup_session_waits_for_other_streams_to_finish():

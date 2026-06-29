@@ -156,3 +156,13 @@ repeat frame_count times:
 | Voice-Analysis-Service | 8001 |
 | Motion-Analysis-Service | 9001 |
 | central-backend | 9000 |
+
+## Railway production
+
+Deploy as private service `motion-analysis` with root
+`/backend/Motion-Analysis-Service`, config
+`/backend/Motion-Analysis-Service/railway.toml`, and healthcheck `/health`.
+Production uses Railway `$PORT`, `MOTION_LIVE_PREVIEW=0`, a private
+`CENTRALIZED_BACKEND_URL`, and the shared `INTERNAL_API_KEY`. The MediaPipe model
+files in `models/` are copied into the image. See
+[`../RAILWAY_DEPLOYMENT.md`](../RAILWAY_DEPLOYMENT.md).
