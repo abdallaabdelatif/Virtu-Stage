@@ -1,49 +1,49 @@
-import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import {
   AlertTriangle,
   CheckCircle,
   CheckCircle2,
   Circle,
   KeyRound,
-} from "lucide-react";
-import { Button } from "../components/Button";
-import { EyeIcon } from "../components/icons";
-import { Input } from "../components/Input";
-import { resetPasswordCall } from "../services/authService";
+} from 'lucide-react';
+import { Button } from '../components/Button';
+import { EyeIcon } from '../components/icons';
+import { Input } from '../components/Input';
+import { resetPasswordCall } from '../services/authService';
 import {
   getPasswordChecks,
   isStrongPassword,
-} from "../utils/accountValidation";
-import { getApiErrorMessage } from "../utils/apiError";
+} from '../utils/accountValidation';
+import { getApiErrorMessage } from '../utils/apiError';
 
 export default function ResetPassword() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const token = searchParams.get("token")?.trim() ?? "";
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const token = searchParams.get('token')?.trim() ?? '';
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const passwordChecks = getPasswordChecks(password);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError("");
+    setError('');
 
     if (!token) {
-      setError("This password reset link is invalid.");
+      setError('This password reset link is invalid.');
       return;
     }
     if (!isStrongPassword(password)) {
-      setError("Password does not meet all strength requirements.");
+      setError('Password does not meet all strength requirements.');
       return;
     }
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError('Passwords do not match.');
       return;
     }
 
@@ -51,13 +51,13 @@ export default function ResetPassword() {
     try {
       await resetPasswordCall(token, password);
       setIsSuccess(true);
-      setPassword("");
-      setConfirmPassword("");
+      setPassword('');
+      setConfirmPassword('');
     } catch (requestError) {
       setError(
         getApiErrorMessage(
           requestError,
-          "Unable to reset your password. The link may be invalid or expired.",
+          'Unable to reset your password. The link may be invalid or expired.',
         ),
       );
     } finally {
@@ -67,13 +67,13 @@ export default function ResetPassword() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0a0c10] p-6 lg:p-12">
-      <div className="pointer-events-none absolute left-0 top-0 h-[500px] w-full bg-gradient-to-b from-[#5c7cff]/10 to-transparent lg:from-[#5c7cff]/5" />
-      <div className="pointer-events-none absolute right-[-5%] top-[-10%] h-[500px] w-[500px] rounded-full bg-[#5c7cff]/10 blur-[120px]" />
+      <div className="pointer-events-none absolute left-0 top-0 h-[500px] w-full bg-gradient-to-b from-brand/10 to-transparent lg:from-brand/5" />
+      <div className="pointer-events-none absolute right-[-5%] top-[-10%] h-[500px] w-[500px] rounded-full bg-brand/10 blur-[120px]" />
       <div className="pointer-events-none absolute bottom-[-10%] left-[-5%] h-[400px] w-[400px] rounded-full bg-[#0bda62]/5 blur-[100px]" />
 
       <div className="relative z-10 w-full max-w-md">
         <div className="relative overflow-hidden rounded-3xl border border-[#272b3a] bg-[#12141c]/80 p-8 shadow-2xl backdrop-blur-xl lg:p-10">
-          <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-[#5c7cff] to-[#0bda62]" />
+          <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-brand to-[#0bda62]" />
 
           {isSuccess ? (
             <div className="flex flex-col items-center py-6 text-center">
@@ -89,7 +89,7 @@ export default function ResetPassword() {
               </p>
               <Button
                 fullWidth
-                onClick={() => navigate("/", { replace: true })}
+                onClick={() => navigate('/', { replace: true })}
               >
                 Continue to Login
               </Button>
@@ -108,7 +108,7 @@ export default function ResetPassword() {
               </p>
               <Link
                 to="/forgot-password"
-                className="flex h-14 w-full items-center justify-center rounded-xl bg-[#5c7cff] px-6 font-bold text-white shadow-xl shadow-[#5c7cff]/20 transition-all hover:brightness-110"
+                className="flex h-14 w-full items-center justify-center rounded-xl bg-brand px-6 font-bold text-white shadow-xl shadow-brand/20 transition-all hover:brightness-110"
               >
                 Request New Link
               </Link>
@@ -116,8 +116,8 @@ export default function ResetPassword() {
           ) : (
             <>
               <div className="mb-8 mt-2 text-center">
-                <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#5c7cff]/10">
-                  <KeyRound className="h-7 w-7 text-[#5c7cff]" />
+                <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand/10">
+                  <KeyRound className="h-7 w-7 text-brand-soft" />
                 </div>
                 <h1 className="mb-3 text-3xl font-black tracking-wide text-white">
                   Create New Password
@@ -139,7 +139,9 @@ export default function ResetPassword() {
 
                 <Input
                   label="New Password"
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
+                  name="new-password"
+                  autoComplete="new-password"
                   placeholder="Enter your new password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
@@ -148,7 +150,7 @@ export default function ResetPassword() {
                     <button
                       type="button"
                       aria-label={
-                        showPassword ? "Hide password" : "Show password"
+                        showPassword ? 'Hide password' : 'Show password'
                       }
                       onClick={() => setShowPassword((current) => !current)}
                     >
@@ -182,7 +184,9 @@ export default function ResetPassword() {
 
                 <Input
                   label="Confirm New Password"
-                  type={showConfirmPassword ? "text" : "password"}
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  name="confirm-password"
+                  autoComplete="new-password"
                   placeholder="Confirm your new password"
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
@@ -192,8 +196,8 @@ export default function ResetPassword() {
                       type="button"
                       aria-label={
                         showConfirmPassword
-                          ? "Hide password confirmation"
-                          : "Show password confirmation"
+                          ? 'Hide password confirmation'
+                          : 'Show password confirmation'
                       }
                       onClick={() =>
                         setShowConfirmPassword((current) => !current)
@@ -208,13 +212,13 @@ export default function ResetPassword() {
                   <p
                     className={`px-1 text-xs ${
                       password === confirmPassword
-                        ? "text-[#0bda62]"
-                        : "text-red-400"
+                        ? 'text-[#0bda62]'
+                        : 'text-red-400'
                     }`}
                   >
                     {password === confirmPassword
-                      ? "Passwords match"
-                      : "Passwords do not match"}
+                      ? 'Passwords match'
+                      : 'Passwords do not match'}
                   </p>
                 )}
 
@@ -238,7 +242,7 @@ function PasswordRequirement({ met, label }: { met: boolean; label: string }) {
   return (
     <div
       className={`flex items-center gap-1.5 text-xs ${
-        met ? "text-[#0bda62]" : "text-[#5c6484]"
+        met ? 'text-[#0bda62]' : 'text-[#858dab]'
       }`}
     >
       <Icon className="h-3.5 w-3.5 shrink-0" />

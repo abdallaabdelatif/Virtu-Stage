@@ -4,7 +4,8 @@ export interface EyeIconProps {
 }
 
 export function EyeIcon({ open, className }: EyeIconProps) {
-  const svgClass = className || "w-5 h-5 text-[#9aa1bc] hover:text-white transition-colors";
+  const svgClass =
+    className || 'w-5 h-5 text-[#9aa1bc] hover:text-white transition-colors';
 
   return open ? (
     <svg

@@ -1,6 +1,6 @@
-import { API_ENDPOINTS } from "../config/api";
-import { mapBackendUser } from "../mappers/userMapper";
-import type { AuthResult, Gender } from "../types/auth";
+import { API_ENDPOINTS } from '../config/api';
+import { mapBackendUser } from '../mappers/userMapper';
+import type { AuthResult, Gender } from '../types/auth';
 import type {
   AuthResponseDto,
   ChangePasswordRequestDto,
@@ -10,8 +10,8 @@ import type {
   MessageResponseDto,
   RegisterRequestDto,
   ResetPasswordRequestDto,
-} from "../types/auth.dto";
-import api from "../utils/api";
+} from '../types/auth.dto';
+import api from '../utils/api';
 
 export const loginCall = async (
   usernameOrEmail: string,
@@ -26,7 +26,7 @@ export const loginCall = async (
     request,
   );
   const token = data.access_token ?? data.token;
-  if (!token) throw new Error("Access token missing from login response");
+  if (!token) throw new Error('Access token missing from login response');
   return {
     success: true,
     token,
@@ -56,7 +56,7 @@ export const registerCall = async (
   );
   const token = data.access_token ?? data.token;
   if (!token)
-    throw new Error("Access token missing from registration response");
+    throw new Error('Access token missing from registration response');
   return {
     success: true,
     token,
@@ -66,7 +66,7 @@ export const registerCall = async (
 
 export const verifySessionCall = async () => {
   const { data } = await api.get<CurrentUserResponseDto>(API_ENDPOINTS.auth.me);
-  return mapBackendUser("user" in data ? data.user : data);
+  return mapBackendUser('user' in data ? data.user : data);
 };
 
 export const forgotPasswordCall = async (email: string) => {

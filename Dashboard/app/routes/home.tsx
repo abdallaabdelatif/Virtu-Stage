@@ -49,7 +49,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (event?: React.FormEvent) => {
+    event?.preventDefault();
     if (!usernameOrEmail || !password) {
       setError('Please fill in all fields');
       return;
@@ -79,7 +80,7 @@ export default function Login() {
     >
       {/* Header */}
       <header className="flex items-center justify-between px-6 md:px-10 py-4 border-b border-[#272b3a] bg-[#0f1323]/30 backdrop-blur-sm sticky top-0 z-50">
-        <div className="flex items-center gap-3 text-[#5c7cff]">
+        <div className="flex items-center gap-3 text-brand-soft">
           <VirtuStageLogo className="w-6 h-6" />
           <h2 className="text-white text-xl font-bold">VirtuStage</h2>
         </div>
@@ -89,7 +90,7 @@ export default function Login() {
           </span>
           <Link
             to="/register"
-            className="min-w-[84px] flex items-center justify-center rounded-xl h-10 px-5 bg-[#5c7cff] text-white text-sm font-bold hover:bg-[#4a6aee] transition-all shadow-lg shadow-[#5c7cff]/20"
+            className="min-w-[84px] flex items-center justify-center rounded-xl h-10 px-5 bg-brand text-white text-sm font-bold hover:bg-brand-hover transition-all shadow-lg shadow-brand/20"
           >
             Sign Up
           </Link>
@@ -112,16 +113,22 @@ export default function Login() {
 
             {/* Error */}
             {error && (
-              <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
+              <div
+                role="alert"
+                className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center"
+              >
                 {error}
               </div>
             )}
 
             {/* Form */}
-            <div className="space-y-1">
+            <form onSubmit={handleSubmit} className="space-y-1">
               <Input
                 label="Email or Username"
                 type="text"
+                name="username"
+                autoComplete="username"
+                required
                 placeholder="Enter your email or username"
                 value={usernameOrEmail}
                 onChange={(e) => setUsernameOrEmail(e.target.value)}
@@ -130,12 +137,20 @@ export default function Login() {
               <Input
                 label="Password"
                 type={showPassword ? 'text' : 'password'}
+                name="password"
+                autoComplete="current-password"
+                required
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                 rightElement={
-                  <button onClick={() => setShowPassword(!showPassword)}>
+                  <button
+                    type="button"
+                    aria-label={
+                      showPassword ? 'Hide password' : 'Show password'
+                    }
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
                     <EyeIcon open={showPassword} />
                   </button>
                 }
@@ -145,22 +160,21 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => navigate('/forgot-password')}
-                  className="text-[#5c7cff] hover:text-[#7691ff] hover:underline underline-offset-4 transition-all"
+                  className="text-brand-soft hover:text-[#7691ff] hover:underline underline-offset-4 transition-all"
                 >
                   Forgot Password?
                 </button>
               </div>
 
-              <Button onClick={handleSubmit} loading={loading} fullWidth>
+              <Button type="submit" loading={loading} fullWidth>
                 Sign In
               </Button>
-            </div>
-
+            </form>
           </div>
         </div>
       </main>
 
-      <footer className="p-6 text-center text-[#5c6484] text-xs">
+      <footer className="p-6 text-center text-[#858dab] text-xs">
         © 2026 VirtuStage AI Training Systems. All rights reserved.
       </footer>
     </div>

@@ -10,10 +10,7 @@ export interface LibraryFile {
 }
 
 export type PresentationProcessingStatus =
-  | 'queued'
-  | 'processing'
-  | 'ready'
-  | 'failed';
+  'queued' | 'processing' | 'ready' | 'failed';
 
 export interface BackendLibraryFileDto {
   file_id: string;

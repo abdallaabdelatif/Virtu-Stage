@@ -12,6 +12,14 @@ import './app.css';
 
 import { AuthProvider } from './context/AuthContext'; // ADDED THIS
 
+export const meta: Route.MetaFunction = () => [
+  { title: 'VirtuStage' },
+  {
+    name: 'description',
+    content: 'AI-enhanced VR presentation training and performance analytics.',
+  },
+];
+
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
   {
@@ -45,7 +53,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    // WRAPPED Outlet with AuthProvider
     <AuthProvider>
       <Outlet />
     </AuthProvider>
@@ -69,11 +76,14 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-canvas px-6 py-16 text-center text-white">
+      <p className="mb-2 text-sm font-bold uppercase tracking-[0.2em] text-brand-soft">
+        VirtuStage
+      </p>
+      <h1 className="text-4xl font-black">{message}</h1>
+      <p className="mt-3 max-w-xl text-secondary">{details}</p>
       {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
+        <pre className="mt-8 w-full max-w-4xl overflow-x-auto rounded-2xl border border-border-subtle bg-surface p-4 text-left text-sm">
           <code>{stack}</code>
         </pre>
       )}

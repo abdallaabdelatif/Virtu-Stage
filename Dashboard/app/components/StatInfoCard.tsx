@@ -8,7 +8,11 @@ interface StatInfoCardProps {
   className?: string;
 }
 
-export function StatInfoCard({ label, value, className = "" }: StatInfoCardProps) {
+export function StatInfoCard({
+  label,
+  value,
+  className = '',
+}: StatInfoCardProps) {
   return (
     <div className={`${styles.cardSub} ${className}`}>
       <p className={`${styles.labelMuted} mb-1`}>{label}</p>

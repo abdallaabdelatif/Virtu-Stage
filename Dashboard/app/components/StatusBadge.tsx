@@ -8,7 +8,7 @@ export function StatusBadge({ status }: { status: string }) {
   }
   if (status === 'In Progress') {
     return (
-      <span className="px-2 py-1 rounded-lg text-xs font-bold bg-[#5c7cff]/10 text-[#5c7cff]">
+      <span className="px-2 py-1 rounded-lg text-xs font-bold bg-brand/10 text-brand-soft">
         In Progress
       </span>
     );

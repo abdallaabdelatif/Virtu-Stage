@@ -75,13 +75,29 @@ function buildVoiceInsights(voice: VoiceAnalysisDto | null): {
     if (score >= 80) {
       strengths.push({
         title: `Voice: ${title}`,
-        desc: feedbackFor(feedback, key, `${title} was a strong part of this delivery.`),
+        desc: feedbackFor(
+          feedback,
+          key,
+          `${title} was a strong part of this delivery.`,
+        ),
         priority: score,
       });
     } else if (score < 60) {
-      const desc = feedbackFor(feedback, key, `${title} needs more consistency.`);
-      growthAreas.push({ title: `Voice: ${title}`, desc, priority: 100 - score });
-      recommendations.push({ title: `Improve ${title.toLowerCase()}`, desc, priority: 100 - score });
+      const desc = feedbackFor(
+        feedback,
+        key,
+        `${title} needs more consistency.`,
+      );
+      growthAreas.push({
+        title: `Voice: ${title}`,
+        desc,
+        priority: 100 - score,
+      });
+      recommendations.push({
+        title: `Improve ${title.toLowerCase()}`,
+        desc,
+        priority: 100 - score,
+      });
     }
   }
 
@@ -90,13 +106,25 @@ function buildVoiceInsights(voice: VoiceAnalysisDto | null): {
     if (anxiety <= 25) {
       strengths.push({
         title: 'Voice: Composure',
-        desc: feedbackFor(feedback, 'anxiety', 'Your voice showed few signs of anxiety.'),
+        desc: feedbackFor(
+          feedback,
+          'anxiety',
+          'Your voice showed few signs of anxiety.',
+        ),
         priority: 100 - anxiety,
       });
     } else if (anxiety >= 50) {
-      const desc = feedbackFor(feedback, 'anxiety', 'Your voice showed elevated anxiety signals.');
+      const desc = feedbackFor(
+        feedback,
+        'anxiety',
+        'Your voice showed elevated anxiety signals.',
+      );
       growthAreas.push({ title: 'Voice: Composure', desc, priority: anxiety });
-      recommendations.push({ title: 'Reset before key answers', desc, priority: anxiety });
+      recommendations.push({
+        title: 'Reset before key answers',
+        desc,
+        priority: anxiety,
+      });
     }
   }
 
@@ -119,7 +147,11 @@ function buildVoiceInsights(voice: VoiceAnalysisDto | null): {
       });
     } else if (score < 60) {
       const desc = `${title} was ${levelText.toLowerCase()} at ${Math.round(score)}%.`;
-      growthAreas.push({ title: `Voice: ${title}`, desc, priority: 100 - score });
+      growthAreas.push({
+        title: `Voice: ${title}`,
+        desc,
+        priority: 100 - score,
+      });
       recommendations.push({
         title: `Practice ${title.toLowerCase()}`,
         desc,
@@ -131,16 +163,31 @@ function buildVoiceInsights(voice: VoiceAnalysisDto | null): {
   const wpm = voice.words_per_minute;
   if (wpm != null && (wpm < 115 || wpm > 165)) {
     const direction = wpm < 115 ? 'slow' : 'fast';
-    const priority = Math.min(100, Math.abs(wpm - (wpm < 115 ? 115 : 165)) + 45);
+    const priority = Math.min(
+      100,
+      Math.abs(wpm - (wpm < 115 ? 115 : 165)) + 45,
+    );
     const desc = `Your pace was ${Math.round(wpm)} WPM, which is ${direction} compared with the 115-165 target range.`;
     growthAreas.push({ title: 'Voice: Speaking pace', desc, priority });
-    recommendations.push({ title: `Use a ${direction === 'slow' ? 'quicker' : 'steadier'} pace`, desc, priority });
+    recommendations.push({
+      title: `Use a ${direction === 'slow' ? 'quicker' : 'steadier'} pace`,
+      desc,
+      priority,
+    });
   }
 
   if (voice.pause_ratio != null && voice.pause_ratio > 0.2) {
     const desc = `${pct(voice.pause_ratio)} of the session was paused; shorter, intentional pauses will improve flow.`;
-    growthAreas.push({ title: 'Voice: Pause control', desc, priority: voice.pause_ratio * 100 });
-    recommendations.push({ title: 'Make pauses intentional', desc, priority: voice.pause_ratio * 100 });
+    growthAreas.push({
+      title: 'Voice: Pause control',
+      desc,
+      priority: voice.pause_ratio * 100,
+    });
+    recommendations.push({
+      title: 'Make pauses intentional',
+      desc,
+      priority: voice.pause_ratio * 100,
+    });
   }
 
   return { strengths, growthAreas, recommendations };
@@ -202,13 +249,21 @@ function buildDimensionFeedback(
   for (const key of MOTION_DIMENSIONS) {
     const value = assessment[key];
     const rating = ratingLabel(value);
-    const label = key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    const label = key
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
     const detail = dimensionDetail(assessment, key);
 
     if (rating && goodRatings.includes(rating)) {
-      strengths.push({ title: label, desc: detail || `${label} rated ${rating}.` });
+      strengths.push({
+        title: label,
+        desc: detail || `${label} rated ${rating}.`,
+      });
     } else if (rating && weakRatings.includes(rating)) {
-      growthAreas.push({ title: label, desc: detail || `${label} rated ${rating}.` });
+      growthAreas.push({
+        title: label,
+        desc: detail || `${label} rated ${rating}.`,
+      });
     }
   }
 
@@ -242,13 +297,13 @@ export function mapSessionReport(
     priority: 75,
   }));
 
-  const motionRecommendations: RankedFeedback[] = (motion?.recommendations ?? []).map(
-    (text, index) => ({
-      title: `Motion practice ${index + 1}`,
-      desc: text,
-      priority: 70 - index,
-    }),
-  );
+  const motionRecommendations: RankedFeedback[] = (
+    motion?.recommendations ?? []
+  ).map((text, index) => ({
+    title: `Motion practice ${index + 1}`,
+    desc: text,
+    priority: 70 - index,
+  }));
 
   const voiceFeedback: FeedbackItem[] = voice
     ? [
@@ -276,19 +331,16 @@ export function mapSessionReport(
     3,
   );
   const overallScore = normalizedScore(session.overall_score);
-  const reportSummary = combinedGrowthAreas.length > 0
-    ? `A ${overallScore != null ? `${Math.round(overallScore)}/100 ` : ''}session with ${combinedStrengths.length > 0 ? 'clear strengths' : 'useful baseline data'} and ${combinedGrowthAreas.length} priority ${combinedGrowthAreas.length === 1 ? 'area' : 'areas'} to improve next.`
-    : `A ${overallScore != null ? `${Math.round(overallScore)}/100 ` : ''}session with balanced delivery and no major weaknesses detected.`;
+  const reportSummary =
+    combinedGrowthAreas.length > 0
+      ? `A ${overallScore != null ? `${Math.round(overallScore)}/100 ` : ''}session with ${combinedStrengths.length > 0 ? 'clear strengths' : 'useful baseline data'} and ${combinedGrowthAreas.length} priority ${combinedGrowthAreas.length === 1 ? 'area' : 'areas'} to improve next.`
+      : `A ${overallScore != null ? `${Math.round(overallScore)}/100 ` : ''}session with balanced delivery and no major weaknesses detected.`;
 
   return {
     id: session.session_id ?? fallbackId,
     title: `${mapScenario(session.scenario_type)} Session`,
-    date: startDate
-      ? formatPlatformDate(startValue)
-      : 'N/A',
-    time: startDate
-      ? formatPlatformTime(startValue)
-      : 'N/A',
+    date: startDate ? formatPlatformDate(startValue) : 'N/A',
+    time: startDate ? formatPlatformTime(startValue) : 'N/A',
     duration:
       session.start_time && session.end_time
         ? `${Math.max(

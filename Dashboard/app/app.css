@@ -1,2 +1,62 @@
 @import 'tailwindcss';
-@plugin "daisyui";
+
+@theme {
+  --color-brand: #4a6aee;
+  --color-brand-hover: #3f5edb;
+  --color-brand-soft: #8da2ff;
+  --color-canvas: #0f1323;
+  --color-canvas-deep: #0a0c10;
+  --color-sidebar: #0d0f1c;
+  --color-surface: #12141c;
+  --color-panel: #1b1d28;
+  --color-elevated: #272b3a;
+  --color-border-subtle: #272b3a;
+  --color-border-strong: #393f56;
+  --color-secondary: #9aa1bc;
+  --color-muted: #858dab;
+  --color-success: #0bda62;
+  --color-warning: #ffb703;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    min-width: 320px;
+    background: var(--color-canvas);
+    color: white;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-soft);
+    outline-offset: 3px;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  summary {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  summary {
+    cursor: pointer;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

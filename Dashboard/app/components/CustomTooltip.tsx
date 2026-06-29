@@ -6,7 +6,11 @@ interface CustomTooltipProps {
   label?: string;
 }
 
-export const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+export const CustomTooltip = ({
+  active,
+  payload,
+  label,
+}: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-[#1b1d28] border border-[#393f56] rounded-xl p-3 text-sm">

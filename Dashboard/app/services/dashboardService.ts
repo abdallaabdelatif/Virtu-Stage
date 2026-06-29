@@ -7,10 +7,7 @@ import type {
   AdminDashboardDto,
   UserDashboardDto,
 } from '../types/dashboard.dto';
-import type {
-  AdminDashboardData,
-  UserDashboardData,
-} from '../types/dashboard';
+import type { AdminDashboardData, UserDashboardData } from '../types/dashboard';
 import api from '../utils/api';
 
 export function getDashboardStats(role: 'admin'): Promise<AdminDashboardData>;
@@ -23,6 +20,8 @@ export async function getDashboardStats(role: 'admin' | 'user' = 'user') {
     return mapAdminDashboard(data);
   }
 
-  const { data } = await api.get<UserDashboardDto>(API_ENDPOINTS.dashboard.user);
+  const { data } = await api.get<UserDashboardDto>(
+    API_ENDPOINTS.dashboard.user,
+  );
   return mapUserDashboard(data);
 }

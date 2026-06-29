@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSessionPolling } from '../hooks/useSessionPolling';
 import { styles } from '../utils/styles';
@@ -16,6 +16,15 @@ interface SessionTableProps {
   onRefresh?: () => void;
 }
 
+function getVisiblePages(page: number, totalPages: number) {
+  const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+  const end = Math.min(totalPages, start + 4);
+  return Array.from(
+    { length: Math.max(0, end - start + 1) },
+    (_, index) => start + index,
+  );
+}
+
 export function SessionTable({
   sessions,
   actionLabel,
@@ -26,55 +35,85 @@ export function SessionTable({
   const [scenario, setScenario] = useState('All');
   const [page, setPage] = useState(1);
 
-  const filtered = sessions.filter((s) => {
+  const scenarios = useMemo(
+    () =>
+      Array.from(new Set(sessions.map((session) => session.scenario))).sort(),
+    [sessions],
+  );
+  const normalizedSearch = search.trim().toLowerCase();
+  const filtered = sessions.filter((session) => {
     const matchSearch =
-      s.scenario.toLowerCase().includes(search.toLowerCase()) ||
-      s.date.toLowerCase().includes(search.toLowerCase());
-    const matchScenario = scenario === 'All' || s.scenario === scenario;
+      session.scenario.toLowerCase().includes(normalizedSearch) ||
+      session.date.toLowerCase().includes(normalizedSearch);
+    const matchScenario = scenario === 'All' || session.scenario === scenario;
     return matchSearch && matchScenario;
   });
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const currentPage = totalPages === 0 ? 1 : Math.min(page, totalPages);
   const paginated = filtered.slice(
-    (page - 1) * ITEMS_PER_PAGE,
-    page * ITEMS_PER_PAGE,
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
   );
+  const visiblePages = getVisiblePages(currentPage, totalPages);
+
+  useEffect(() => {
+    if (page !== currentPage) setPage(currentPage);
+  }, [currentPage, page]);
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5c6484]" />
+      <div
+        className="mb-4 flex flex-wrap items-center gap-3"
+        aria-label="Session filters"
+      >
+        <div className="relative min-w-[200px] flex-1 sm:max-w-sm">
+          <Search
+            aria-hidden="true"
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+          />
+          <label htmlFor="session-search" className="sr-only">
+            Search sessions
+          </label>
           <input
-            type="text"
+            id="session-search"
+            type="search"
             placeholder="Search sessions by keyword..."
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
+            onChange={(event) => {
+              setSearch(event.target.value);
               setPage(1);
             }}
             className={`${styles.inputBase} ${styles.inputWithIcon}`}
           />
         </div>
+        <label htmlFor="scenario-filter" className="sr-only">
+          Filter by scenario
+        </label>
         <select
+          id="scenario-filter"
           value={scenario}
-          onChange={(e) => {
-            setScenario(e.target.value);
+          onChange={(event) => {
+            setScenario(event.target.value);
             setPage(1);
           }}
-          className={styles.selectBase}
+          className={`${styles.selectBase} w-full sm:w-auto`}
         >
           <option value="All">Scenario: All</option>
-          <option>Job Interview</option>
-          <option>Public Speaking</option>
+          {scenarios.map((value) => (
+            <option key={value} value={value}>
+              {value}
+            </option>
+          ))}
         </select>
       </div>
 
-      <div className={`${styles.tableContainer} mb-6`}>
+      <div className={`${styles.tableContainer} mb-6`} aria-label="Sessions">
         <div
-          className={`grid grid-cols-12 px-6 py-3 ${styles.tableHeaderGroup}`}
+          className={`hidden grid-cols-12 px-6 py-3 md:grid ${styles.tableHeaderGroup}`}
+          aria-hidden="true"
         >
-          <div className="col-span-3">Date & Time</div>
+          <div className="col-span-3">Date &amp; Time</div>
           <div className="col-span-3">Scenario Type</div>
           <div className="col-span-4">AI Performance Score</div>
           <div className="col-span-2 text-right">Actions</div>
@@ -92,51 +131,81 @@ export function SessionTable({
       </div>
 
       {totalPages > 0 && (
-        <div className={`${styles.flexBetween} mb-8`}>
-          <p className="text-[#5c6484] text-sm">
+        <nav
+          className="mb-8 flex flex-col items-center justify-between gap-4 sm:flex-row"
+          aria-label="Session pages"
+        >
+          <p className="text-sm text-muted" aria-live="polite">
             Showing{' '}
-            <span className="text-white font-bold">
-              {Math.min((page - 1) * ITEMS_PER_PAGE + 1, filtered.length)}
+            <span className="font-bold text-white">
+              {(currentPage - 1) * ITEMS_PER_PAGE + 1}
             </span>{' '}
             to{' '}
-            <span className="text-white font-bold">
-              {Math.min(page * ITEMS_PER_PAGE, filtered.length)}
+            <span className="font-bold text-white">
+              {Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)}
             </span>{' '}
-            of <span className="text-white font-bold">{filtered.length}</span>{' '}
+            of <span className="font-bold text-white">{filtered.length}</span>{' '}
             sessions
           </p>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPage(Math.max(1, page - 1))}
-              disabled={page === 1}
-              className="w-9 h-9 rounded-lg bg-[#12141c] border border-[#272b3a] flex items-center justify-center text-[#9aa1bc] hover:border-[#5c7cff] disabled:opacity-40 transition-colors"
+            <PageButton
+              label="Previous page"
+              disabled={currentPage === 1}
+              onClick={() => setPage(Math.max(1, currentPage - 1))}
             >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <ChevronLeft aria-hidden="true" className="h-4 w-4" />
+            </PageButton>
+            {visiblePages.map((pageNumber) => (
               <button
-                key={p}
-                onClick={() => setPage(p)}
-                className={`w-9 h-9 rounded-lg text-sm font-bold transition-colors ${
-                  page === p
-                    ? 'bg-[#5c7cff] text-white'
-                    : 'bg-[#12141c] border border-[#272b3a] text-[#9aa1bc] hover:border-[#5c7cff]'
+                key={pageNumber}
+                type="button"
+                aria-label={`Page ${pageNumber}`}
+                aria-current={currentPage === pageNumber ? 'page' : undefined}
+                onClick={() => setPage(pageNumber)}
+                className={`h-9 w-9 rounded-lg text-sm font-bold transition-colors ${
+                  currentPage === pageNumber
+                    ? 'bg-brand text-white'
+                    : 'border border-border-subtle bg-surface text-secondary hover:border-brand'
                 }`}
               >
-                {p}
+                {pageNumber}
               </button>
             ))}
-            <button
-              onClick={() => setPage(Math.min(totalPages, page + 1))}
-              disabled={page === totalPages || totalPages === 0}
-              className="w-9 h-9 rounded-lg bg-[#12141c] border border-[#272b3a] flex items-center justify-center text-[#9aa1bc] hover:border-[#5c7cff] disabled:opacity-40 transition-colors"
+            <PageButton
+              label="Next page"
+              disabled={currentPage === totalPages}
+              onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
             >
-              <ChevronRight className="w-4 h-4" />
-            </button>
+              <ChevronRight aria-hidden="true" className="h-4 w-4" />
+            </PageButton>
           </div>
-        </div>
+        </nav>
       )}
     </>
+  );
+}
+
+function PageButton({
+  children,
+  disabled,
+  label,
+  onClick,
+}: {
+  children: React.ReactNode;
+  disabled: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      disabled={disabled}
+      className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-subtle bg-surface text-secondary transition-colors hover:border-brand disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      {children}
+    </button>
   );
 }
 
@@ -151,65 +220,66 @@ function SessionRow({
   onClick: () => void;
   onRefresh?: () => void;
 }) {
-  const isActive = session.backendStatus !== 'completed';
   const { status } = useSessionPolling(
     session.id,
     session.backendStatus,
     onRefresh,
   );
-
-  const currentStatus = isActive ? status : session.status;
   const canOpenReport =
-    currentStatus === 'Completed' ||
-    currentStatus === 'Processing Analysis' ||
-    currentStatus === 'Failed';
+    status === 'Completed' ||
+    status === 'Processing Analysis' ||
+    status === 'Failed';
 
   return (
-    <div
-      onClick={() => canOpenReport && onClick()}
-      className={`grid grid-cols-12 px-6 py-5 transition-colors last:border-0 border-b border-[#1a1c25] ${
-        !canOpenReport
-          ? 'opacity-60 cursor-not-allowed'
-          : 'hover:bg-white/5 cursor-pointer'
-      }`}
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!canOpenReport}
+      aria-label={`${actionLabel}: ${session.scenario} session from ${session.date} at ${session.time}`}
+      className="grid w-full grid-cols-1 gap-4 border-b border-[#1a1c25] px-4 py-5 text-left transition-colors last:border-0 enabled:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60 md:grid-cols-12 md:gap-0 md:px-6"
     >
-      <div className="col-span-3">
-        <p className="text-white font-semibold text-sm">{session.date}</p>
-        <p className={styles.textMuted}>{session.time}</p>
+      <div className="grid grid-cols-[7rem_1fr] items-center md:col-span-3 md:block">
+        <span className="text-xs font-bold uppercase tracking-wider text-muted md:hidden">
+          Date
+        </span>
+        <div>
+          <p className="text-sm font-semibold text-white">{session.date}</p>
+          <p className={styles.textMuted}>{session.time}</p>
+        </div>
       </div>
 
-      <div className="col-span-3 flex items-center">
+      <div className="grid grid-cols-[7rem_1fr] items-center md:col-span-3 md:flex">
+        <span className="text-xs font-bold uppercase tracking-wider text-muted md:hidden">
+          Scenario
+        </span>
         <ScenarioBadge scenario={session.scenario} />
       </div>
 
-      <div className="col-span-4 flex items-center gap-3">
-        {currentStatus === 'Completed' && session.score != null ? (
+      <div className="grid grid-cols-[7rem_1fr] items-center md:col-span-4 md:flex md:gap-3">
+        <span className="text-xs font-bold uppercase tracking-wider text-muted md:hidden">
+          Performance
+        </span>
+        {status === 'Completed' && session.score != null ? (
           <ScoreProgressBar score={session.score} />
         ) : (
-          <StatusBadge status={currentStatus} />
+          <StatusBadge status={status} />
         )}
       </div>
 
-      <div
-        className="col-span-2 flex items-center justify-end gap-2"
-        onClick={(e) => {
-          if (!canOpenReport) e.stopPropagation();
-        }}
-      >
-        {!canOpenReport ? (
-          <span className="text-[#5c6484] text-xs font-bold">Waiting...</span>
-        ) : (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onClick();
-            }}
-            className={styles.btnLink}
-          >
-            {actionLabel}
-          </button>
-        )}
+      <div className="grid grid-cols-[7rem_1fr] items-center md:col-span-2 md:flex md:justify-end">
+        <span className="text-xs font-bold uppercase tracking-wider text-muted md:hidden">
+          Action
+        </span>
+        <span
+          className={
+            canOpenReport
+              ? 'text-sm font-bold text-brand-soft'
+              : 'text-xs font-bold text-muted'
+          }
+        >
+          {canOpenReport ? actionLabel : 'Waiting...'}
+        </span>
       </div>
-    </div>
+    </button>
   );
 }

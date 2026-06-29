@@ -12,6 +12,7 @@ import {
   getAccessToken,
   setAccessToken,
 } from '../utils/tokenStorage';
+import { UNAUTHORIZED_EVENT } from '../utils/authEvents';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -27,6 +28,13 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const handleUnauthorized = () => setUser(null);
+    window.addEventListener(UNAUTHORIZED_EVENT, handleUnauthorized);
+    return () =>
+      window.removeEventListener(UNAUTHORIZED_EVENT, handleUnauthorized);
+  }, []);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -72,7 +80,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
       }}
     >
-      {!loading && children}
+      {loading ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex min-h-screen items-center justify-center bg-canvas text-secondary"
+        >
+          <span className="h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+          <span className="sr-only">Loading your session</span>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 }

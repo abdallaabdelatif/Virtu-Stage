@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Search, UsersRound } from 'lucide-react';
-import { PageLayout } from '../components/PageLayout';
 import { Card } from '../components/Card';
-import { AdminRoute } from '../components/AdminRoute';
 import {
   deleteManagedUser,
   getAdminUsers,
@@ -94,73 +92,79 @@ export default function UserManagement() {
   };
 
   return (
-    <AdminRoute>
-      <PageLayout>
-        <SectionHeader
-          title="User Management"
-          subtitle="Manage users and review platform membership"
-        />
+    <>
+      <SectionHeader
+        title="User Management"
+        subtitle="Manage users and review platform membership"
+      />
 
-        {loading && <LoadingSpinner text="Loading admin users..." />}
-        {error && <ErrorMessage message={error} onRetry={fetchAdminUsers} />}
+      {loading && <LoadingSpinner text="Loading admin users..." />}
+      {error && <ErrorMessage message={error} onRetry={fetchAdminUsers} />}
 
-        {!loading && !error && (
-          <Card title="All Users">
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5c6484]" />
-              <input
-                type="text"
-                placeholder="Search users..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className={`${styles.inputBase} ${styles.inputWithIcon}`}
-              />
+      {!loading && !error && (
+        <Card title="All Users">
+          <div className="relative mb-4">
+            <Search
+              aria-hidden="true"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#858dab]"
+            />
+            <label htmlFor="admin-user-search" className="sr-only">
+              Search users
+            </label>
+            <input
+              id="admin-user-search"
+              type="search"
+              placeholder="Search users..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className={`${styles.inputBase} ${styles.inputWithIcon}`}
+            />
+          </div>
+
+          {filtered.length === 0 ? (
+            <EmptyState
+              compact
+              icon={UsersRound}
+              title={search ? 'No matching users' : 'No users yet'}
+              description={
+                search
+                  ? `No platform users match "${search}".`
+                  : 'Registered platform users will appear here.'
+              }
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <caption className="sr-only">Registered platform users</caption>
+                <thead>
+                  <tr className={styles.tableHeaderGroup}>
+                    <th className="text-left pb-3 font-bold">User</th>
+                    <th className="text-left pb-3 font-bold">Sessions</th>
+                    <th className="text-left pb-3 font-bold">Joined</th>
+                    <th className="text-left pb-3 font-bold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#272b3a]">
+                  {filtered.map((user) => (
+                    <UserTableRow
+                      key={user.id}
+                      user={user}
+                      openMenu={openMenu}
+                      onToggleMenu={setOpenMenu}
+                      onDisable={toggleDisable}
+                      onDelete={deleteUser}
+                      isBusy={pendingUserId === user.id}
+                    />
+                  ))}
+                </tbody>
+              </table>
             </div>
-
-            {filtered.length === 0 ? (
-              <EmptyState
-                compact
-                icon={UsersRound}
-                title={search ? 'No matching users' : 'No users yet'}
-                description={
-                  search
-                    ? `No platform users match "${search}".`
-                    : 'Registered platform users will appear here.'
-                }
-              />
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className={styles.tableHeaderGroup}>
-                      <th className="text-left pb-3 font-bold">User</th>
-                      <th className="text-left pb-3 font-bold">Sessions</th>
-                      <th className="text-left pb-3 font-bold">Joined</th>
-                      <th className="text-left pb-3 font-bold">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#272b3a]">
-                    {filtered.map((user) => (
-                      <UserTableRow
-                        key={user.id}
-                        user={user}
-                        openMenu={openMenu}
-                        onToggleMenu={setOpenMenu}
-                        onDisable={toggleDisable}
-                        onDelete={deleteUser}
-                        isBusy={pendingUserId === user.id}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            <p className="text-[#5c6484] text-xs mt-4">
-              Showing {filtered.length} of {managedUsers.length} users
-            </p>
-          </Card>
-        )}
-      </PageLayout>
-    </AdminRoute>
+          )}
+          <p className="text-[#858dab] text-xs mt-4">
+            Showing {filtered.length} of {managedUsers.length} users
+          </p>
+        </Card>
+      )}
+    </>
   );
 }

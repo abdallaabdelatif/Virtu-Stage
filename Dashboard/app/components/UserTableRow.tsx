@@ -37,12 +37,16 @@ export function UserTableRow({
       const menuWidth = 176;
       const menuHeight = 94;
       const gap = 6;
-      const top = bounds.bottom + gap + menuHeight <= window.innerHeight
-        ? bounds.bottom + gap
-        : bounds.top - menuHeight - gap;
+      const top =
+        bounds.bottom + gap + menuHeight <= window.innerHeight
+          ? bounds.bottom + gap
+          : bounds.top - menuHeight - gap;
       setMenuPosition({
         top: Math.max(8, top),
-        left: Math.max(8, Math.min(bounds.right - menuWidth, window.innerWidth - menuWidth - 8)),
+        left: Math.max(
+          8,
+          Math.min(bounds.right - menuWidth, window.innerWidth - menuWidth - 8),
+        ),
       });
     }
     onToggleMenu(user.id);
@@ -61,12 +65,20 @@ export function UserTableRow({
       }
     };
     const closeMenu = () => onToggleMenu(null);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onToggleMenu(null);
+        actionButtonRef.current?.focus();
+      }
+    };
 
     document.addEventListener('pointerdown', closeOnOutsideClick);
+    document.addEventListener('keydown', handleKeyDown);
     window.addEventListener('resize', closeMenu);
     window.addEventListener('scroll', closeMenu, true);
     return () => {
       document.removeEventListener('pointerdown', closeOnOutsideClick);
+      document.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('resize', closeMenu);
       window.removeEventListener('scroll', closeMenu, true);
     };
@@ -75,7 +87,9 @@ export function UserTableRow({
   return (
     <tr className={styles.tableRow}>
       <td className="py-4 pr-4">
-        <p className={`font-semibold ${user.disabled ? "text-[#5c6484] line-through" : "text-white"}`}>
+        <p
+          className={`font-semibold ${user.disabled ? 'text-[#858dab] line-through' : 'text-white'}`}
+        >
           {user.name}
         </p>
         <p className={styles.textMuted}>{user.email}</p>
@@ -87,45 +101,51 @@ export function UserTableRow({
           ref={actionButtonRef}
           type="button"
           aria-label={`Actions for ${user.name}`}
+          aria-haspopup="menu"
           aria-expanded={isMenuOpen}
+          aria-controls={isMenuOpen ? `user-actions-${user.id}` : undefined}
           disabled={isBusy}
           onClick={toggleMenu}
           className="p-1 hover:bg-white/10 rounded-lg transition-colors disabled:cursor-wait disabled:opacity-60"
         >
           {isBusy ? (
-            <LoaderCircle className="w-4 h-4 animate-spin text-[#5c7cff]" />
+            <LoaderCircle className="w-4 h-4 animate-spin text-brand-soft" />
           ) : (
             <MoreVertical className="w-4 h-4 text-[#9aa1bc]" />
           )}
         </button>
-        {isMenuOpen && typeof document !== 'undefined' && createPortal(
-          <div
-            ref={menuRef}
-            role="menu"
-            style={{ top: menuPosition.top, left: menuPosition.left }}
-            className="fixed z-[100] w-44 overflow-hidden rounded-xl border border-[#393f56] bg-[#1b1d28] shadow-xl"
-          >
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => onDisable(user.id)}
-              className={`w-full text-left px-4 py-2.5 text-sm hover:bg-white/5 ${
-                user.disabled ? "text-[#0bda62]" : "text-red-400"
-              }`}
+        {isMenuOpen &&
+          typeof document !== 'undefined' &&
+          createPortal(
+            <div
+              id={`user-actions-${user.id}`}
+              ref={menuRef}
+              role="menu"
+              aria-label={`Actions for ${user.name}`}
+              style={{ top: menuPosition.top, left: menuPosition.left }}
+              className="fixed z-[100] w-44 overflow-hidden rounded-xl border border-[#393f56] bg-[#1b1d28] shadow-xl"
             >
-              {user.disabled ? "Enable User" : "Disable User"}
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => onDelete(user.id)}
-              className="w-full border-t border-[#393f56] px-4 py-2.5 text-left text-sm text-red-400 hover:bg-red-500/10"
-            >
-              Delete User
-            </button>
-          </div>,
-          document.body,
-        )}
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => onDisable(user.id)}
+                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-white/5 ${
+                  user.disabled ? 'text-[#0bda62]' : 'text-red-400'
+                }`}
+              >
+                {user.disabled ? 'Enable User' : 'Disable User'}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => onDelete(user.id)}
+                className="w-full border-t border-[#393f56] px-4 py-2.5 text-left text-sm text-red-400 hover:bg-red-500/10"
+              >
+                Delete User
+              </button>
+            </div>,
+            document.body,
+          )}
       </td>
     </tr>
   );

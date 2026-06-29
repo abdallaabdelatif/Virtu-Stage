@@ -1,17 +1,21 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { PageLayout } from '../components/PageLayout';
-import { ProtectedRoute } from '../components/ProtectedRoute';
 import { getDashboardStats } from '../services/dashboardService';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorMessage } from '../components/ErrorMessage';
-import { UserDashboard } from '../components/UserDashboard';
-import { AdminDashboard } from '../components/AdminDashboard';
 import { getApiErrorMessage } from '../utils/apiError';
-import type {
-  AdminDashboardData,
-  UserDashboardData,
-} from '../types/dashboard';
+import type { AdminDashboardData, UserDashboardData } from '../types/dashboard';
+
+const UserDashboard = lazy(() =>
+  import('../components/UserDashboard').then((module) => ({
+    default: module.UserDashboard,
+  })),
+);
+const AdminDashboard = lazy(() =>
+  import('../components/AdminDashboard').then((module) => ({
+    default: module.AdminDashboard,
+  })),
+);
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -23,7 +27,7 @@ export default function Dashboard() {
     AdminDashboardData | UserDashboardData | null
   >(null);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -36,53 +40,37 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAdmin]);
 
   useEffect(() => {
     if (user) {
       fetchDashboardData();
     }
-  }, [user]);
+  }, [fetchDashboardData, user]);
 
   if (loading) {
-    return (
-      <ProtectedRoute>
-        <PageLayout>
-          <LoadingSpinner text="Loading your dashboard..." />
-        </PageLayout>
-      </ProtectedRoute>
-    );
+    return <LoadingSpinner text="Loading your dashboard..." />;
   }
 
   if (error || !stats) {
     return (
-      <ProtectedRoute>
-        <PageLayout>
-          <ErrorMessage
-            title="Dashboard Unavailable"
-            message={error || 'No data found'}
-            onRetry={fetchDashboardData}
-          />
-        </PageLayout>
-      </ProtectedRoute>
+      <ErrorMessage
+        title="Dashboard Unavailable"
+        message={error || 'No data found'}
+        onRetry={fetchDashboardData}
+      />
     );
   }
 
   return (
-    <ProtectedRoute>
-      <PageLayout>
-        {'totalUsers' in stats ? (
-          <AdminDashboard
-            name={user?.name ?? ''}
-            data={stats}
-          />
-        ) : (
-          <UserDashboard
-            name={user?.name ?? ''}
-            data={stats}
-          />
-        )}
-      </PageLayout>
-    </ProtectedRoute>
+    <Suspense
+      fallback={<LoadingSpinner text="Preparing dashboard charts..." />}
+    >
+      {'totalUsers' in stats ? (
+        <AdminDashboard name={user?.name ?? ''} data={stats} />
+      ) : (
+        <UserDashboard name={user?.name ?? ''} data={stats} />
+      )}
+    </Suspense>
   );
 }

@@ -290,7 +290,7 @@ def test_deletes_stale_queued_metadata_when_r2_object_is_already_missing(file_ap
 
 
 @pytest.mark.asyncio
-async def test_pdf_processing_uploads_ordered_pngs(monkeypatch, tmp_path: Path):
+async def test_pdf_processing_uploads_ordered_pngs(monkeypatch):
     file_id = str(uuid.uuid4())
     record = {
         "file_id": file_id,

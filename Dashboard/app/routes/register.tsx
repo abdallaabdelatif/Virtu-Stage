@@ -39,7 +39,8 @@ export default function Register() {
   const usernameError = usernameValidationError ?? usernameConflict;
   const passwordChecks = getPasswordChecks(password);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (event?: React.FormEvent) => {
+    event?.preventDefault();
     if (
       !username ||
       !firstName ||
@@ -111,7 +112,7 @@ export default function Register() {
     >
       {/* Header */}
       <header className="flex items-center justify-between px-6 md:px-10 py-4 border-b border-[#272b3a] bg-[#0f1323]/30 backdrop-blur-sm sticky top-0 z-50">
-        <div className="flex items-center gap-3 text-[#5c7cff]">
+        <div className="flex items-center gap-3 text-brand-soft">
           <VirtuStageLogo className="w-6 h-6" />
           <h2 className="text-white text-xl font-bold">VirtuStage</h2>
         </div>
@@ -121,7 +122,7 @@ export default function Register() {
           </span>
           <Link
             to="/"
-            className="min-w-[84px] flex items-center justify-center rounded-xl h-10 px-5 bg-[#5c7cff] text-white text-sm font-bold hover:bg-[#4a6aee] transition-all shadow-lg shadow-[#5c7cff]/20"
+            className="min-w-[84px] flex items-center justify-center rounded-xl h-10 px-5 bg-brand text-white text-sm font-bold hover:bg-brand-hover transition-all shadow-lg shadow-brand/20"
           >
             Sign In
           </Link>
@@ -142,14 +143,20 @@ export default function Register() {
             </div>
 
             {error && (
-              <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
+              <div
+                role="alert"
+                className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center"
+              >
                 {error}
               </div>
             )}
 
-            <div className="space-y-1">
+            <form onSubmit={handleSubmit} className="space-y-1">
               <Input
                 label="Username"
+                name="username"
+                autoComplete="username"
+                required
                 placeholder="Choose a username"
                 value={username}
                 error={Boolean(usernameError)}
@@ -161,7 +168,7 @@ export default function Register() {
               />
               <p
                 className={`-mt-1 mb-2 text-xs ${
-                  usernameError ? 'text-red-400' : 'text-[#5c6484]'
+                  usernameError ? 'text-red-400' : 'text-[#858dab]'
                 }`}
               >
                 {usernameError ??
@@ -170,12 +177,18 @@ export default function Register() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input
                   label="First Name"
+                  name="given-name"
+                  autoComplete="given-name"
+                  required
                   placeholder="First name"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                 />
                 <Input
                   label="Last Name"
+                  name="family-name"
+                  autoComplete="family-name"
+                  required
                   placeholder="Last name"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
@@ -184,6 +197,9 @@ export default function Register() {
               <Input
                 label="Email Address"
                 type="email"
+                name="email"
+                autoComplete="email"
+                required
                 placeholder="Enter your email"
                 value={email}
                 error={Boolean(emailConflict)}
@@ -199,10 +215,17 @@ export default function Register() {
                 </p>
               )}
               <div className="mb-4">
-                <label className="block text-[#9aa1bc] text-sm font-bold mb-2">
+                <p
+                  id="gender-label"
+                  className="block text-secondary text-sm font-bold mb-2"
+                >
                   Gender
-                </label>
-                <div className="grid grid-cols-2 gap-3">
+                </p>
+                <div
+                  role="group"
+                  aria-labelledby="gender-label"
+                  className="grid grid-cols-2 gap-3"
+                >
                   {(['male', 'female'] as const).map((option) => (
                     <button
                       key={option}
@@ -211,8 +234,8 @@ export default function Register() {
                       aria-pressed={gender === option}
                       className={`rounded-xl border px-4 py-3 text-sm font-bold capitalize transition-colors ${
                         gender === option
-                          ? 'border-[#5c7cff] bg-[#5c7cff]/15 text-white'
-                          : 'border-[#393f56] bg-[#1b1d28] text-[#9aa1bc] hover:border-[#5c7cff]/60 hover:text-white'
+                          ? 'border-brand bg-brand/15 text-white'
+                          : 'border-[#393f56] bg-[#1b1d28] text-[#9aa1bc] hover:border-brand/60 hover:text-white'
                       }`}
                     >
                       {option}
@@ -223,13 +246,18 @@ export default function Register() {
               <Input
                 label="Password"
                 type={showPassword ? 'text' : 'password'}
+                name="new-password"
+                autoComplete="new-password"
+                required
                 placeholder="Create a password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 rightElement={
                   <button
                     type="button"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={
+                      showPassword ? 'Hide password' : 'Show password'
+                    }
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     <EyeIcon open={showPassword} />
@@ -261,10 +289,12 @@ export default function Register() {
               <Input
                 label="Confirm Password"
                 type={showConfirm ? 'text' : 'password'}
+                name="confirm-password"
+                autoComplete="new-password"
+                required
                 placeholder="Confirm your password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                 rightElement={
                   <button
                     type="button"
@@ -294,36 +324,29 @@ export default function Register() {
               )}
 
               <div className="pt-2">
-                <Button onClick={handleSubmit} loading={loading} fullWidth>
+                <Button type="submit" loading={loading} fullWidth>
                   Create Account
                 </Button>
               </div>
-            </div>
-
+            </form>
           </div>
         </div>
       </main>
 
-      <footer className="p-6 text-center text-[#5c6484] text-xs">
+      <footer className="p-6 text-center text-[#858dab] text-xs">
         © 2026 VirtuStage AI Training Systems. All rights reserved.
       </footer>
     </div>
   );
 }
 
-function PasswordRequirement({
-  met,
-  label,
-}: {
-  met: boolean;
-  label: string;
-}) {
+function PasswordRequirement({ met, label }: { met: boolean; label: string }) {
   const Icon = met ? CheckCircle2 : Circle;
 
   return (
     <div
       className={`flex items-center gap-1.5 text-xs ${
-        met ? 'text-[#0bda62]' : 'text-[#5c6484]'
+        met ? 'text-[#0bda62]' : 'text-[#858dab]'
       }`}
     >
       <Icon className="h-3.5 w-3.5 shrink-0" />

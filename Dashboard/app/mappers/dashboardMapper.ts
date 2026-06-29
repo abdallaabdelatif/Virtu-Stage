@@ -3,10 +3,7 @@ import type {
   AdminUserDto,
   UserDashboardDto,
 } from '../types/dashboard.dto';
-import type {
-  AdminDashboardData,
-  UserDashboardData,
-} from '../types/dashboard';
+import type { AdminDashboardData, UserDashboardData } from '../types/dashboard';
 import type { ManagedUser } from '../types/admin';
 import {
   formatPlatformCalendarDay,

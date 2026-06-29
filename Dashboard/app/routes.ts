@@ -1,30 +1,32 @@
-import { type RouteConfig, index, route } from "@react-router/dev/routes";
+import {
+  type RouteConfig,
+  index,
+  layout,
+  route,
+} from '@react-router/dev/routes';
 
 export default [
   // ── Auth ──────────────────────────────
-  index("routes/home.tsx"), // / → Login
-  route("register", "routes/register.tsx"), // /register
-  route("forgot-password", "routes/forgot-password.tsx"), // /forgot-password
-  route("reset-password", "routes/reset-password.tsx"), // /reset-password?token=...
+  index('routes/home.tsx'), // / → Login
+  route('register', 'routes/register.tsx'), // /register
+  route('forgot-password', 'routes/forgot-password.tsx'), // /forgot-password
+  route('reset-password', 'routes/reset-password.tsx'), // /reset-password?token=...
 
-  // ── Main Dashboard ────────────────────
-  route("dashboard", "routes/dashboard.tsx"), // /dashboard
-  route("analytics", "routes/analytics.tsx"), // /analytics
+  layout('routes/protected-layout.tsx', [
+    route('dashboard', 'routes/dashboard.tsx'),
+    route('settings', 'routes/settings.tsx'),
+  ]),
 
-  // ── Sessions ──────────────────────────
-  route("sessions", "routes/sessions.tsx"), // /sessions
-  route("session/:id", "routes/session.$id.tsx"), // /session/:id → redirects to analytics
-  route("session-analytics/:id", "routes/session.analytics.tsx"), // /session-analytics/1 → Detailed analysis
+  layout('routes/user-layout.tsx', [
+    route('analytics', 'routes/analytics.tsx'),
+    route('sessions', 'routes/sessions.tsx'),
+    route('session/:id', 'routes/session.$id.tsx'),
+    route('session-analytics/:id', 'routes/session.analytics.tsx'),
+    route('library', 'routes/library.tsx'),
+  ]),
 
-  // ── Content ───────────────────────────
-  route("library", "routes/library.tsx"), // /library → Training Materials
-
-  // ── User ──────────────────────────────
-  route("settings", "routes/settings.tsx"), // /settings
-
-  // ── Admin ─────────────────────────────
-  route("admin", "routes/admin.tsx"), // /admin
+  layout('routes/admin-layout.tsx', [route('admin', 'routes/admin.tsx')]),
 
   // ── Error Pages ──
-  route("*", "routes/not-found.tsx"),
+  route('*', 'routes/not-found.tsx'),
 ] satisfies RouteConfig;

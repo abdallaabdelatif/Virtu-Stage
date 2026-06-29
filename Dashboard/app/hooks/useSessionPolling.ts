@@ -9,18 +9,16 @@ import type {
 import { isNonTerminalStatus } from '../types/session';
 import api from '../utils/api';
 
-const TERMINAL_STATUSES: SessionStatus[] = [
-  'Completed',
-  'Failed',
-  'Cancelled',
-];
+const TERMINAL_STATUSES: SessionStatus[] = ['Completed', 'Failed', 'Cancelled'];
 
 export function useSessionPolling(
   sessionId: string | null,
   backendStatus: BackendSessionStatus | null,
   onTerminal?: () => void,
 ) {
-  const shouldPoll = Boolean(sessionId && backendStatus && isNonTerminalStatus(backendStatus));
+  const shouldPoll = Boolean(
+    sessionId && backendStatus && isNonTerminalStatus(backendStatus),
+  );
   const [status, setStatus] = useState<SessionStatus>(
     backendStatus ? mapSessionStatus(backendStatus) : 'Pending',
   );
@@ -37,7 +35,9 @@ export function useSessionPolling(
     if (!sessionId || !isPolling) return;
 
     let active = true;
+    let timer: number | undefined;
     const poll = async () => {
+      let reachedTerminal = false;
       try {
         const { data } = await api.get<SessionStatusResponseDto>(
           API_ENDPOINTS.sessions.status(sessionId),
@@ -46,19 +46,23 @@ export function useSessionPolling(
         const nextStatus = mapSessionStatus(data.status);
         setStatus(nextStatus);
         if (TERMINAL_STATUSES.includes(nextStatus)) {
+          reachedTerminal = true;
           setIsPolling(false);
           onTerminal?.();
         }
       } catch {
         // Retry temporary failures on the next interval.
+      } finally {
+        if (active && !reachedTerminal) {
+          timer = window.setTimeout(poll, 3000);
+        }
       }
     };
 
     void poll();
-    const interval = window.setInterval(poll, 3000);
     return () => {
       active = false;
-      window.clearInterval(interval);
+      if (timer !== undefined) window.clearTimeout(timer);
     };
   }, [sessionId, isPolling, onTerminal]);
 

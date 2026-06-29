@@ -1,4 +1,4 @@
-import type { BackendUserDto, Gender } from "./auth";
+import type { BackendUserDto, Gender } from './auth';
 
 export interface LoginRequestDto {
   username_or_email: string;

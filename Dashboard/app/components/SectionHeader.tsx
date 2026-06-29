@@ -1,14 +1,19 @@
-import type { ReactNode } from "react"
-import { styles } from "../utils/styles"
+import type { ReactNode } from 'react';
+import { styles } from '../utils/styles';
 
 interface SectionHeaderProps {
-  title: string
-  subtitle?: string
-  action?: ReactNode
-  className?: string
+  title: string;
+  subtitle?: string;
+  action?: ReactNode;
+  className?: string;
 }
 
-export function SectionHeader({ title, subtitle, action, className = "mb-8" }: SectionHeaderProps) {
+export function SectionHeader({
+  title,
+  subtitle,
+  action,
+  className = 'mb-8',
+}: SectionHeaderProps) {
   return (
     <div className={`${styles.flexBetween} items-start ${className}`}>
       <div>
@@ -17,5 +22,5 @@ export function SectionHeader({ title, subtitle, action, className = "mb-8" }: S
       </div>
       {action && <div>{action}</div>}
     </div>
-  )
+  );
 }

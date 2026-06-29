@@ -122,12 +122,12 @@ export function UserDashboard({ name, data }: UserDashboardProps) {
                   <CartesianGrid strokeDasharray="3 3" stroke="#272b3a" />
                   <XAxis
                     dataKey="date"
-                    tick={{ fill: '#5c6484', fontSize: 11 }}
+                    tick={{ fill: '#858dab', fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
-                    tick={{ fill: '#5c6484', fontSize: 11 }}
+                    tick={{ fill: '#858dab', fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
                     domain={[0, 100]}
@@ -163,12 +163,12 @@ export function UserDashboard({ name, data }: UserDashboardProps) {
                   <CartesianGrid strokeDasharray="3 3" stroke="#272b3a" />
                   <XAxis
                     dataKey="label"
-                    tick={{ fill: '#5c6484', fontSize: 11 }}
+                    tick={{ fill: '#858dab', fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
-                    tick={{ fill: '#5c6484', fontSize: 11 }}
+                    tick={{ fill: '#858dab', fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
                     domain={[0, 100]}

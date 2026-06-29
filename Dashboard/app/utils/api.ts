@@ -1,8 +1,6 @@
 import axios from 'axios';
-import {
-  clearAccessToken,
-  getAccessToken,
-} from './tokenStorage';
+import { clearAccessToken, getAccessToken } from './tokenStorage';
+import { notifyUnauthorized } from './authEvents';
 
 // 1. Base axios instance
 const api = axios.create({
@@ -23,7 +21,7 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // 3. Response interceptor
@@ -32,19 +30,19 @@ api.interceptors.response.use(
   (error) => {
     if (error.response) {
       const status = error.response.status;
-      
+
       // If 401 response → clear localStorage token and user → redirect to "/"
       if (status === 401) {
         clearAccessToken();
-        if (window.location.pathname !== '/') window.location.href = '/';
-      } 
+        notifyUnauthorized();
+      }
       // If 500+ response → log error to console
       else if (status >= 500) {
-        console.error("Server Error:", error.response.data || error.message);
+        console.error('Server Error:', error.response.data || error.message);
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // 4. Export default the axios instance

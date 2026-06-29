@@ -1,2 +1,2 @@
-export * from "./EyeIcon";
-export * from "./VirtuStageLogo";
+export * from './EyeIcon';
+export * from './VirtuStageLogo';

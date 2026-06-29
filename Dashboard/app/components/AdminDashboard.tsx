@@ -23,6 +23,7 @@ import {
 } from 'recharts';
 import type { AdminDashboardData } from '../types/dashboard';
 import { EmptyState } from './EmptyState';
+import { Link } from 'react-router';
 
 interface AdminDashboardProps {
   name: string;
@@ -115,12 +116,12 @@ export function AdminDashboard({ name, data }: AdminDashboardProps) {
                 <CartesianGrid strokeDasharray="3 3" stroke="#272b3a" />
                 <XAxis
                   dataKey="day"
-                  tick={{ fill: '#5c6484', fontSize: 11 }}
+                  tick={{ fill: '#858dab', fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fill: '#5c6484', fontSize: 11 }}
+                  tick={{ fill: '#858dab', fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
                 />
@@ -156,12 +157,12 @@ export function AdminDashboard({ name, data }: AdminDashboardProps) {
                 <CartesianGrid strokeDasharray="3 3" stroke="#272b3a" />
                 <XAxis
                   dataKey="month"
-                  tick={{ fill: '#5c6484', fontSize: 11 }}
+                  tick={{ fill: '#858dab', fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fill: '#5c6484', fontSize: 11 }}
+                  tick={{ fill: '#858dab', fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
                   domain={[0, 100]}
@@ -185,9 +186,9 @@ export function AdminDashboard({ name, data }: AdminDashboardProps) {
       <div className={styles.card}>
         <div className={`${styles.flexBetween} mb-5`}>
           <h2 className={styles.cardTitle}>Recent Registrations</h2>
-          <a href="/admin" className={styles.btnLink}>
+          <Link to="/admin" className={styles.btnLink}>
             View All Users →
-          </a>
+          </Link>
         </div>
         {recentRegistrations.length === 0 ? (
           <EmptyState
@@ -204,12 +205,14 @@ export function AdminDashboard({ name, data }: AdminDashboardProps) {
                 className="flex flex-wrap items-center gap-4 p-3 rounded-xl bg-[#12141c] border border-[#272b3a]"
               >
                 <div
-                  className={`w-9 h-9 rounded-full bg-[#5c7cff]/20 ${styles.flexCenter} text-[#5c7cff] font-bold text-sm flex-shrink-0`}
+                  className={`w-9 h-9 rounded-full bg-brand/20 ${styles.flexCenter} text-brand-soft font-bold text-sm flex-shrink-0`}
                 >
                   {user.name.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-white font-semibold text-sm">{user.name}</p>
+                  <p className="text-white font-semibold text-sm">
+                    {user.name}
+                  </p>
                   <p className={styles.textMuted}>{user.email}</p>
                 </div>
                 <span className={styles.textMuted}>{user.time}</span>
