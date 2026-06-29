@@ -141,7 +141,7 @@ async def finish_session(request: Request, session_id: str):
     dependencies=[Depends(require_internal_api_key)],
 )
 async def ingest_voice_analysis(payload: VoiceAnalysisResultPayload):
-    logger.info("received voice analysis payload: %s", payload.model_dump())
+    print("received voice analysis payload: %s", payload.model_dump())
     try:
         stored = await crud_client.create_voice_analysis(payload.to_model_dict())
     except Exception:

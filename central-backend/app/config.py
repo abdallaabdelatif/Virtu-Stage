@@ -6,7 +6,7 @@ load_dotenv()
 CRUD_BASE_URL = os.getenv("CRUD_BASE_URL", "http://localhost:8000")
 VOICE_ANALYSIS_WS_URL = os.getenv("VOICE_ANALYSIS_WS_URL", "ws://localhost:8001")
 CONVERSATIONAL_COMPONENT_WS_URL = os.getenv(
-    "CONVERSATIONAL_COMPONENT_WS_URL", "ws://localhost:8002/ws"
+    "CONVERSATIONAL_COMPONENT_WS_URL", "ws://localhost:9000/ws"
 )
 MOTION_ANALYSIS_WS_URL = os.getenv(
     "MOTION_ANALYSIS_WS_URL", "ws://localhost:9001"
