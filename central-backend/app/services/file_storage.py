@@ -12,6 +12,7 @@ from app.config import (
     R2_ACCESS_KEY_ID,
     R2_ACCOUNT_ID,
     R2_BUCKET_NAME,
+    R2_AVATAR_BUCKET_NAME,
     R2_SECRET_ACCESS_KEY,
     R2_SIGNED_URL_EXPIRES_SECONDS,
 )
@@ -118,6 +119,40 @@ class R2FileStorage:
             "get_object",
             Params={"Bucket": R2_BUCKET_NAME, "Key": object_key},
             ExpiresIn=R2_SIGNED_URL_EXPIRES_SECONDS,
+        )
+
+    async def upload_avatar(self, file_object: BinaryIO, object_key: str) -> None:
+        client = self._get_client()
+        await run_in_threadpool(
+            client.upload_fileobj,
+            file_object,
+            R2_AVATAR_BUCKET_NAME,
+            object_key,
+            ExtraArgs={"ContentType": "image/webp"},
+        )
+
+    async def read_avatar(self, object_key: str) -> bytes:
+        client = self._get_client()
+
+        def read_object() -> bytes:
+            response = client.get_object(
+                Bucket=R2_AVATAR_BUCKET_NAME,
+                Key=object_key,
+            )
+            body = response["Body"]
+            try:
+                return body.read()
+            finally:
+                body.close()
+
+        return await run_in_threadpool(read_object)
+
+    async def delete_avatar(self, object_key: str) -> None:
+        client = self._get_client()
+        await run_in_threadpool(
+            client.delete_object,
+            Bucket=R2_AVATAR_BUCKET_NAME,
+            Key=object_key,
         )
 
 

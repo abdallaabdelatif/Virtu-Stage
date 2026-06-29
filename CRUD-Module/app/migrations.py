@@ -10,6 +10,7 @@ REGISTRATION_IDENTITY_MIGRATION_ID = "20260628_registration_identity_uniqueness"
 VOICE_SCHEMA_MIGRATION_ID = "20260628_voice_analysis_flat_schema"
 VOICE_PAUSE_RATIO_NULLABLE_MIGRATION_ID = "20260628_voice_pause_ratio_nullable"
 PRESENTATION_PROCESSING_MIGRATION_ID = "20260628_presentation_processing"
+USER_AVATAR_MIGRATION_ID = "20260629_user_avatar"
 
 
 def _run_core_auth_migration(sync_connection) -> None:
@@ -86,6 +87,7 @@ async def run_migrations(connection: AsyncConnection) -> None:
     await connection.run_sync(_run_voice_pause_ratio_nullable_migration)
     await connection.run_sync(_run_registration_identity_migration)
     await connection.run_sync(_run_presentation_processing_migration)
+    await connection.run_sync(_run_user_avatar_migration)
 
 
 def _run_motion_assessment_migration(sync_connection) -> None:
@@ -532,3 +534,18 @@ def _run_presentation_processing_migration(sync_connection) -> None:
             )
 
     _record_migration(sync_connection, PRESENTATION_PROCESSING_MIGRATION_ID)
+
+
+def _run_user_avatar_migration(sync_connection) -> None:
+    if _migration_already_applied(sync_connection, USER_AVATAR_MIGRATION_ID):
+        return
+
+    inspector = inspect(sync_connection)
+    if "users" in inspector.get_table_names():
+        columns = {column["name"] for column in inspector.get_columns("users")}
+        if "avatar_key" not in columns:
+            sync_connection.execute(
+                text("ALTER TABLE users ADD COLUMN avatar_key VARCHAR(500)")
+            )
+
+    _record_migration(sync_connection, USER_AVATAR_MIGRATION_ID)

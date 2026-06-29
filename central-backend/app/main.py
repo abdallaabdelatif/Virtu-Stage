@@ -10,6 +10,7 @@ from app.api.dashboard import router as dashboard_router
 from app.api.sessions import router as sessions_router
 from app.api.files import router as files_router
 from app.api.vr import router as vr_router
+from app.api.avatars import router as avatars_router
 from app.auth.jwt import verify_token
 from app.clients.crud_client import crud_client
 from app.config import CORS_ORIGINS
@@ -45,6 +46,7 @@ async def auth_middleware(request: Request, call_next):
     is_public = (
         request.method == "OPTIONS"
         or path in _PUBLIC_PATHS
+        or path.startswith("/api/avatars/")
     )
     if is_public:
         return await call_next(request)
@@ -83,6 +85,7 @@ app.include_router(dashboard_router)
 app.include_router(protected_router)
 app.include_router(account_router)
 app.include_router(admin_router)
+app.include_router(avatars_router)
 
 
 @app.get("/")

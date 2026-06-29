@@ -9,6 +9,7 @@ from app.dependencies.internal import require_internal_api_key
 from app.models.user import User
 from app.schemas.auth import (
     EmailLookupRequest,
+    InternalAvatarUpdate,
     InternalProfileUpdate,
     InternalLoginRequest,
     PasswordChangeRequest,
@@ -140,6 +141,29 @@ async def update_user_profile(
         )
     user.first_name = payload.first_name
     user.last_name = payload.last_name
+    await session.commit()
+    await session.refresh(user)
+    return user
+
+
+@router.patch("/users/{user_id}/avatar", response_model=UserResponse)
+async def update_user_avatar(
+    user_id: uuid.UUID,
+    payload: InternalAvatarUpdate,
+    session: AsyncSession = Depends(get_session),
+) -> User:
+    user = await session.get(User, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is disabled",
+        )
+    user.avatar_key = payload.avatar_key
     await session.commit()
     await session.refresh(user)
     return user

@@ -43,6 +43,7 @@ export default function Settings() {
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -84,12 +85,19 @@ export default function Settings() {
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      showToast('Avatar must be a JPG, PNG, or WebP image', 'error');
+      event.target.value = '';
+      return;
+    }
     if (file.size > 1024 * 1024) {
       showToast('Avatar must be 1MB or smaller', 'error');
+      event.target.value = '';
       return;
     }
 
     try {
+      setIsUploadingAvatar(true);
       const avatarUrl = await uploadAvatar(file);
       setAvatar(avatarUrl);
       updateUser({ avatar: avatarUrl });
@@ -100,6 +108,7 @@ export default function Settings() {
         'error',
       );
     } finally {
+      setIsUploadingAvatar(false);
       event.target.value = '';
     }
   };
@@ -283,7 +292,7 @@ export default function Settings() {
                   <input
                     ref={avatarInputRef}
                     type="file"
-                    accept="image/png, image/jpeg, image/gif"
+                    accept="image/png,image/jpeg,image/webp"
                     className="hidden"
                     onChange={handleAvatarChange}
                   />
@@ -303,13 +312,14 @@ export default function Settings() {
                     <div>
                       <button
                         type="button"
+                        disabled={isUploadingAvatar}
                         onClick={() => avatarInputRef.current?.click()}
-                        className="bg-[#272b3a] hover:bg-[#393f56] text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors mb-2"
+                        className="bg-[#272b3a] hover:bg-[#393f56] disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors mb-2"
                       >
-                        Change Avatar
+                        {isUploadingAvatar ? 'Uploading...' : 'Change Avatar'}
                       </button>
                       <p className="text-[#5c6484] text-xs">
-                        JPG, GIF or PNG. 1MB max.
+                        JPG, PNG or WebP. 1MB max.
                       </p>
                     </div>
                   </div>

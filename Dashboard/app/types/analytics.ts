@@ -45,6 +45,7 @@ export interface SessionAnalytics {
   articulationScore: number | null;
   articulationLevel: string | null;
   voiceFeedback: FeedbackItem[];
+  reportSummary: string;
   postureScore: number | null;
   gazeAssessment: string | null;
   gesturesScore: number | null;

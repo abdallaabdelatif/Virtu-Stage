@@ -1,3 +1,5 @@
+import logging
+
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
@@ -10,8 +12,10 @@ from app.auth.schemas import (
     UserResponse,
 )
 from app.clients.crud_client import crud_client
+from app.services.file_storage import file_storage
 
 router = APIRouter(prefix="/api/users/me", tags=["account"])
+logger = logging.getLogger(__name__)
 
 
 @router.patch("", response_model=UserResponse)
@@ -76,6 +80,7 @@ async def change_password(
 
 @router.delete("", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_account(user=Depends(get_current_active_user)) -> Response:
+    avatar_key = user.get("avatar_key")
     try:
         await crud_client.delete_user(str(user["user_id"]))
     except httpx.HTTPStatusError as exc:
@@ -93,4 +98,9 @@ async def delete_account(user=Depends(get_current_active_user)) -> Response:
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="CRUD service is unavailable",
         ) from exc
+    if avatar_key and avatar_key.startswith("avatars/"):
+        try:
+            await file_storage.delete_avatar(avatar_key)
+        except Exception:
+            logger.exception("Unable to clean up deleted account avatar %s", avatar_key)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

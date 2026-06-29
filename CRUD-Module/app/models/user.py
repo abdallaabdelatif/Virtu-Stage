@@ -22,6 +22,7 @@ class User(Base):
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
     gender: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    avatar_key: Mapped[str | None] = mapped_column(String(500), nullable=True)
     role: Mapped[str] = mapped_column(
         String(20), nullable=False, default="user", server_default="user"
     )

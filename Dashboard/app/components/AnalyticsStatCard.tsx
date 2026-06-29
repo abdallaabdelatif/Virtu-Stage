@@ -48,7 +48,7 @@ export function AnalyticsStatCard({
         </>
       ) : (
         <>
-          <p className={`${styles.statValueLarge} mt-2`}>
+          <p className="mt-2 min-w-0 break-words text-3xl font-extrabold leading-tight text-white sm:text-4xl">
             {value}
           </p>
           {subText && <p className={`${styles.textMuted} mt-auto pt-3`}>{subText}</p>}

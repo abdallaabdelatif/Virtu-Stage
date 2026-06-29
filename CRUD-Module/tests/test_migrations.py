@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy import inspect, text
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from app.migrations import run_migrations
+from app.migrations import _run_user_avatar_migration, run_migrations
 
 
 @pytest.mark.asyncio
@@ -79,5 +79,29 @@ async def test_voice_pause_ratio_migration_relaxes_sqlite_not_null():
                     """
                 )
             )
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_user_avatar_migration_adds_column_to_existing_users_table():
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    try:
+        async with engine.begin() as connection:
+            await connection.execute(
+                text(
+                    "CREATE TABLE users ("
+                    "user_id CHAR(32) PRIMARY KEY, username VARCHAR(100) NOT NULL"
+                    ")"
+                )
+            )
+            await connection.run_sync(_run_user_avatar_migration)
+            columns = await connection.run_sync(
+                lambda sync_connection: {
+                    column["name"]
+                    for column in inspect(sync_connection).get_columns("users")
+                }
+            )
+            assert "avatar_key" in columns
     finally:
         await engine.dispose()

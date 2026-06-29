@@ -198,6 +198,20 @@ class CRUDClient:
         response.raise_for_status()
         return response.json()
 
+    async def update_user_avatar(
+        self,
+        user_id: str,
+        avatar_key: str,
+    ) -> dict[str, Any]:
+        response = await self._request(
+            "PATCH",
+            f"/internal/users/{user_id}/avatar",
+            json={"avatar_key": avatar_key},
+            internal=True,
+        )
+        response.raise_for_status()
+        return response.json()
+
     async def delete_user(self, user_id: str) -> None:
         response = await self._request(
             "DELETE", f"/users/{user_id}", internal=True

@@ -3,8 +3,9 @@ import re
 from typing import Literal, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 from app.auth.passwords import validate_password_strength
+from app.services.avatars import avatar_url_from_key
 
 
 USERNAME_MIN_LENGTH = 3
@@ -88,10 +89,18 @@ class UserResponse(BaseModel):
     first_name: str
     last_name: str
     gender: Optional[str] = None
+    avatar_key: Optional[str] = Field(default=None, exclude=True)
+    avatar_url: Optional[str] = None
     role: Literal["user", "admin"]
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+    @model_validator(mode="after")
+    def populate_avatar_url(self):
+        if self.avatar_key:
+            self.avatar_url = avatar_url_from_key(self.avatar_key)
+        return self
 
 
 class AuthResponse(Token):

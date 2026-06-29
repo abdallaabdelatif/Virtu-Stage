@@ -61,5 +61,17 @@ class InternalProfileUpdate(BaseModel):
         return value
 
 
+class InternalAvatarUpdate(BaseModel):
+    avatar_key: str
+
+    @field_validator("avatar_key")
+    @classmethod
+    def validate_avatar_key(cls, value: str) -> str:
+        value = value.strip()
+        if not value.startswith("avatars/") or not value.endswith(".webp"):
+            raise ValueError("invalid avatar object key")
+        return value
+
+
 class MessageResponse(BaseModel):
     message: str

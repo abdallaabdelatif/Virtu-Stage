@@ -20,11 +20,22 @@ GOTENBERG_TIMEOUT_SECONDS=120
 PRESENTATION_MAX_SLIDES=100
 PRESENTATION_IMAGE_WIDTH=1920
 R2_SIGNED_URL_EXPIRES_SECONDS=3600
+R2_AVATAR_BUCKET_NAME=virtustage
+PUBLIC_API_URL=http://localhost:9000
+AVATAR_MAX_BYTES=1048576
+AVATAR_SIZE=512
 ```
 
 The R2 bucket stays private. `GET /api/files` returns metadata only. Call
 `GET /api/files/{file_id}/slides` after a user selects a presentation to receive
 ordered, short-lived URLs for the generated PNG files.
+
+Avatars are normalized to square WebP images and stored under the `avatars/`
+prefix. By default they use the same private R2 bucket and are served through
+the public, opaque `/api/avatars/{user_id}/{avatar_id}.webp` endpoint. Set
+`R2_AVATAR_BUCKET_NAME` to isolate them in another bucket. If that bucket has a
+public custom domain, set `AVATAR_PUBLIC_BASE_URL` to use the CDN URL directly.
+Never make the presentation bucket public.
 
 ## Railway deployment
 
@@ -45,6 +56,7 @@ SECRET_KEY=<long-random-secret>
 FRONTEND_URL=https://virtu-stage-dashboard.vercel.app
 CORS_ORIGINS=https://virtu-stage-dashboard.vercel.app
 ENVIRONMENT=production
+PUBLIC_API_URL=https://<central-backend-public-domain>
 GOTENBERG_URL=http://gotenberg:3000
 ```
 

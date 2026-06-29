@@ -98,6 +98,7 @@ class UserResponse(BaseModel):
     first_name: str
     last_name: str
     gender: Optional[str] = None
+    avatar_key: Optional[str] = None
     role: str
     is_active: bool
     created_at: datetime
