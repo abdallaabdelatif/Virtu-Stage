@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timedelta, timezone
 
 from app.api.schemas.sessions import (
@@ -20,6 +21,17 @@ def _parse_datetime(value: str | None) -> datetime | None:
     if value.endswith("Z"):
         value = value[:-1] + "+00:00"
     return datetime.fromisoformat(value)
+
+
+def _string_list(value: object) -> list[str]:
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except json.JSONDecodeError:
+            return []
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value if item]
 
 
 def _component_timed_out(
@@ -91,6 +103,10 @@ def map_voice_analysis(data: dict) -> VoiceAnalysisReport:
         anxiety_level=data.get("anxiety_level"),
         clarity_level=data.get("clarity_level"),
         focus_level=data.get("focus_level"),
+        confidence_reasons=_string_list(data.get("confidence_reasons")),
+        anxiety_reasons=_string_list(data.get("anxiety_reasons")),
+        clarity_reasons=_string_list(data.get("clarity_reasons")),
+        focus_reasons=_string_list(data.get("focus_reasons")),
         voice_quality_score=data.get("voice_quality_score"),
         voice_quality_level=data.get("voice_quality_level"),
         fluency_score=data.get("fluency_score"),

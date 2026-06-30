@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, JSON, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import Uuid
 
@@ -26,6 +26,13 @@ class VoiceAnalysis(Base):
     anxiety_level: Mapped[float | None] = mapped_column(Float, nullable=True)
     clarity_level: Mapped[float | None] = mapped_column(Float, nullable=True)
     focus_level: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    confidence_reasons: Mapped[list[str]] = mapped_column(
+        JSON, nullable=False, default=list
+    )
+    anxiety_reasons: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    clarity_reasons: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    focus_reasons: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
 
     voice_quality_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     voice_quality_level: Mapped[str | None] = mapped_column(String(32), nullable=True)

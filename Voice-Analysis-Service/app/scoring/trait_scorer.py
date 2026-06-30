@@ -87,18 +87,20 @@ def score_final_analysis(
     scoring = score_communication(audio, transcript)
     fluency = _section(transcript or {}, "fluency")
     subscores = scoring.get("subscores", {})
+    traits = scoring.get("traits", {})
 
     return {
         "traits": {
-            name: _safe(_num(result, "score"))
-            for name, result in scoring.get("traits", {}).items()
+            name: _safe(_num(result, "score")) for name, result in traits.items()
+        },
+        "trait_reasons": {
+            name: _safe_reasons(result.get("reasons", []))
+            for name, result in traits.items()
         },
         "subscores": {
             "voice_quality": _compact_subscore(subscores.get("voice_quality", {})),
             "fluency": _compact_subscore(subscores.get("fluency", {})),
-            "energy_control": _compact_subscore(
-                subscores.get("energy_stability", {})
-            ),
+            "energy_control": _compact_subscore(subscores.get("energy_stability", {})),
             "articulation": _compact_subscore(subscores.get("articulation", {})),
         },
         "fluency": {
@@ -156,9 +158,21 @@ def _risk_subscores(
     fluency = _section(transcript, "fluency")
 
     pitch_risk = _pitch_instability_risk(pitch)
-    dysfluency = _inverse_subscore(subscores, "fluency", "Dysfluency risk comes from pauses, fillers, repetitions, and pace.")
-    voice_instability = _inverse_subscore(subscores, "voice_quality", "Voice instability risk comes from jitter, shimmer, and harmonic quality.")
-    energy_instability = _inverse_subscore(subscores, "energy_stability", "Energy instability risk comes from loudness variation, silence, and emphasis control.")
+    dysfluency = _inverse_subscore(
+        subscores,
+        "fluency",
+        "Dysfluency risk comes from pauses, fillers, repetitions, and pace.",
+    )
+    voice_instability = _inverse_subscore(
+        subscores,
+        "voice_quality",
+        "Voice instability risk comes from jitter, shimmer, and harmonic quality.",
+    )
+    energy_instability = _inverse_subscore(
+        subscores,
+        "energy_stability",
+        "Energy instability risk comes from loudness variation, silence, and emphasis control.",
+    )
     pace_irregularity = _pace_irregularity_risk(fluency)
 
     return {
@@ -173,7 +187,11 @@ def _risk_subscores(
 def _pitch_instability_risk(pitch: dict[str, Any]) -> dict[str, Any]:
     mean_f0 = _num(pitch, "mean_f0_hz")
     std_f0 = _num(pitch, "std_f0_hz")
-    f0_cv = std_f0 / mean_f0 if _is_finite(std_f0) and _is_finite(mean_f0) and mean_f0 > 0 else None
+    f0_cv = (
+        std_f0 / mean_f0
+        if _is_finite(std_f0) and _is_finite(mean_f0) and mean_f0 > 0
+        else None
+    )
     jump_rate = _num(pitch, "semitone_jump_rate")
     perturbation = _num(pitch, "relative_f0_perturbation")
     direction_changes = _num(pitch, "direction_change_rate_per_sec")
@@ -184,32 +202,46 @@ def _pitch_instability_risk(pitch: dict[str, Any]) -> dict[str, Any]:
         "pitch_jumps": _range_score(jump_rate, 0.3, 1.5),
         "frame_instability": _range_score(perturbation, 0.04, 0.14),
         "direction_changes": _range_score(direction_changes, 5.0, 16.0),
-        "pitch_drift": _range_score(abs(slope) if _is_finite(slope) else None, 8.0, 40.0),
+        "pitch_drift": _range_score(
+            abs(slope) if _is_finite(slope) else None, 8.0, 40.0
+        ),
     }
-    score, available = _weighted(parts, {
-        "pitch_variability": 0.25,
-        "pitch_jumps": 0.25,
-        "frame_instability": 0.25,
-        "direction_changes": 0.15,
-        "pitch_drift": 0.10,
-    })
+    score, available = _weighted(
+        parts,
+        {
+            "pitch_variability": 0.25,
+            "pitch_jumps": 0.25,
+            "frame_instability": 0.25,
+            "direction_changes": 0.15,
+            "pitch_drift": 0.10,
+        },
+    )
 
     reasons = []
     if _is_finite(jump_rate):
         reasons.append(
-            "Large pitch jumps increase anxiety evidence." if jump_rate >= 0.6 else "Pitch jumps do not strongly suggest anxiety."
+            "Large pitch jumps increase anxiety evidence."
+            if jump_rate >= 0.6
+            else "Pitch jumps do not strongly suggest anxiety."
         )
     if _is_finite(perturbation):
         reasons.append(
-            "Frame-to-frame pitch instability is elevated." if perturbation >= 0.07 else "Pitch movement is relatively smooth."
+            "Frame-to-frame pitch instability is elevated."
+            if perturbation >= 0.07
+            else "Pitch movement is relatively smooth."
         )
 
-    return _risk_dict(score, available, reasons, {
-        "f0_cv": f0_cv,
-        "semitone_jump_rate": jump_rate,
-        "relative_f0_perturbation": perturbation,
-        "direction_change_rate_per_sec": direction_changes,
-    })
+    return _risk_dict(
+        score,
+        available,
+        reasons,
+        {
+            "f0_cv": f0_cv,
+            "semitone_jump_rate": jump_rate,
+            "relative_f0_perturbation": perturbation,
+            "direction_change_rate_per_sec": direction_changes,
+        },
+    )
 
 
 def _pace_irregularity_risk(fluency: dict[str, Any]) -> dict[str, Any]:
@@ -234,29 +266,41 @@ def _pace_irregularity_risk(fluency: dict[str, Any]) -> dict[str, Any]:
         "filler_pressure": _range_score(filler_rate, 3.0, 10.0),
         "long_pause_pressure": _range_score(longest_pause, 1.5, 5.0),
     }
-    score, available = _weighted(parts, {
-        "rate_outside_range": 0.40,
-        "pause_pressure": 0.25,
-        "filler_pressure": 0.25,
-        "long_pause_pressure": 0.10,
-    })
+    score, available = _weighted(
+        parts,
+        {
+            "rate_outside_range": 0.40,
+            "pause_pressure": 0.25,
+            "filler_pressure": 0.25,
+            "long_pause_pressure": 0.10,
+        },
+    )
 
     reasons = []
     if _is_finite(wpm):
         reasons.append(
-            "Speaking pace is outside the preferred range." if wpm < 115 or wpm > 165 else "Speaking pace is within the preferred range."
+            "Speaking pace is outside the preferred range."
+            if wpm < 115 or wpm > 165
+            else "Speaking pace is within the preferred range."
         )
     if _is_finite(filler_rate):
         reasons.append(
-            "Fillers add pace irregularity." if filler_rate >= 4 else "Filler rate does not strongly disrupt pace."
+            "Fillers add pace irregularity."
+            if filler_rate >= 4
+            else "Filler rate does not strongly disrupt pace."
         )
 
-    return _risk_dict(score, available, reasons, {
-        "words_per_minute": wpm,
-        "pause_ratio": pause_ratio,
-        "filler_rate_per_minute": filler_rate,
-        "longest_pause_sec": longest_pause,
-    })
+    return _risk_dict(
+        score,
+        available,
+        reasons,
+        {
+            "words_per_minute": wpm,
+            "pause_ratio": pause_ratio,
+            "filler_rate_per_minute": filler_rate,
+            "longest_pause_sec": longest_pause,
+        },
+    )
 
 
 def _inverse_subscore(
@@ -381,6 +425,12 @@ def _compact_subscore(subscore: dict[str, Any]) -> dict[str, Any]:
         "score": _safe(_num(subscore, "score")),
         "level": subscore.get("level"),
     }
+
+
+def _safe_reasons(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(reason) for reason in value if reason][:4]
 
 
 def _positive_level(score: float) -> str:

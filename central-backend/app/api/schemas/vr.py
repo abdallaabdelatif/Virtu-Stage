@@ -33,6 +33,10 @@ class VoiceAnalysisResultPayload(BaseModel):
     anxiety_level: float | None = None
     clarity_level: float | None = None
     focus_level: float | None = None
+    confidence_reasons: list[str] = Field(default_factory=list)
+    anxiety_reasons: list[str] = Field(default_factory=list)
+    clarity_reasons: list[str] = Field(default_factory=list)
+    focus_reasons: list[str] = Field(default_factory=list)
     voice_quality_score: float | None = None
     voice_quality_level: str | None = None
     fluency_score: float | None = None

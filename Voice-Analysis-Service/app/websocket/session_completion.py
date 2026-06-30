@@ -6,7 +6,6 @@ from typing import Any
 from app.analysis import pipeline
 from app.audio.audio_buffer import AudioBuffer
 from app.audio.transcript_buffer import TranscriptBuffer
-from app.config import VOICE_ANALYSIS_RESULT_CALLBACK_URL
 from app.feedback import trait_feedback
 from app.scoring import trait_scorer
 from app.websocket import result_sender
@@ -35,7 +34,6 @@ _session_lock = asyncio.Lock()  # to prevent race conditions
 
 
 async def register_result_callback(session_id: str, callback_url: str | None) -> None:
-    callback_url = callback_url or VOICE_ANALYSIS_RESULT_CALLBACK_URL
     if not callback_url:
         return
 
@@ -185,6 +183,7 @@ def _flat_result_payload(
     feedback: dict[str, str],
 ) -> dict[str, Any]:
     traits = _section(analysis, "traits")
+    trait_reasons = _section(analysis, "trait_reasons")
     subscores = _section(analysis, "subscores")
     fluency = _section(analysis, "fluency")
 
@@ -194,6 +193,10 @@ def _flat_result_payload(
         "anxiety_level": traits.get("anxiety_level"),
         "clarity_level": traits.get("clarity_level"),
         "focus_level": traits.get("focus_level"),
+        "confidence_reasons": _list_value(trait_reasons, "confidence_level"),
+        "anxiety_reasons": _list_value(trait_reasons, "anxiety_level"),
+        "clarity_reasons": _list_value(trait_reasons, "clarity_level"),
+        "focus_reasons": _list_value(trait_reasons, "focus_level"),
         "voice_quality_score": _subscore_value(subscores, "voice_quality", "score"),
         "voice_quality_level": _subscore_value(subscores, "voice_quality", "level"),
         "fluency_score": _subscore_value(subscores, "fluency", "score"),
@@ -238,3 +241,10 @@ def _subscore_value(
     if not isinstance(subscore, dict):
         return None
     return subscore.get(key)
+
+
+def _list_value(data: dict[str, Any], key: str) -> list[str]:
+    value = data.get(key, [])
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value if item]

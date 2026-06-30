@@ -11,6 +11,7 @@ VOICE_SCHEMA_MIGRATION_ID = "20260628_voice_analysis_flat_schema"
 VOICE_PAUSE_RATIO_NULLABLE_MIGRATION_ID = "20260628_voice_pause_ratio_nullable"
 PRESENTATION_PROCESSING_MIGRATION_ID = "20260628_presentation_processing"
 USER_AVATAR_MIGRATION_ID = "20260629_user_avatar"
+VOICE_TRAIT_REASONS_MIGRATION_ID = "20260630_voice_trait_reasons"
 
 
 def _run_core_auth_migration(sync_connection) -> None:
@@ -88,6 +89,7 @@ async def run_migrations(connection: AsyncConnection) -> None:
     await connection.run_sync(_run_registration_identity_migration)
     await connection.run_sync(_run_presentation_processing_migration)
     await connection.run_sync(_run_user_avatar_migration)
+    await connection.run_sync(_run_voice_trait_reasons_migration)
 
 
 def _run_motion_assessment_migration(sync_connection) -> None:
@@ -419,6 +421,31 @@ def _run_voice_pause_ratio_nullable_migration(sync_connection) -> None:
     _record_migration(sync_connection, VOICE_PAUSE_RATIO_NULLABLE_MIGRATION_ID)
 
 
+def _run_voice_trait_reasons_migration(sync_connection) -> None:
+    if _migration_already_applied(sync_connection, VOICE_TRAIT_REASONS_MIGRATION_ID):
+        return
+
+    inspector = inspect(sync_connection)
+    if "voice_analysis" not in inspector.get_table_names():
+        _record_migration(sync_connection, VOICE_TRAIT_REASONS_MIGRATION_ID)
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("voice_analysis")}
+    json_definition = "JSON NOT NULL DEFAULT '[]'"
+    for name in [
+        "confidence_reasons",
+        "anxiety_reasons",
+        "clarity_reasons",
+        "focus_reasons",
+    ]:
+        if name not in columns:
+            sync_connection.execute(
+                text(f"ALTER TABLE voice_analysis ADD COLUMN {name} {json_definition}")
+            )
+
+    _record_migration(sync_connection, VOICE_TRAIT_REASONS_MIGRATION_ID)
+
+
 def _rebuild_sqlite_voice_analysis_with_nullable_pause_ratio(sync_connection) -> None:
     inspector = inspect(sync_connection)
     existing_columns = {
@@ -431,6 +458,10 @@ def _rebuild_sqlite_voice_analysis_with_nullable_pause_ratio(sync_connection) ->
         "anxiety_level",
         "clarity_level",
         "focus_level",
+        "confidence_reasons",
+        "anxiety_reasons",
+        "clarity_reasons",
+        "focus_reasons",
         "voice_quality_score",
         "voice_quality_level",
         "fluency_score",
@@ -466,6 +497,10 @@ def _rebuild_sqlite_voice_analysis_with_nullable_pause_ratio(sync_connection) ->
                 anxiety_level FLOAT,
                 clarity_level FLOAT,
                 focus_level FLOAT,
+                confidence_reasons JSON NOT NULL DEFAULT '[]',
+                anxiety_reasons JSON NOT NULL DEFAULT '[]',
+                clarity_reasons JSON NOT NULL DEFAULT '[]',
+                focus_reasons JSON NOT NULL DEFAULT '[]',
                 voice_quality_score FLOAT,
                 voice_quality_level VARCHAR(32),
                 fluency_score FLOAT,

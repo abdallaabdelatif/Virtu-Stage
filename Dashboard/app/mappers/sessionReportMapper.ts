@@ -46,6 +46,15 @@ function feedbackFor(
   return feedback[key]?.trim() || fallback;
 }
 
+function withReasons(feedback: string, reasons?: string[] | null): string {
+  const cleanReasons = Array.isArray(reasons)
+    ? reasons.filter((reason) => reason.trim().length > 0)
+    : [];
+  if (cleanReasons.length === 0) return feedback;
+  const reasonText = cleanReasons.join(' ');
+  return feedback.trim().length > 0 ? `${feedback} ${reasonText}` : reasonText;
+}
+
 function buildVoiceInsights(voice: VoiceAnalysisDto | null): {
   strengths: RankedFeedback[];
   growthAreas: RankedFeedback[];
@@ -57,10 +66,10 @@ function buildVoiceInsights(voice: VoiceAnalysisDto | null): {
   const growthAreas: RankedFeedback[] = [];
   const recommendations: RankedFeedback[] = [];
   const feedback = {
-    confidence: voice.confidence_feedback,
-    clarity: voice.clarity_feedback,
-    focus: voice.focus_feedback,
-    anxiety: voice.anxiety_feedback,
+    confidence: withReasons(voice.confidence_feedback, voice.confidence_reasons),
+    clarity: withReasons(voice.clarity_feedback, voice.clarity_reasons),
+    focus: withReasons(voice.focus_feedback, voice.focus_reasons),
+    anxiety: withReasons(voice.anxiety_feedback, voice.anxiety_reasons),
   };
 
   const positiveTraits = [
@@ -307,10 +316,22 @@ export function mapSessionReport(
 
   const voiceFeedback: FeedbackItem[] = voice
     ? [
-        { title: 'Confidence', desc: voice.confidence_feedback },
-        { title: 'Clarity', desc: voice.clarity_feedback },
-        { title: 'Focus', desc: voice.focus_feedback },
-        { title: 'Anxiety', desc: voice.anxiety_feedback },
+        {
+          title: 'Confidence',
+          desc: withReasons(voice.confidence_feedback, voice.confidence_reasons),
+        },
+        {
+          title: 'Clarity',
+          desc: withReasons(voice.clarity_feedback, voice.clarity_reasons),
+        },
+        {
+          title: 'Focus',
+          desc: withReasons(voice.focus_feedback, voice.focus_reasons),
+        },
+        {
+          title: 'Anxiety',
+          desc: withReasons(voice.anxiety_feedback, voice.anxiety_reasons),
+        },
       ].filter((item) => item.desc.trim().length > 0)
     : [];
 
