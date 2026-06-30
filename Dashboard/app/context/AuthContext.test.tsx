@@ -47,7 +47,12 @@ function AuthHarness() {
       <button type="button" onClick={() => login(testUser, 'new-token')}>
         Login
       </button>
-      <button type="button" onClick={() => updateUser({ firstName: 'Updated', name: 'Updated Ahmed' })}>
+      <button
+        type="button"
+        onClick={() =>
+          updateUser({ firstName: 'Updated', name: 'Updated Ahmed' })
+        }
+      >
         Update User
       </button>
       <button type="button" onClick={logout}>
@@ -140,4 +145,3 @@ describe('AuthProvider', () => {
     vi.mocked(console.error).mockRestore();
   });
 });
-

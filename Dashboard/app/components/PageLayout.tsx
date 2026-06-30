@@ -146,11 +146,11 @@ export function PageLayout({ children }: PageLayoutProps) {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center h-[76px] gap-3 px-4 border-b border-border-subtle">
-        <div className="w-14 h-14 rounded-xl bg-brand/20 flex items-center justify-center">
-          <VirtuStageLogo className="w-14 h-14 text-brand-soft" />
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/10 ring-1 ring-brand/20">
+          <VirtuStageLogo className="h-10 w-10 object-contain" />
         </div>
         <div>
-          <p className="text-white font-bold text-sm">VirtuStage</p>
+          <p className="text-[#d9d9d9] font-bold text-sm">VirtuStage</p>
           <p className="text-muted text-xs">
             {isAdmin ? 'Admin Console' : 'AI VR Training'}
           </p>
@@ -184,7 +184,7 @@ export function PageLayout({ children }: PageLayoutProps) {
             aria-current={isActive(item.path) ? 'page' : undefined}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
               isActive(item.path)
-                ? 'bg-brand text-white'
+                ? 'bg-brand text-brand-contrast'
                 : 'text-secondary hover:bg-white/5 hover:text-white'
             }`}
           >
@@ -199,7 +199,7 @@ export function PageLayout({ children }: PageLayoutProps) {
         <Link
           to="/settings"
           aria-label="Open profile settings"
-          className="flex items-center gap-3 px-3 py-2 rounded-xl bg-[#12141c] mb-2 hover:bg-[#1b1d28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5c7cff]/70 transition-colors"
+          className="flex items-center gap-3 px-3 py-2 rounded-xl bg-[#121610] mb-2 hover:bg-[#1a2117] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c1ff72]/70 transition-colors"
         >
           <div className="w-8 h-8 rounded-full bg-brand/30 flex items-center justify-center text-brand-soft font-bold text-sm flex-shrink-0 overflow-hidden">
             {user?.avatar ? (
@@ -231,10 +231,10 @@ export function PageLayout({ children }: PageLayoutProps) {
   );
 
   return (
-    <div className="min-h-screen bg-canvas text-white flex">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_0%_100%,rgba(193,255,114,0.12),transparent_34rem),linear-gradient(115deg,#10130f_0%,#111410_48%,#062815_100%)] text-white flex">
       <a
         href="#main-content"
-        className="sr-only z-[200] rounded-lg bg-brand px-4 py-2 text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+        className="sr-only z-[200] rounded-lg bg-brand px-4 py-2 text-brand-contrast focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
       >
         Skip to main content
       </a>

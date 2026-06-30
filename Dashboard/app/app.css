@@ -1,19 +1,20 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-brand: #4a6aee;
-  --color-brand-hover: #3f5edb;
-  --color-brand-soft: #8da2ff;
-  --color-canvas: #0f1323;
-  --color-canvas-deep: #0a0c10;
-  --color-sidebar: #0d0f1c;
-  --color-surface: #12141c;
-  --color-panel: #1b1d28;
-  --color-elevated: #272b3a;
-  --color-border-subtle: #272b3a;
-  --color-border-strong: #393f56;
-  --color-secondary: #9aa1bc;
-  --color-muted: #858dab;
+  --color-brand: #c1ff72;
+  --color-brand-hover: #a8ea4f;
+  --color-brand-soft: #d5ff9e;
+  --color-brand-contrast: #10140d;
+  --color-canvas: #10130f;
+  --color-canvas-deep: #070a08;
+  --color-sidebar: #0b100c;
+  --color-surface: #121610;
+  --color-panel: #1a2117;
+  --color-elevated: #263020;
+  --color-border-subtle: #2a3325;
+  --color-border-strong: #46513c;
+  --color-secondary: #d9d9d9;
+  --color-muted: #aeb4a8;
   --color-success: #0bda62;
   --color-warning: #ffb703;
 }
@@ -25,8 +26,22 @@
 
   body {
     min-width: 320px;
-    background: var(--color-canvas);
-    color: white;
+    background:
+      radial-gradient(
+        circle at 0% 100%,
+        rgba(193, 255, 114, 0.12),
+        transparent 34rem
+      ),
+      linear-gradient(115deg, #10130f 0%, #111410 48%, #062815 100%);
+    color: var(--color-secondary);
+    font-family:
+      'Atkinson Hyperlegible',
+      'Atkinson Hyperlegible Next',
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      sans-serif;
   }
 
   :focus-visible {

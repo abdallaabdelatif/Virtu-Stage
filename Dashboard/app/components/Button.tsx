@@ -12,11 +12,12 @@ interface ButtonProps extends Omit<
 }
 
 const variants = {
-  primary: 'bg-brand text-white hover:bg-brand-hover shadow-xl shadow-brand/20',
+  primary:
+    'bg-brand text-brand-contrast hover:bg-brand-hover shadow-xl shadow-brand/20',
   secondary: 'bg-elevated text-white hover:bg-border-strong',
   danger:
     'bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20',
-  ghost: 'bg-transparent border border-[#393f56] text-white hover:bg-white/5',
+  ghost: 'bg-transparent border border-[#46513c] text-white hover:bg-white/5',
 };
 
 const sizes = {

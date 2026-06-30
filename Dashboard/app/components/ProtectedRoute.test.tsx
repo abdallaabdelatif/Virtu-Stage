@@ -121,4 +121,3 @@ describe('ProtectedRoute', () => {
     expect(screen.getByText('Admin Content')).toBeInTheDocument();
   });
 });
-

@@ -8,7 +8,7 @@ interface CardProps {
 export function Card({ children, className = '', title, action }: CardProps) {
   return (
     <div
-      className={`bg-[#1b1d28] border border-[#393f56] rounded-2xl p-6 ${className}`}
+      className={`bg-[#1a2117] border border-[#46513c] rounded-2xl p-6 ${className}`}
     >
       {(title || action) && (
         <div className="flex items-center justify-between mb-5">
@@ -34,14 +34,14 @@ export function StatCard({
   label,
   value,
   change,
-  color = '#5c7cff',
+  color = '#c1ff72',
   icon,
 }: StatCardProps) {
   const isPositive = change?.startsWith('+');
   return (
-    <div className="bg-[#1b1d28] border border-[#393f56] rounded-2xl p-5">
+    <div className="bg-[#1a2117] border border-[#46513c] rounded-2xl p-5">
       <div className="flex justify-between items-start mb-3">
-        <p className="text-[#9aa1bc] text-xs font-bold uppercase tracking-wider">
+        <p className="text-[#d9d9d9] text-xs font-bold uppercase tracking-wider">
           {label}
         </p>
         {icon && (
@@ -58,7 +58,7 @@ export function StatCard({
           {change} from last month
         </span>
       )}
-      <div className="w-full h-1 rounded-full mt-3 bg-[#272b3a]">
+      <div className="w-full h-1 rounded-full mt-3 bg-[#2a3325]">
         <div
           className="h-full rounded-full"
           style={{ width: '60%', backgroundColor: color }}

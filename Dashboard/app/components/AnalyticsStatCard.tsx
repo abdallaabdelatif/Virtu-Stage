@@ -25,7 +25,7 @@ export function AnalyticsStatCard({
   if (badgeType === 'warning')
     badgeColorClass = 'text-orange-400 bg-orange-400/10';
   if (badgeType === 'neutral')
-    badgeColorClass = 'text-[#858dab] bg-[#858dab]/10';
+    badgeColorClass = 'text-[#aeb4a8] bg-[#aeb4a8]/10';
 
   return (
     <div className={styles.cardSub}>
@@ -44,9 +44,9 @@ export function AnalyticsStatCard({
         <>
           <div className="flex items-baseline gap-1 mt-2">
             <span className={styles.statValueLarge}>{value}</span>
-            <span className="text-[#858dab] text-xl font-bold">/100</span>
+            <span className="text-[#aeb4a8] text-xl font-bold">/100</span>
           </div>
-          <div className="w-full h-2 bg-[#12141c] rounded-full mt-4">
+          <div className="w-full h-2 bg-[#121610] rounded-full mt-4">
             <div
               className="h-full bg-brand rounded-full"
               style={{ width: `${barProgress}%` }}

@@ -1,49 +1,79 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { getAnalyticsSessions } from '../services/analyticsService';
 import { SessionTable } from '../components/SessionTable';
 import { SectionHeader } from '../components/SectionHeader';
-import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorMessage } from '../components/ErrorMessage';
 import type { SessionListItem } from '../types/session';
 import { getApiErrorMessage } from '../utils/apiError';
 import { EmptyState } from '../components/EmptyState';
 import { ChartNoAxesCombined } from 'lucide-react';
+import { SessionListSkeleton } from '../components/PageSkeletons';
+import { useTransientMessages } from '../hooks/useTransientMessages';
+import { RefreshNotice } from '../components/RefreshNotice';
+
+let cachedAnalyticsSessions: SessionListItem[] | null = null;
 
 export default function Analytics() {
   const navigate = useNavigate();
-  const [sessions, setSessions] = useState<SessionListItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [sessions, setSessions] = useState<SessionListItem[]>(
+    () => cachedAnalyticsSessions ?? [],
+  );
+  const [loading, setLoading] = useState(
+    () => cachedAnalyticsSessions === null,
+  );
   const [error, setError] = useState<string | null>(null);
+  const { messages: refreshMessages, appendMessage: appendRefreshMessage } =
+    useTransientMessages();
+  const mountedRef = useRef(false);
 
   const fetchSessions = useCallback(async () => {
+    const hasCachedSnapshot = cachedAnalyticsSessions !== null;
     try {
-      setLoading(true);
+      if (!hasCachedSnapshot) setLoading(true);
       setError(null);
       const data = await getAnalyticsSessions();
+      if (!mountedRef.current) return;
+      cachedAnalyticsSessions = data;
       setSessions(data);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Failed to load analytics data.'));
+      if (!mountedRef.current) return;
+      const message = getApiErrorMessage(err, 'Failed to load analytics data.');
+      if (cachedAnalyticsSessions !== null) {
+        appendRefreshMessage(`${message} Showing the latest analytics data.`);
+      } else {
+        setError(message);
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
-  }, []);
+  }, [appendRefreshMessage]);
 
   useEffect(() => {
+    mountedRef.current = true;
     void fetchSessions();
+    return () => {
+      mountedRef.current = false;
+    };
   }, [fetchSessions]);
 
   return (
     <>
       <SectionHeader
         title="Performance Analytics"
-        subtitle={`Select a session to review its detailed AI performance analysis. ${sessions.length} sessions available.`}
+        subtitle={
+          loading
+            ? 'Select a session to review its detailed AI performance analysis.'
+            : `Select a session to review its detailed AI performance analysis. ${sessions.length} sessions available.`
+        }
       />
 
-      {loading && <LoadingSpinner text="Loading analytics..." />}
+      <RefreshNotice messages={refreshMessages} />
+
+      {loading && sessions.length === 0 && <SessionListSkeleton />}
       {error && <ErrorMessage message={error} onRetry={fetchSessions} />}
 
-      {!loading && !error && sessions.length === 0 && (
+      {!error && !loading && sessions.length === 0 && (
         <EmptyState
           icon={ChartNoAxesCombined}
           title="No analytics available"
@@ -51,7 +81,7 @@ export default function Analytics() {
         />
       )}
 
-      {!loading && !error && sessions.length > 0 && (
+      {!error && sessions.length > 0 && (
         <SessionTable
           sessions={sessions}
           actionLabel="View Analysis"

@@ -176,7 +176,7 @@ export default function Settings() {
             role={toastType === 'error' ? 'alert' : 'status'}
             aria-live={toastType === 'error' ? 'assertive' : 'polite'}
             aria-atomic="true"
-            className={`bg-[#1b1d28] border rounded-xl p-4 flex items-center gap-3 shadow-2xl ${
+            className={`bg-[#1a2117] border rounded-xl p-4 flex items-center gap-3 shadow-2xl ${
               toastType === 'success'
                 ? 'border-[#0bda62]/30 shadow-[#0bda62]/10'
                 : 'border-red-500/30 shadow-red-500/10'
@@ -194,7 +194,7 @@ export default function Settings() {
 
       <div className="mb-8">
         <h1 className="text-3xl font-black tracking-tight">Settings</h1>
-        <p className="text-[#9aa1bc] mt-1">
+        <p className="text-[#d9d9d9] mt-1">
           Manage your profile and account security.
         </p>
       </div>
@@ -214,7 +214,7 @@ export default function Settings() {
             onClick={() => setActiveTab('account')}
           />
 
-          <div className="h-px bg-[#272b3a] my-4 mx-2" />
+          <div className="h-px bg-[#2a3325] my-4 mx-2" />
 
           <button
             onClick={logout}
@@ -225,7 +225,7 @@ export default function Settings() {
           </button>
         </div>
 
-        <div className="flex-1 bg-[#12141c] border border-[#272b3a] rounded-3xl p-6 md:p-8">
+        <div className="flex-1 bg-[#121610] border border-[#2a3325] rounded-3xl p-6 md:p-8">
           <form onSubmit={handleSave}>
             {activeTab === 'profile' && (
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -259,11 +259,11 @@ export default function Settings() {
                       type="button"
                       disabled={isUploadingAvatar}
                       onClick={() => avatarInputRef.current?.click()}
-                      className="bg-[#272b3a] hover:bg-[#393f56] disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors mb-2"
+                      className="bg-[#2a3325] hover:bg-[#46513c] disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors mb-2"
                     >
                       {isUploadingAvatar ? 'Uploading...' : 'Change Avatar'}
                     </button>
-                    <p className="text-[#858dab] text-xs">
+                    <p className="text-[#aeb4a8] text-xs">
                       JPG, PNG or WebP. 1MB max.
                     </p>
                   </div>
@@ -330,7 +330,7 @@ export default function Settings() {
                         setCurrentPassword(event.target.value);
                         setPasswordError(null);
                       }}
-                      className="w-full bg-[#1b1d28] border border-[#393f56] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand"
+                      className="w-full bg-[#1a2117] border border-[#46513c] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand"
                     />
                     <label
                       htmlFor="new-password"
@@ -348,7 +348,7 @@ export default function Settings() {
                         setNewPassword(event.target.value);
                         setPasswordError(null);
                       }}
-                      className="w-full bg-[#1b1d28] border border-[#393f56] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand"
+                      className="w-full bg-[#1a2117] border border-[#46513c] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand"
                     />
                     <label
                       htmlFor="confirm-new-password"
@@ -366,13 +366,13 @@ export default function Settings() {
                         setConfirmNewPassword(event.target.value);
                         setPasswordError(null);
                       }}
-                      className="w-full bg-[#1b1d28] border border-[#393f56] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand"
+                      className="w-full bg-[#1a2117] border border-[#46513c] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand"
                     />
                     <button
                       type="button"
                       onClick={() => void handleChangePassword()}
                       disabled={isChangingPassword}
-                      className="bg-[#272b3a] hover:bg-[#393f56] disabled:cursor-not-allowed disabled:opacity-60 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors"
+                      className="bg-[#2a3325] hover:bg-[#46513c] disabled:cursor-not-allowed disabled:opacity-60 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors"
                     >
                       {isChangingPassword
                         ? 'Updating Password...'
@@ -383,7 +383,7 @@ export default function Settings() {
 
                 <div className="border border-red-500/20 bg-red-500/5 rounded-2xl p-6">
                   <h3 className="text-red-400 font-black mb-2">Danger Zone</h3>
-                  <p className="text-[#9aa1bc] text-sm mb-4">
+                  <p className="text-[#d9d9d9] text-sm mb-4">
                     Permanently delete your account and all associated session
                     data. This cannot be undone.
                   </p>
@@ -399,18 +399,18 @@ export default function Settings() {
             )}
 
             {activeTab !== 'account' && (
-              <div className="mt-8 pt-6 border-t border-[#272b3a] flex justify-end gap-3">
+              <div className="mt-8 pt-6 border-t border-[#2a3325] flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => void handleDiscard()}
-                  className="text-[#9aa1bc] hover:text-white px-5 py-2.5 text-sm font-bold transition-colors"
+                  className="text-[#d9d9d9] hover:text-white px-5 py-2.5 text-sm font-bold transition-colors"
                 >
                   Discard Changes
                 </button>
                 <button
                   type="submit"
                   disabled={isSavingProfile}
-                  className="bg-brand hover:bg-brand-hover text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-lg shadow-brand/20"
+                  className="bg-brand hover:bg-brand-hover text-brand-contrast px-6 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-lg shadow-brand/20"
                 >
                   {isSavingProfile ? 'Saving...' : 'Save Preferences'}
                 </button>
@@ -447,7 +447,7 @@ function ProfileField({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         required
-        className="w-full bg-[#1b1d28] border border-[#393f56] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand"
+        className="w-full bg-[#1a2117] border border-[#46513c] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand"
       />
     </div>
   );
@@ -476,7 +476,7 @@ function ReadOnlyField({
         type={type}
         value={value}
         readOnly
-        className="w-full bg-[#1b1d28] border border-[#393f56] rounded-xl px-4 py-2.5 text-sm text-[#858dab] cursor-not-allowed"
+        className="w-full bg-[#1a2117] border border-[#46513c] rounded-xl px-4 py-2.5 text-sm text-[#aeb4a8] cursor-not-allowed"
       />
     </div>
   );
@@ -497,9 +497,9 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all text-sm font-bold ${active ? 'bg-brand/10 text-brand-soft shadow-[inset_2px_0_0_#5c7cff]' : 'text-[#9aa1bc] hover:bg-[#272b3a] hover:text-white'}`}
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all text-sm font-bold ${active ? 'bg-brand/10 text-brand-soft shadow-[inset_2px_0_0_#c1ff72]' : 'text-[#d9d9d9] hover:bg-[#2a3325] hover:text-white'}`}
     >
-      <span className={active ? 'text-brand-soft' : 'text-[#858dab]'}>
+      <span className={active ? 'text-brand-soft' : 'text-[#aeb4a8]'}>
         {icon}
       </span>
       {label}

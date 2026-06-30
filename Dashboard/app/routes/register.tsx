@@ -105,24 +105,24 @@ export default function Register() {
     <div
       className="relative min-h-screen flex flex-col text-white"
       style={{
-        backgroundColor: '#0f1323',
+        backgroundColor: '#10130f',
         backgroundImage:
-          'radial-gradient(at 0% 0%, hsla(228,100%,15%,1) 0, transparent 50%), radial-gradient(at 100% 100%, hsla(230,100%,20%,1) 0, transparent 50%)',
+          'radial-gradient(at 0% 100%, rgba(193,255,114,0.14) 0, transparent 48%), radial-gradient(at 100% 0%, rgba(6,68,35,0.55) 0, transparent 46%)',
       }}
     >
       {/* Header */}
-      <header className="flex items-center justify-between px-6 md:px-10 py-4 border-b border-[#272b3a] bg-[#0f1323]/30 backdrop-blur-sm sticky top-0 z-50">
-        <div className="flex items-center gap-3 text-brand-soft">
-          <VirtuStageLogo className="w-6 h-6" />
-          <h2 className="text-white text-xl font-bold">VirtuStage</h2>
-        </div>
+      <header className="flex items-center justify-between px-6 md:px-10 py-4 border-b border-[#2a3325] bg-[#10130f]/30 backdrop-blur-sm sticky top-0 z-50">
+        <VirtuStageLogo
+          variant="wordmark"
+          className="h-10 w-auto max-w-[180px] object-contain"
+        />
         <div className="flex items-center gap-4">
           <span className="text-gray-400 text-sm hidden md:block">
             Already have an account?
           </span>
           <Link
             to="/"
-            className="min-w-[84px] flex items-center justify-center rounded-xl h-10 px-5 bg-brand text-white text-sm font-bold hover:bg-brand-hover transition-all shadow-lg shadow-brand/20"
+            className="min-w-[84px] flex items-center justify-center rounded-xl h-10 px-5 bg-brand text-brand-contrast text-sm font-bold hover:bg-brand-hover transition-all shadow-lg shadow-brand/20"
           >
             Sign In
           </Link>
@@ -132,12 +132,12 @@ export default function Register() {
       {/* Main */}
       <main className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-[480px]">
-          <div className="bg-[#1b1d28]/60 border border-[#393f56] rounded-xl p-8 shadow-2xl backdrop-blur-md">
+          <div className="bg-[#1a2117]/60 border border-[#46513c] rounded-xl p-8 shadow-2xl backdrop-blur-md">
             <div className="text-center mb-8">
               <h1 className="text-white text-[32px] font-bold pb-2">
                 Create Account
               </h1>
-              <p className="text-[#9aa1bc]">
+              <p className="text-[#d9d9d9]">
                 Start your AI-enhanced VR training journey
               </p>
             </div>
@@ -168,7 +168,7 @@ export default function Register() {
               />
               <p
                 className={`-mt-1 mb-2 text-xs ${
-                  usernameError ? 'text-red-400' : 'text-[#858dab]'
+                  usernameError ? 'text-red-400' : 'text-[#aeb4a8]'
                 }`}
               >
                 {usernameError ??
@@ -235,7 +235,7 @@ export default function Register() {
                       className={`rounded-xl border px-4 py-3 text-sm font-bold capitalize transition-colors ${
                         gender === option
                           ? 'border-brand bg-brand/15 text-white'
-                          : 'border-[#393f56] bg-[#1b1d28] text-[#9aa1bc] hover:border-brand/60 hover:text-white'
+                          : 'border-[#46513c] bg-[#1a2117] text-[#d9d9d9] hover:border-brand/60 hover:text-white'
                       }`}
                     >
                       {option}
@@ -333,7 +333,7 @@ export default function Register() {
         </div>
       </main>
 
-      <footer className="p-6 text-center text-[#858dab] text-xs">
+      <footer className="p-6 text-center text-[#aeb4a8] text-xs">
         © 2026 VirtuStage AI Training Systems. All rights reserved.
       </footer>
     </div>
@@ -346,7 +346,7 @@ function PasswordRequirement({ met, label }: { met: boolean; label: string }) {
   return (
     <div
       className={`flex items-center gap-1.5 text-xs ${
-        met ? 'text-[#0bda62]' : 'text-[#858dab]'
+        met ? 'text-[#0bda62]' : 'text-[#aeb4a8]'
       }`}
     >
       <Icon className="h-3.5 w-3.5 shrink-0" />

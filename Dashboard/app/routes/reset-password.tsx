@@ -72,7 +72,7 @@ export default function ResetPassword() {
       <div className="pointer-events-none absolute bottom-[-10%] left-[-5%] h-[400px] w-[400px] rounded-full bg-[#0bda62]/5 blur-[100px]" />
 
       <div className="relative z-10 w-full max-w-md">
-        <div className="relative overflow-hidden rounded-3xl border border-[#272b3a] bg-[#12141c]/80 p-8 shadow-2xl backdrop-blur-xl lg:p-10">
+        <div className="relative overflow-hidden rounded-3xl border border-[#2a3325] bg-[#121610]/80 p-8 shadow-2xl backdrop-blur-xl lg:p-10">
           <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-brand to-[#0bda62]" />
 
           {isSuccess ? (
@@ -83,7 +83,7 @@ export default function ResetPassword() {
               <h1 className="mb-3 text-2xl font-bold text-white">
                 Password updated
               </h1>
-              <p className="mb-8 text-sm font-medium leading-relaxed text-[#9aa1bc]">
+              <p className="mb-8 text-sm font-medium leading-relaxed text-[#d9d9d9]">
                 Your password has been reset successfully. You can now sign in
                 using your new password.
               </p>
@@ -102,13 +102,13 @@ export default function ResetPassword() {
               <h1 className="mb-3 text-2xl font-bold text-white">
                 Invalid reset link
               </h1>
-              <p className="mb-8 text-sm font-medium leading-relaxed text-[#9aa1bc]">
+              <p className="mb-8 text-sm font-medium leading-relaxed text-[#d9d9d9]">
                 This link does not contain a password reset token. Request a new
                 reset link and try again.
               </p>
               <Link
                 to="/forgot-password"
-                className="flex h-14 w-full items-center justify-center rounded-xl bg-brand px-6 font-bold text-white shadow-xl shadow-brand/20 transition-all hover:brightness-110"
+                className="flex h-14 w-full items-center justify-center rounded-xl bg-brand px-6 font-bold text-brand-contrast shadow-xl shadow-brand/20 transition-all hover:brightness-110"
               >
                 Request New Link
               </Link>
@@ -122,7 +122,7 @@ export default function ResetPassword() {
                 <h1 className="mb-3 text-3xl font-black tracking-wide text-white">
                   Create New Password
                 </h1>
-                <p className="text-sm font-medium text-[#9aa1bc]">
+                <p className="text-sm font-medium text-[#d9d9d9]">
                   Choose a strong password that you have not used before.
                 </p>
               </div>
@@ -242,7 +242,7 @@ function PasswordRequirement({ met, label }: { met: boolean; label: string }) {
   return (
     <div
       className={`flex items-center gap-1.5 text-xs ${
-        met ? 'text-[#0bda62]' : 'text-[#858dab]'
+        met ? 'text-[#0bda62]' : 'text-[#aeb4a8]'
       }`}
     >
       <Icon className="h-3.5 w-3.5 shrink-0" />

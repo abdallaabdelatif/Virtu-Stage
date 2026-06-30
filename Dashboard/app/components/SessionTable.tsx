@@ -164,7 +164,7 @@ export function SessionTable({
                 onClick={() => setPage(pageNumber)}
                 className={`h-9 w-9 rounded-lg text-sm font-bold transition-colors ${
                   currentPage === pageNumber
-                    ? 'bg-brand text-white'
+                    ? 'bg-brand text-brand-contrast'
                     : 'border border-border-subtle bg-surface text-secondary hover:border-brand'
                 }`}
               >

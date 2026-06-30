@@ -28,8 +28,8 @@ export function ActivityItem({ item }: ActivityItemProps) {
         >
           {item.title}
         </p>
-        <p className="text-[#9aa1bc] text-xs leading-relaxed">{item.desc}</p>
-        <p className="text-[#858dab] text-xs mt-1">{item.time}</p>
+        <p className="text-[#d9d9d9] text-xs leading-relaxed">{item.desc}</p>
+        <p className="text-[#aeb4a8] text-xs mt-1">{item.time}</p>
       </div>
     </div>
   );

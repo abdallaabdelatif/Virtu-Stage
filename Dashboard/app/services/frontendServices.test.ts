@@ -1,17 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as allure from 'allure-js-commons';
 import api from '../utils/api';
-import {
-  forgotPasswordCall,
-  loginCall,
-  registerCall,
-} from './authService';
+import { forgotPasswordCall, loginCall, registerCall } from './authService';
 import { getDashboardStats } from './dashboardService';
-import {
-  getFileDownloadUrl,
-  getFiles,
-  uploadFile,
-} from './libraryService';
+import { getFileDownloadUrl, getFiles, uploadFile } from './libraryService';
 import { getSessionById, getSessions } from './sessionService';
 
 vi.mock('../utils/api', () => ({
@@ -127,10 +119,7 @@ describe('frontend services', () => {
     const detail = await getSessionById('session-1');
 
     expect(mockedApi.get).toHaveBeenNthCalledWith(1, '/api/sessions/me');
-    expect(mockedApi.get).toHaveBeenNthCalledWith(
-      2,
-      '/api/sessions/session-1',
-    );
+    expect(mockedApi.get).toHaveBeenNthCalledWith(2, '/api/sessions/session-1');
     expect(list[0]).toMatchObject({
       id: 'session-1',
       scenario: 'Job Interview',
@@ -194,13 +183,21 @@ describe('frontend services', () => {
       .mockResolvedValueOnce({ data: [fileDto] })
       .mockResolvedValueOnce({ data: { url: 'https://signed.example/deck' } });
     mockedApi.post.mockImplementationOnce((_url, _body, config) => {
-      config?.onUploadProgress?.({ loaded: 50, total: 100 } as ProgressEvent);
+      config?.onUploadProgress?.({
+        bytes: 50,
+        lengthComputable: true,
+        loaded: 50,
+        total: 100,
+      });
       return Promise.resolve({ data: fileDto });
     });
 
     const files = await getFiles();
     const onProgress = vi.fn();
-    const uploaded = await uploadFile(new File(['pdf'], 'deck.pdf'), onProgress);
+    const uploaded = await uploadFile(
+      new File(['pdf'], 'deck.pdf'),
+      onProgress,
+    );
     const downloadUrl = await getFileDownloadUrl('file-1');
 
     expect(mockedApi.get).toHaveBeenNthCalledWith(1, '/api/files');
@@ -215,4 +212,3 @@ describe('frontend services', () => {
     expect(downloadUrl).toBe('https://signed.example/deck');
   });
 });
-

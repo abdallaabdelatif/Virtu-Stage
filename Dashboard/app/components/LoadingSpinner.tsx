@@ -11,7 +11,7 @@ export function LoadingSpinner({ text = 'Loading...' }: { text?: string }) {
         aria-hidden="true"
         className="w-10 h-10 text-brand-soft animate-spin mb-4"
       />
-      <p className="text-[#9aa1bc] font-bold">{text}</p>
+      <p className="text-[#d9d9d9] font-bold">{text}</p>
     </div>
   );
 }

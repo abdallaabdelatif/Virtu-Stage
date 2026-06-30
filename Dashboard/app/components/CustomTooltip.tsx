@@ -13,8 +13,8 @@ export const CustomTooltip = ({
 }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-[#1b1d28] border border-[#393f56] rounded-xl p-3 text-sm">
-        <p className="text-[#9aa1bc] mb-1">{label}</p>
+      <div className="bg-[#1a2117] border border-[#46513c] rounded-xl p-3 text-sm">
+        <p className="text-[#d9d9d9] mb-1">{label}</p>
         {payload.map((p) => (
           <p key={p.name} style={{ color: p.color }} className="font-bold">
             {p.name}: {p.value}

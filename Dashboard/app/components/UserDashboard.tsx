@@ -56,7 +56,7 @@ export function UserDashboard({ name, data }: UserDashboardProps) {
               ? 'Complete your first training session'
               : 'Your recorded training sessions'
           }
-          color="#5c7cff"
+          color="#c1ff72"
           icon={<BarChart2 className="w-5 h-5" />}
         />
         <StatCard
@@ -119,15 +119,15 @@ export function UserDashboard({ name, data }: UserDashboardProps) {
             ) : (
               <ResponsiveContainer width="100%" height={220}>
                 <LineChart data={[...progressData].reverse()}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#272b3a" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2a3325" />
                   <XAxis
                     dataKey="date"
-                    tick={{ fill: '#858dab', fontSize: 11 }}
+                    tick={{ fill: '#aeb4a8', fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
-                    tick={{ fill: '#858dab', fontSize: 11 }}
+                    tick={{ fill: '#aeb4a8', fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
                     domain={[0, 100]}
@@ -136,10 +136,10 @@ export function UserDashboard({ name, data }: UserDashboardProps) {
                   <Line
                     type="monotone"
                     dataKey="score"
-                    stroke="#5c7cff"
+                    stroke="#c1ff72"
                     strokeWidth={3}
                     dot={false}
-                    activeDot={{ r: 6, fill: '#5c7cff' }}
+                    activeDot={{ r: 6, fill: '#c1ff72' }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -160,15 +160,15 @@ export function UserDashboard({ name, data }: UserDashboardProps) {
             ) : (
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={voiceMotionData} barGap={4}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#272b3a" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2a3325" />
                   <XAxis
                     dataKey="label"
-                    tick={{ fill: '#858dab', fontSize: 11 }}
+                    tick={{ fill: '#aeb4a8', fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
-                    tick={{ fill: '#858dab', fontSize: 11 }}
+                    tick={{ fill: '#aeb4a8', fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
                     domain={[0, 100]}
@@ -176,19 +176,19 @@ export function UserDashboard({ name, data }: UserDashboardProps) {
                   <Tooltip content={<CustomTooltip />} />
                   <Legend
                     formatter={(value) => (
-                      <span style={{ color: '#9aa1bc' }}>{value}</span>
+                      <span style={{ color: '#d9d9d9' }}>{value}</span>
                     )}
                   />
                   <Bar
                     dataKey="voice"
                     name="Voice"
-                    fill="#5c7cff"
+                    fill="#c1ff72"
                     radius={[4, 4, 0, 0]}
                   />
                   <Bar
                     dataKey="motion"
                     name="Motion"
-                    fill="#3d4f8a"
+                    fill="#d9d9d9"
                     radius={[4, 4, 0, 0]}
                   />
                 </BarChart>

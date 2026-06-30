@@ -39,13 +39,13 @@ export default function ForgotPassword() {
       <div className="w-full max-w-md relative z-10">
         <button
           onClick={() => navigate('/')}
-          className="flex items-center gap-2 text-[#9aa1bc] hover:text-white transition-colors mb-8 font-bold text-sm"
+          className="flex items-center gap-2 text-[#d9d9d9] hover:text-white transition-colors mb-8 font-bold text-sm"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Login
         </button>
 
-        <div className="bg-[#12141c]/80 backdrop-blur-xl border border-[#272b3a] rounded-3xl p-8 lg:p-10 shadow-2xl relative overflow-hidden">
+        <div className="bg-[#121610]/80 backdrop-blur-xl border border-[#2a3325] rounded-3xl p-8 lg:p-10 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand to-[#0bda62]" />
 
           {isSuccess ? (
@@ -56,7 +56,7 @@ export default function ForgotPassword() {
               <h2 className="text-2xl font-bold text-white mb-3">
                 Check your email
               </h2>
-              <p className="text-[#9aa1bc] mb-8 font-medium">
+              <p className="text-[#d9d9d9] mb-8 font-medium">
                 If an account exists for <br />
                 <span className="text-white font-bold">{email}</span>, you will
                 receive a password reset link.
@@ -71,7 +71,7 @@ export default function ForgotPassword() {
                 <h2 className="text-3xl font-black text-white mb-3 tracking-wide">
                   Reset Password
                 </h2>
-                <p className="text-[#9aa1bc] font-medium text-sm">
+                <p className="text-[#d9d9d9] font-medium text-sm">
                   Enter your email address and we'll send you a link to reset
                   your password.
                 </p>

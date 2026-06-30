@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import * as allure from 'allure-js-commons';
-import { mapAdminDashboard, mapAdminUser, mapUserDashboard } from './dashboardMapper';
+import {
+  mapAdminDashboard,
+  mapAdminUser,
+  mapUserDashboard,
+} from './dashboardMapper';
 import { mapLibraryFile } from './libraryMapper';
 import {
   mapBackendSession,
@@ -75,7 +79,12 @@ describe('frontend mappers', () => {
       improvement_rate: 12,
       score_history: [{ session_id: 's1', date: '2026-06-30', score: 82 }],
       analysis_history: [
-        { session_id: 's1', label: 'Session 1', voice_score: 80, motion_score: 84 },
+        {
+          session_id: 's1',
+          label: 'Session 1',
+          voice_score: 80,
+          motion_score: 84,
+        },
       ],
     });
     const adminDashboard = mapAdminDashboard({
@@ -102,7 +111,10 @@ describe('frontend mappers', () => {
       motion: 84,
     });
     expect(adminDashboard.totalUsers).toBe(5);
-    expect(adminDashboard.adminScoreData[0]).toMatchObject({ month: 'Jun', score: 79 });
+    expect(adminDashboard.adminScoreData[0]).toMatchObject({
+      month: 'Jun',
+      score: 79,
+    });
   });
 
   it('maps admin users and library files for UI display', async () => {
@@ -121,7 +133,8 @@ describe('frontend mappers', () => {
     const libraryFile = mapLibraryFile({
       file_id: 'file-1',
       original_name: 'training-deck.pptx',
-      content_type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      content_type:
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
       size_bytes: 2 * 1024 * 1024,
       upload_status: 'ready',
       processing_status: 'ready',
@@ -143,4 +156,3 @@ describe('frontend mappers', () => {
     });
   });
 });
-

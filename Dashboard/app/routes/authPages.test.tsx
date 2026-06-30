@@ -226,7 +226,10 @@ describe('auth pages', () => {
     await allure.feature('Auth Pages');
     await allure.story('Reset password flow');
 
-    const invalidLinkView = renderWithRoutes(<ResetPassword />, '/reset-password');
+    const invalidLinkView = renderWithRoutes(
+      <ResetPassword />,
+      '/reset-password',
+    );
     expect(screen.getByText(/invalid reset link/i)).toBeInTheDocument();
     invalidLinkView.unmount();
 

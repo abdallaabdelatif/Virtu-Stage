@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { UploadCloud, Search, AlertCircle } from 'lucide-react';
-import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorMessage } from '../components/ErrorMessage';
 import {
   getFiles,
@@ -19,17 +18,43 @@ import {
   type UploadProgress,
 } from '../components/LibraryUploadZone';
 import { LibraryFileCard } from '../components/LibraryFileCard';
+import { LibrarySkeleton } from '../components/PageSkeletons';
 
 const ALLOWED_TYPES = ['pdf', 'pptx'];
 const MAX_SIZE_MB = 50;
+let cachedLibraryFiles: LibraryFile[] | null = null;
+let cachedUploadingFiles: UploadProgress[] = [];
+
+const libraryFileListeners = new Set<(files: LibraryFile[]) => void>();
+const uploadProgressListeners = new Set<(uploads: UploadProgress[]) => void>();
+const pendingUploadNames = new Set<string>();
+
+function setCachedLibraryFiles(files: LibraryFile[]) {
+  cachedLibraryFiles = files;
+  libraryFileListeners.forEach((listener) => listener(files));
+}
+
+function updateCachedUploadingFiles(
+  updater: (current: UploadProgress[]) => UploadProgress[],
+) {
+  cachedUploadingFiles = updater(cachedUploadingFiles);
+  const snapshot = [...cachedUploadingFiles];
+  uploadProgressListeners.forEach((listener) => listener(snapshot));
+}
 
 export default function Library() {
-  const [files, setFiles] = useState<LibraryFile[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [files, setFiles] = useState<LibraryFile[]>(
+    () => cachedLibraryFiles ?? [],
+  );
+  const [loading, setLoading] = useState(
+    () => cachedLibraryFiles === null && cachedUploadingFiles.length === 0,
+  );
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [isDragging, setIsDragging] = useState(false);
-  const [uploadingFiles, setUploadingFiles] = useState<UploadProgress[]>([]);
+  const [uploadingFiles, setUploadingFiles] = useState<UploadProgress[]>(
+    () => cachedUploadingFiles,
+  );
   const [deletingFileIds, setDeletingFileIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -42,29 +67,58 @@ export default function Library() {
   // Always holds the latest files array — fixes stale closure in useCallback handlers
   const filesRef = useRef<LibraryFile[]>([]);
   const dragDepthRef = useRef(0);
-  const pendingNamesRef = useRef(new Set<string>());
+  const mountedRef = useRef(false);
 
   // Keep ref in sync with state
   const updateFiles = useCallback((newFiles: LibraryFile[]) => {
     filesRef.current = newFiles;
-    setFiles(newFiles);
+    setCachedLibraryFiles(newFiles);
   }, []);
 
   const fetchFiles = useCallback(async () => {
+    const hasVisibleSnapshot =
+      cachedLibraryFiles !== null || cachedUploadingFiles.length > 0;
     try {
-      setLoading(true);
+      if (!hasVisibleSnapshot) setLoading(true);
       setError(null);
       const data = await getFiles();
+      if (!mountedRef.current) return;
       updateFiles(data);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Failed to load library files.'));
+      if (!mountedRef.current) return;
+      const message = getApiErrorMessage(err, 'Failed to load library files.');
+      if (cachedLibraryFiles !== null || cachedUploadingFiles.length > 0) {
+        appendError(`${message} Showing the latest cached files.`);
+      } else {
+        setError(message);
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
-  }, [updateFiles]);
+  }, [appendError, updateFiles]);
 
   useEffect(() => {
-    fetchFiles();
+    mountedRef.current = true;
+    const syncFiles = (nextFiles: LibraryFile[]) => {
+      filesRef.current = nextFiles;
+      setFiles(nextFiles);
+    };
+    const syncUploads = (nextUploads: UploadProgress[]) => {
+      setUploadingFiles(nextUploads);
+    };
+
+    libraryFileListeners.add(syncFiles);
+    uploadProgressListeners.add(syncUploads);
+
+    if (cachedLibraryFiles) syncFiles(cachedLibraryFiles);
+    syncUploads(cachedUploadingFiles);
+
+    void fetchFiles();
+    return () => {
+      mountedRef.current = false;
+      libraryFileListeners.delete(syncFiles);
+      uploadProgressListeners.delete(syncUploads);
+    };
   }, [fetchFiles]);
 
   useEffect(() => {
@@ -107,29 +161,35 @@ export default function Library() {
   const uploadSelectedFile = useCallback(
     async (file: File) => {
       const uploadId = crypto.randomUUID();
-      setUploadingFiles((current) => [
+      updateCachedUploadingFiles((current) => [
         ...current,
         { id: uploadId, name: file.name, progress: 0 },
       ]);
 
       try {
         const saved = await uploadFile(file, (progress) => {
-          setUploadingFiles((current) =>
+          updateCachedUploadingFiles((current) =>
             current.map((item) =>
               item.id === uploadId ? { ...item, progress } : item,
             ),
           );
         });
-        updateFiles([saved, ...filesRef.current]);
+        const latestFiles = cachedLibraryFiles ?? filesRef.current;
+        updateFiles([
+          saved,
+          ...latestFiles.filter((item) => item.id !== saved.id),
+        ]);
       } catch (error) {
-        appendError(
-          getApiErrorMessage(error, `Failed to upload "${file.name}".`),
-        );
+        if (mountedRef.current) {
+          appendError(
+            getApiErrorMessage(error, `Failed to upload "${file.name}".`),
+          );
+        }
       } finally {
-        setUploadingFiles((current) =>
+        updateCachedUploadingFiles((current) =>
           current.filter((item) => item.id !== uploadId),
         );
-        pendingNamesRef.current.delete(file.name.toLowerCase());
+        pendingUploadNames.delete(file.name.toLowerCase());
       }
     },
     [appendError, updateFiles],
@@ -142,7 +202,7 @@ export default function Library() {
       const validFiles: File[] = [];
       const reservedNames = new Set([
         ...filesRef.current.map((file) => file.name.toLowerCase()),
-        ...pendingNamesRef.current,
+        ...pendingUploadNames,
       ]);
 
       Array.from(fileList).forEach((file) => {
@@ -156,7 +216,7 @@ export default function Library() {
         if (error) newErrors.push(error);
         else {
           reservedNames.add(normalizedName);
-          pendingNamesRef.current.add(normalizedName);
+          pendingUploadNames.add(normalizedName);
           validFiles.push(file);
         }
       });
@@ -269,12 +329,12 @@ export default function Library() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-black tracking-tight">Content Library</h1>
-        <p className="text-[#9aa1bc] mt-1">
+        <p className="text-[#d9d9d9] mt-1">
           Upload and manage materials for your VR training sessions.
         </p>
       </div>
 
-      {loading && <LoadingSpinner text="Loading your files..." />}
+      {loading && <LibrarySkeleton />}
       {error && <ErrorMessage message={error} onRetry={fetchFiles} />}
 
       {!loading && !error && (
@@ -317,18 +377,18 @@ export default function Library() {
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <h2 className="text-white text-xl font-black">
               Your Files
-              <span className="text-[#858dab] text-sm font-normal ml-2">
+              <span className="text-[#aeb4a8] text-sm font-normal ml-2">
                 ({filtered.length} {filtered.length === 1 ? 'file' : 'files'})
               </span>
             </h2>
             <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#858dab]" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#aeb4a8]" />
               <input
                 type="text"
                 placeholder="Search files..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-[#12141c] border border-[#393f56] rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-[#858dab] focus:outline-none focus:border-brand"
+                className="w-full bg-[#121610] border border-[#46513c] rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-[#aeb4a8] focus:outline-none focus:border-brand"
               />
             </div>
           </div>
@@ -346,7 +406,7 @@ export default function Library() {
               />
             ))}
 
-            {filtered.length === 0 && (
+            {filtered.length === 0 && uploadingFiles.length === 0 && (
               <div className="col-span-full">
                 {search ? (
                   <EmptyState

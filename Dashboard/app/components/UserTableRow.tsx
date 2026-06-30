@@ -88,14 +88,14 @@ export function UserTableRow({
     <tr className={styles.tableRow}>
       <td className="py-4 pr-4">
         <p
-          className={`font-semibold ${user.disabled ? 'text-[#858dab] line-through' : 'text-white'}`}
+          className={`font-semibold ${user.disabled ? 'text-[#aeb4a8] line-through' : 'text-white'}`}
         >
           {user.name}
         </p>
         <p className={styles.textMuted}>{user.email}</p>
       </td>
-      <td className="py-4 text-[#9aa1bc]">{user.sessions}</td>
-      <td className="py-4 text-[#9aa1bc]">{user.joinedAt}</td>
+      <td className="py-4 text-[#d9d9d9]">{user.sessions}</td>
+      <td className="py-4 text-[#d9d9d9]">{user.joinedAt}</td>
       <td className="py-4">
         <button
           ref={actionButtonRef}
@@ -111,7 +111,7 @@ export function UserTableRow({
           {isBusy ? (
             <LoaderCircle className="w-4 h-4 animate-spin text-brand-soft" />
           ) : (
-            <MoreVertical className="w-4 h-4 text-[#9aa1bc]" />
+            <MoreVertical className="w-4 h-4 text-[#d9d9d9]" />
           )}
         </button>
         {isMenuOpen &&
@@ -123,7 +123,7 @@ export function UserTableRow({
               role="menu"
               aria-label={`Actions for ${user.name}`}
               style={{ top: menuPosition.top, left: menuPosition.left }}
-              className="fixed z-[100] w-44 overflow-hidden rounded-xl border border-[#393f56] bg-[#1b1d28] shadow-xl"
+              className="fixed z-[100] w-44 overflow-hidden rounded-xl border border-[#46513c] bg-[#1a2117] shadow-xl"
             >
               <button
                 type="button"
@@ -139,7 +139,7 @@ export function UserTableRow({
                 type="button"
                 role="menuitem"
                 onClick={() => onDelete(user.id)}
-                className="w-full border-t border-[#393f56] px-4 py-2.5 text-left text-sm text-red-400 hover:bg-red-500/10"
+                className="w-full border-t border-[#46513c] px-4 py-2.5 text-left text-sm text-red-400 hover:bg-red-500/10"
               >
                 Delete User
               </button>

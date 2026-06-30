@@ -27,7 +27,7 @@ export function ScoreBadge({
 export function ScoreProgressBar({ score }: { score: number }) {
   return (
     <div className="flex items-center gap-3 w-full">
-      <div className="flex-1 h-2 bg-[#272b3a] rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-[#2a3325] rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-1000 ${helpers.scoreBg(score)}`}
           style={{ width: `${score}%` }}

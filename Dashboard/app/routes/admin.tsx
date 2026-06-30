@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Search, UsersRound } from 'lucide-react';
 import { Card } from '../components/Card';
 import {
@@ -8,37 +8,59 @@ import {
 } from '../services/adminService';
 import { styles } from '../utils/styles';
 import { SectionHeader } from '../components/SectionHeader';
-import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { UserTableRow } from '../components/UserTableRow';
 import type { ManagedUser } from '../types/admin';
 import { getApiErrorMessage } from '../utils/apiError';
 import { EmptyState } from '../components/EmptyState';
 import { confirmDeletion } from '../utils/confirmDeletion';
+import { UserManagementSkeleton } from '../components/PageSkeletons';
+import { useTransientMessages } from '../hooks/useTransientMessages';
+import { RefreshNotice } from '../components/RefreshNotice';
+
+let cachedAdminUsers: ManagedUser[] | null = null;
 
 export default function UserManagement() {
-  const [users, setUsers] = useState<ManagedUser[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState<ManagedUser[]>(
+    () => cachedAdminUsers ?? [],
+  );
+  const [loading, setLoading] = useState(() => cachedAdminUsers === null);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
+  const { messages: refreshMessages, appendMessage: appendRefreshMessage } =
+    useTransientMessages();
+  const mountedRef = useRef(false);
 
   const fetchAdminUsers = useCallback(async () => {
+    const hasCachedSnapshot = cachedAdminUsers !== null;
     try {
-      setLoading(true);
+      if (!hasCachedSnapshot) setLoading(true);
       setError(null);
       const data = await getAdminUsers();
+      if (!mountedRef.current) return;
+      cachedAdminUsers = data;
       setUsers(data);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Failed to load admin users.'));
+      if (!mountedRef.current) return;
+      const message = getApiErrorMessage(err, 'Failed to load admin users.');
+      if (cachedAdminUsers !== null) {
+        appendRefreshMessage(`${message} Showing the latest user list.`);
+      } else {
+        setError(message);
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
-  }, []);
+  }, [appendRefreshMessage]);
 
   useEffect(() => {
+    mountedRef.current = true;
     void fetchAdminUsers();
+    return () => {
+      mountedRef.current = false;
+    };
   }, [fetchAdminUsers]);
 
   const managedUsers = users.filter((user) => user.role === 'user');
@@ -56,15 +78,22 @@ export default function UserManagement() {
     setPendingUserId(id);
     try {
       await updateManagedUser(id, { disabled: !target.disabled });
-      setUsers((prev) =>
-        prev.map((user) =>
+      if (!mountedRef.current) return;
+      setUsers((prev) => {
+        const nextUsers = prev.map((user) =>
           user.id === id ? { ...user, disabled: !user.disabled } : user,
-        ),
-      );
+        );
+        cachedAdminUsers = nextUsers;
+        return nextUsers;
+      });
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Failed to update the user.'));
+      if (mountedRef.current) {
+        appendRefreshMessage(
+          getApiErrorMessage(err, 'Failed to update the user.'),
+        );
+      }
     } finally {
-      setPendingUserId(null);
+      if (mountedRef.current) setPendingUserId(null);
     }
   };
 
@@ -83,11 +112,20 @@ export default function UserManagement() {
     setPendingUserId(id);
     try {
       await deleteManagedUser(id);
-      setUsers((previous) => previous.filter((user) => user.id !== id));
+      if (!mountedRef.current) return;
+      setUsers((previous) => {
+        const nextUsers = previous.filter((user) => user.id !== id);
+        cachedAdminUsers = nextUsers;
+        return nextUsers;
+      });
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Failed to delete the user.'));
+      if (mountedRef.current) {
+        appendRefreshMessage(
+          getApiErrorMessage(err, 'Failed to delete the user.'),
+        );
+      }
     } finally {
-      setPendingUserId(null);
+      if (mountedRef.current) setPendingUserId(null);
     }
   };
 
@@ -98,15 +136,17 @@ export default function UserManagement() {
         subtitle="Manage users and review platform membership"
       />
 
-      {loading && <LoadingSpinner text="Loading admin users..." />}
+      <RefreshNotice messages={refreshMessages} />
+
+      {loading && users.length === 0 && <UserManagementSkeleton />}
       {error && <ErrorMessage message={error} onRetry={fetchAdminUsers} />}
 
-      {!loading && !error && (
+      {!error && (!loading || users.length > 0) && (
         <Card title="All Users">
           <div className="relative mb-4">
             <Search
               aria-hidden="true"
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#858dab]"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#aeb4a8]"
             />
             <label htmlFor="admin-user-search" className="sr-only">
               Search users
@@ -144,7 +184,7 @@ export default function UserManagement() {
                     <th className="text-left pb-3 font-bold">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#272b3a]">
+                <tbody className="divide-y divide-[#2a3325]">
                   {filtered.map((user) => (
                     <UserTableRow
                       key={user.id}
@@ -160,7 +200,7 @@ export default function UserManagement() {
               </table>
             </div>
           )}
-          <p className="text-[#858dab] text-xs mt-4">
+          <p className="text-[#aeb4a8] text-xs mt-4">
             Showing {filtered.length} of {managedUsers.length} users
           </p>
         </Card>

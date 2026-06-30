@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as allure from 'allure-js-commons';
 import { MemoryRouter } from 'react-router';
@@ -40,14 +40,30 @@ vi.mock('../services/adminService', () => ({
 }));
 
 vi.mock('../components/UserDashboard', () => ({
-  UserDashboard: ({ name, data }: { name: string; data: { totalSessions: number } }) => (
-    <div>User dashboard for {name}: {data.totalSessions}</div>
+  UserDashboard: ({
+    name,
+    data,
+  }: {
+    name: string;
+    data: { totalSessions: number };
+  }) => (
+    <div>
+      User dashboard for {name}: {data.totalSessions}
+    </div>
   ),
 }));
 
 vi.mock('../components/AdminDashboard', () => ({
-  AdminDashboard: ({ name, data }: { name: string; data: { totalUsers: number } }) => (
-    <div>Admin dashboard for {name}: {data.totalUsers}</div>
+  AdminDashboard: ({
+    name,
+    data,
+  }: {
+    name: string;
+    data: { totalUsers: number };
+  }) => (
+    <div>
+      Admin dashboard for {name}: {data.totalUsers}
+    </div>
   ),
 }));
 
@@ -102,7 +118,9 @@ describe('page states', () => {
 
     renderPage(<Dashboard />);
 
-    expect(await screen.findByText(/User dashboard for Sara Ahmed: 3/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/User dashboard for Sara Ahmed: 3/),
+    ).toBeInTheDocument();
     expect(mockedGetDashboardStats).toHaveBeenCalledWith('user');
   });
 
@@ -114,7 +132,7 @@ describe('page states', () => {
 
     renderPage(<Sessions />);
 
-    expect(await screen.findByText('No sessions found')).toBeInTheDocument();
+    expect(await screen.findByText('No VR sessions yet')).toBeInTheDocument();
   });
 
   it('validates unsupported library uploads before calling upload API', async () => {
@@ -175,4 +193,3 @@ describe('page states', () => {
     expect(screen.getByText('No matching users')).toBeInTheDocument();
   });
 });
-

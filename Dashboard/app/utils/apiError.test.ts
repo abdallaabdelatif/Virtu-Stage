@@ -28,7 +28,9 @@ describe('API error handling', () => {
           statusText: 'Unprocessable Entity',
           headers: {},
           config: {} as never,
-          data: { detail: [{ msg: 'Invalid email' }, { msg: 'Weak password' }] },
+          data: {
+            detail: [{ msg: 'Invalid email' }, { msg: 'Weak password' }],
+          },
         }),
       ),
     ).toBe('Invalid email, Weak password');
@@ -47,4 +49,3 @@ describe('API error handling', () => {
     window.removeEventListener(UNAUTHORIZED_EVENT, listener);
   });
 });
-

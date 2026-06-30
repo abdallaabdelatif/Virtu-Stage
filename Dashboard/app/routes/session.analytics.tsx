@@ -1,4 +1,10 @@
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  type ReactNode,
+} from 'react';
 import { useParams, useNavigate } from 'react-router';
 import {
   ArrowLeft,
@@ -13,7 +19,6 @@ import {
 import { getSessionAnalytics } from '../services/analyticsService';
 import { styles } from '../utils/styles';
 import { SectionHeader } from '../components/SectionHeader';
-import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { AnalyticsStatCard } from '../components/AnalyticsStatCard';
 import { FeedbackItem } from '../components/FeedbackItem';
@@ -24,6 +29,11 @@ import { getApiErrorMessage } from '../utils/apiError';
 import { pct } from '../mappers/sessionReportMapper';
 import { useSessionPolling } from '../hooks/useSessionPolling';
 import type { BackendSessionStatus } from '../types/session';
+import { SessionAnalyticsSkeleton } from '../components/PageSkeletons';
+import { useTransientMessages } from '../hooks/useTransientMessages';
+import { RefreshNotice } from '../components/RefreshNotice';
+
+const cachedSessionAnalytics = new Map<string, SessionAnalyticsData>();
 
 function ProcessingBanner({ label }: { label: string }) {
   return (
@@ -66,7 +76,7 @@ function deliveryTone(
   className: string;
 } {
   if (score == null)
-    return { label: 'Unavailable', className: 'text-[#9aa1bc] bg-white/5' };
+    return { label: 'Unavailable', className: 'text-[#d9d9d9] bg-white/5' };
   const effective = inverse ? 100 - score : score;
   if (effective >= 80)
     return { label: 'Strong', className: 'text-[#0bda62] bg-[#0bda62]/10' };
@@ -95,7 +105,7 @@ function DeliverySnapshotCard({
 }) {
   const tone = deliveryTone(score, inverse);
   return (
-    <div className="rounded-2xl border border-[#393f56] bg-[#1b1d28] p-5">
+    <div className="rounded-2xl border border-[#46513c] bg-[#1a2117] p-5">
       <div className="flex items-start justify-between gap-3">
         <p className={styles.labelMuted}>{label}</p>
         <span
@@ -105,7 +115,7 @@ function DeliverySnapshotCard({
         </span>
       </div>
       <p className="mt-3 text-2xl font-black text-white">{value}</p>
-      <p className="mt-2 text-sm leading-relaxed text-[#9aa1bc]">{detail}</p>
+      <p className="mt-2 text-sm leading-relaxed text-[#d9d9d9]">{detail}</p>
     </div>
   );
 }
@@ -128,15 +138,15 @@ function DetailSection({
   children: ReactNode;
 }) {
   return (
-    <details className="group rounded-2xl border border-[#393f56] bg-[#1b1d28]">
+    <details className="group rounded-2xl border border-[#46513c] bg-[#1a2117]">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5">
         <div>
           <p className="font-bold text-white">{title}</p>
-          <p className="mt-1 text-sm text-[#9aa1bc]">{subtitle}</p>
+          <p className="mt-1 text-sm text-[#d9d9d9]">{subtitle}</p>
         </div>
-        <ChevronDown className="h-5 w-5 text-[#9aa1bc] transition-transform group-open:rotate-180" />
+        <ChevronDown className="h-5 w-5 text-[#d9d9d9] transition-transform group-open:rotate-180" />
       </summary>
-      <div className="border-t border-[#393f56] p-5">{children}</div>
+      <div className="border-t border-[#46513c] p-5">{children}</div>
     </details>
   );
 }
@@ -144,11 +154,19 @@ function DetailSection({
 export default function SessionAnalytics() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [session, setSession] = useState<SessionAnalyticsData | null>(null);
+  const cachedSession = id ? cachedSessionAnalytics.get(id) : null;
+  const [session, setSession] = useState<SessionAnalyticsData | null>(
+    () => cachedSession ?? null,
+  );
   const [backendStatus, setBackendStatus] =
-    useState<BackendSessionStatus | null>(null);
-  const [loading, setLoading] = useState(true);
+    useState<BackendSessionStatus | null>(
+      () => cachedSession?.backendStatus ?? null,
+    );
+  const [loading, setLoading] = useState(() => !cachedSession);
   const [error, setError] = useState<string | null>(null);
+  const { messages: refreshMessages, appendMessage: appendRefreshMessage } =
+    useTransientMessages();
+  const mountedRef = useRef(false);
 
   const fetchSessionAnalytics = useCallback(async () => {
     if (!id) {
@@ -157,26 +175,52 @@ export default function SessionAnalytics() {
       return;
     }
 
+    const hasCachedSnapshot = cachedSessionAnalytics.has(id);
     try {
+      if (!hasCachedSnapshot) setLoading(true);
       setError(null);
       const sessionData = await getSessionAnalytics(id);
+      if (!mountedRef.current) return;
+      cachedSessionAnalytics.set(id, sessionData);
       setSession(sessionData);
       setBackendStatus(sessionData.backendStatus);
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, 'Failed to load session analytics.'));
+      if (!mountedRef.current) return;
+      const message = getApiErrorMessage(
+        err,
+        'Failed to load session analytics.',
+      );
+      if (cachedSessionAnalytics.has(id)) {
+        appendRefreshMessage(`${message} Showing the latest analysis data.`);
+      } else {
+        setError(message);
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
-  }, [id]);
+  }, [appendRefreshMessage, id]);
 
   useEffect(() => {
+    mountedRef.current = true;
+    if (id) {
+      const cached = cachedSessionAnalytics.get(id);
+      if (cached) {
+        setSession(cached);
+        setBackendStatus(cached.backendStatus);
+        setLoading(false);
+        setError(null);
+      }
+    }
     void fetchSessionAnalytics();
-  }, [fetchSessionAnalytics]);
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [fetchSessionAnalytics, id]);
 
   useSessionPolling(id ?? null, backendStatus, fetchSessionAnalytics);
 
   if (loading) {
-    return <LoadingSpinner text="Analyzing session data..." />;
+    return <SessionAnalyticsSkeleton />;
   }
 
   if (error || !session) {
@@ -306,7 +350,7 @@ export default function SessionAnalytics() {
     <>
       <button
         onClick={() => navigate('/analytics')}
-        className="flex items-center gap-2 text-[#9aa1bc] hover:text-white text-sm font-medium mb-4 transition-colors group"
+        className="flex items-center gap-2 text-[#d9d9d9] hover:text-white text-sm font-medium mb-4 transition-colors group"
       >
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
         Back to Sessions
@@ -317,9 +361,11 @@ export default function SessionAnalytics() {
         subtitle={`${session.scenario} • ${session.difficulty} • ${session.date} • ${session.time} (${session.duration})`}
       />
 
+      <RefreshNotice messages={refreshMessages} />
+
       <div className="flex items-center gap-3 mb-6 -mt-4">
         <StatusBadge status={session.status} />
-        <span className="text-[#858dab] text-xs uppercase tracking-wider font-bold">
+        <span className="text-[#aeb4a8] text-xs uppercase tracking-wider font-bold">
           Report: {session.reportStatus}
         </span>
       </div>
@@ -357,11 +403,11 @@ export default function SessionAnalytics() {
 
       <section className="mb-8 rounded-3xl border border-brand/30 bg-brand/10 p-6">
         <div className="flex items-start gap-4">
-          <div className="rounded-2xl bg-brand p-3 text-white">
+          <div className="rounded-2xl bg-brand p-3 text-brand-contrast">
             <Sparkles className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-[#8da2ff]">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#c1ff72]">
               Session summary
             </p>
             <p className="mt-2 max-w-4xl text-lg font-semibold leading-relaxed text-white">
@@ -372,7 +418,7 @@ export default function SessionAnalytics() {
       </section>
 
       <section className="mb-10 grid grid-cols-1 gap-5 lg:grid-cols-3">
-        <div className="rounded-3xl border border-[#0bda62]/15 bg-[#1b1d28] p-5">
+        <div className="rounded-3xl border border-[#0bda62]/15 bg-[#1a2117] p-5">
           <h3 className={styles.heading3}>
             <CheckCircle className="h-5 w-5 text-[#0bda62]" /> Top strengths
           </h3>
@@ -394,7 +440,7 @@ export default function SessionAnalytics() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-orange-400/15 bg-[#1b1d28] p-5">
+        <div className="rounded-3xl border border-orange-400/15 bg-[#1a2117] p-5">
           <h3 className={styles.heading3}>
             <AlertTriangle className="h-5 w-5 text-orange-400" /> Priority
             improvements
@@ -417,9 +463,9 @@ export default function SessionAnalytics() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-[#393f56] bg-[#1e2433] p-5">
+        <div className="rounded-3xl border border-[#46513c] bg-[#1e2433] p-5">
           <h3 className={styles.heading3}>
-            <Sparkles className="h-5 w-5 text-[#8da2ff]" /> Next session plan
+            <Sparkles className="h-5 w-5 text-[#c1ff72]" /> Next session plan
           </h3>
           <div className="space-y-5">
             {session.recommendations.length > 0 ? (
@@ -442,10 +488,10 @@ export default function SessionAnalytics() {
 
       <section className="mb-10">
         <div className="mb-4 flex items-center gap-3">
-          <Mic2 className="h-6 w-6 text-[#8da2ff]" />
+          <Mic2 className="h-6 w-6 text-[#c1ff72]" />
           <div>
             <h2 className="text-2xl font-black text-white">Voice snapshot</h2>
-            <p className="text-sm text-[#9aa1bc]">
+            <p className="text-sm text-[#d9d9d9]">
               The four signals that best explain your delivery.
             </p>
           </div>
@@ -466,12 +512,12 @@ export default function SessionAnalytics() {
       {showVoice && session.voiceFeedback.length > 0 && (
         <section className="mb-10">
           <div className="mb-4 flex items-center gap-3">
-            <Mic2 className="h-6 w-6 text-[#8da2ff]" />
+            <Mic2 className="h-6 w-6 text-[#c1ff72]" />
             <div>
               <h2 className="text-2xl font-black text-white">
                 Voice analysis feedback
               </h2>
-              <p className="text-sm text-[#9aa1bc]">
+              <p className="text-sm text-[#d9d9d9]">
                 Explanations generated from this session's vocal signals.
               </p>
             </div>
@@ -480,10 +526,10 @@ export default function SessionAnalytics() {
             {session.voiceFeedback.map((item) => (
               <div
                 key={item.title}
-                className="rounded-2xl border border-[#393f56] bg-[#1b1d28] p-5"
+                className="rounded-2xl border border-[#46513c] bg-[#1a2117] p-5"
               >
                 <p className="font-bold text-white">{item.title}</p>
-                <p className="mt-2 text-sm leading-relaxed text-[#9aa1bc]">
+                <p className="mt-2 text-sm leading-relaxed text-[#d9d9d9]">
                   {item.desc}
                 </p>
               </div>
@@ -494,10 +540,10 @@ export default function SessionAnalytics() {
 
       <section className="mb-10">
         <div className="mb-4 flex items-center gap-3">
-          <Move3d className="h-6 w-6 text-[#8da2ff]" />
+          <Move3d className="h-6 w-6 text-[#c1ff72]" />
           <div>
             <h2 className="text-2xl font-black text-white">Motion snapshot</h2>
-            <p className="text-sm text-[#9aa1bc]">
+            <p className="text-sm text-[#d9d9d9]">
               The visual signals with the greatest coaching value.
             </p>
           </div>
