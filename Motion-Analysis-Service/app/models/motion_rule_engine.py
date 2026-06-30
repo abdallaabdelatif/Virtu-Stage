@@ -111,13 +111,13 @@ class MotionRuleEngine:
         lean = posture_forward_lean_degrees(frame)
         if lean < self.LEAN_FORWARD_EXCELLENT_DEG:
             severity = RuleSeverity.EXCELLENT
-            message = f"Forward lean {lean:.1f}° — upright, audience-facing"
+            message = f"Forward lean {lean:.1f}deg - upright, audience-facing"
         elif lean <= self.LEAN_FORWARD_ACCEPTABLE_DEG:
             severity = RuleSeverity.ACCEPTABLE
-            message = f"Forward lean {lean:.1f}° — acceptable"
+            message = f"Forward lean {lean:.1f}deg - acceptable"
         else:
             severity = RuleSeverity.WARNING
-            message = f"Forward lean {lean:.1f}° — stand taller, face the audience"
+            message = f"Forward lean {lean:.1f}deg - stand taller, face the audience"
         return RuleEvaluation(
             rule_id="leaning_forward",
             label="Leaning Forward",
@@ -130,13 +130,13 @@ class MotionRuleEngine:
         lean = posture_backward_lean_degrees(frame)
         if lean < self.LEAN_BACKWARD_WARNING_DEG:
             severity = RuleSeverity.EXCELLENT
-            message = f"Backward lean {lean:.1f}° — upright posture"
+            message = f"Backward lean {lean:.1f}deg - upright posture"
         elif lean <= self.LEAN_BACKWARD_POOR_DEG:
             severity = RuleSeverity.WARNING
-            message = f"Backward lean {lean:.1f}° — sit/stand upright toward audience"
+            message = f"Backward lean {lean:.1f}deg - sit/stand upright toward audience"
         else:
             severity = RuleSeverity.POOR
-            message = f"Backward lean {lean:.1f}° — avoid reclining away from audience"
+            message = f"Backward lean {lean:.1f}deg - avoid reclining away from audience"
         return RuleEvaluation(
             rule_id="leaning_backward",
             label="Leaning Backward",
@@ -170,7 +170,7 @@ class MotionRuleEngine:
             label="Hand Near Face",
             severity=severity,
             message=(
-                f"{side.title()} {part} near face ({source}) — "
+                f"{side.title()} {part} near face ({source}) - "
                 "keep gestures open and visible"
             ),
             value=closest,
@@ -193,7 +193,7 @@ class MotionRuleEngine:
                 label="Body Too Static",
                 severity=RuleSeverity.WARNING,
                 message=(
-                    f"Upper body still for {static_duration_sec:.0f}s — "
+                    f"Upper body still for {static_duration_sec:.0f}s - "
                     "add purposeful gestures (MIT: move with purpose)"
                 ),
                 value=avg,
@@ -209,16 +209,16 @@ class MotionRuleEngine:
         diff_cm = diff_ratio * self.SHOULDER_WIDTH_M * 100
         if diff_ratio < self.SHOULDER_EXCELLENT_RATIO:
             severity = RuleSeverity.EXCELLENT
-            message = f"Shoulder alignment {diff_cm:.1f} cm — level, upright"
+            message = f"Shoulder alignment {diff_cm:.1f} cm - level, upright"
         elif diff_ratio < self.SHOULDER_WARNING_RATIO:
             severity = RuleSeverity.ACCEPTABLE
-            message = f"Shoulder alignment {diff_cm:.1f} cm — minor asymmetry"
+            message = f"Shoulder alignment {diff_cm:.1f} cm - minor asymmetry"
         elif diff_ratio < self.SHOULDER_POOR_RATIO:
             severity = RuleSeverity.WARNING
-            message = f"Shoulder alignment {diff_cm:.1f} cm — noticeable tilt"
+            message = f"Shoulder alignment {diff_cm:.1f} cm - noticeable tilt"
         else:
             severity = RuleSeverity.POOR
-            message = f"Shoulder alignment {diff_cm:.1f} cm — poor symmetry"
+            message = f"Shoulder alignment {diff_cm:.1f} cm - poor symmetry"
         return RuleEvaluation(
             rule_id="shoulder_alignment",
             label="Shoulder Alignment",
@@ -243,7 +243,7 @@ class MotionRuleEngine:
                 label="Hands Too Static",
                 severity=RuleSeverity.WARNING,
                 message=(
-                    f"Hands still {static_duration_sec:.0f}s — use deliberate gestures "
+                    f"Hands still {static_duration_sec:.0f}s - use deliberate gestures "
                     "to emphasize key points"
                 ),
                 value=avg_velocity,
@@ -259,7 +259,7 @@ class MotionRuleEngine:
                 rule_id="excessive_movement",
                 label="Excessive Movement",
                 severity=RuleSeverity.WARNING,
-                message=f"Hand velocity {avg_velocity:.2f} m/s — distracting gesture speed",
+                message=f"Hand velocity {avg_velocity:.2f} m/s - distracting gesture speed",
                 value=avg_velocity,
             )
         return None
@@ -270,7 +270,7 @@ class MotionRuleEngine:
                 rule_id="looking_down",
                 label="Looking Down",
                 severity=RuleSeverity.WARNING,
-                message=f"Gaze down {pitch_deg:.1f}° — engage audience with eye contact",
+                message=f"Gaze down {pitch_deg:.1f}deg - engage audience with eye contact",
                 value=pitch_deg,
             )
         return None
@@ -282,7 +282,7 @@ class MotionRuleEngine:
                 label="Looking Down (Session)",
                 severity=RuleSeverity.WARNING,
                 message=(
-                    f"Looking down {looking_down_ratio * 100:.0f}% of session — "
+                    f"Looking down {looking_down_ratio * 100:.0f}% of session - "
                     "keep gaze toward audience"
                 ),
                 value=looking_down_ratio,
@@ -305,7 +305,7 @@ class MotionRuleEngine:
                 rule_id="crossed_arms",
                 label="Crossed Arms",
                 severity=RuleSeverity.WARNING,
-                message="Crossed arms detected — open posture recommended",
+                message="Crossed arms detected - open posture recommended",
                 value=min(left_wrist_to_right_elbow, right_wrist_to_left_elbow),
             )
         return None
@@ -327,7 +327,7 @@ class MotionRuleEngine:
                 rule_id="one_hand_dominance",
                 label="One-Hand Dominance",
                 severity=RuleSeverity.INFO,
-                message=f"{side.title()} hand dominant ({dominant * 100:.0f}%) — balance gestures",
+                message=f"{side.title()} hand dominant ({dominant * 100:.0f}%) - balance gestures",
                 value=dominant,
             )
         return None
