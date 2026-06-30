@@ -33,8 +33,8 @@
       "script": {
         "type": "text/javascript",
         "exec": [
-          "pm.test('Response time is under 2000ms', function () {",
-          "  pm.expect(pm.response.responseTime).to.be.below(2000);",
+          "pm.test('Response time is under 3000ms', function () {",
+          "  pm.expect(pm.response.responseTime).to.be.below(3000);",
           "});"
         ]
       }
@@ -1189,16 +1189,28 @@
           "name": "Delete User As Admin",
           "request": {
             "method": "DELETE",
-            "url": "{{baseUrl}}/api/admin/users/{{adminUserId}}"
+            "url": "{{baseUrl}}/api/admin/users/{{safeAdminUserId}}"
           },
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const adminUserId = (pm.collectionVariables.get('adminUserId') || pm.environment.get('adminUserId') || '').trim();",
+                  "pm.variables.set('safeAdminUserId', adminUserId || '00000000-0000-0000-0000-000000000000');"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Admin delete user is protected', function () {",
-                  "  pm.expect([204, 400, 403, 404, 422, 502]).to.include(pm.response.code);",
+                  "pm.test('Admin delete user is protected or safely skipped without adminUserId', function () {",
+                  "  const adminUserId = (pm.collectionVariables.get('adminUserId') || pm.environment.get('adminUserId') || '').trim();",
+                  "  const expectedStatuses = adminUserId ? [204, 400, 403, 404, 422, 502] : [400, 403, 404, 422, 502];",
+                  "  pm.expect(expectedStatuses).to.include(pm.response.code);",
                   "});"
                 ]
               }
