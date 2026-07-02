@@ -134,6 +134,76 @@ def test_partial_report_voice_first(client, monkeypatch):
     assert body["motion_analysis"] is None
 
 
+def test_status_stays_processing_before_analysis_timeout(client, monkeypatch):
+    test_client, _, _, session_id = client
+    monkeypatch.setattr(report_service, "ANALYSIS_TIMEOUT_SECONDS", 600)
+
+    response = test_client.get(
+        f"/api/sessions/{session_id}/status",
+        headers={"Authorization": "Bearer test-token"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "processing"
+
+
+def test_status_fails_after_analysis_timeout(client, monkeypatch):
+    test_client, owner_id, _, session_id = client
+    old_end = datetime.now(timezone.utc) - timedelta(seconds=700)
+
+    async def fake_get_session(_sid: str):
+        return {
+            "session_id": session_id,
+            "user_id": owner_id,
+            "scenario_type": "interview",
+            "difficulty_level": "medium",
+            "status": "processing",
+            "start_time": old_end.isoformat(),
+            "end_time": old_end.isoformat(),
+            "overall_score": None,
+            "voice_analysis_score": 81.0,
+            "motion_analysis_score": None,
+            "created_at": old_end.isoformat(),
+        }
+
+    import app.api.sessions as sessions_module
+
+    sessions_module.crud_client.get_training_session = fake_get_session
+    monkeypatch.setattr(report_service, "ANALYSIS_TIMEOUT_SECONDS", 600)
+
+    response = test_client.get(
+        f"/api/sessions/{session_id}/status",
+        headers={"Authorization": "Bearer test-token"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "session_id": session_id,
+        "status": "failed",
+        "voice_ready": True,
+        "motion_ready": False,
+    }
+
+
+def test_status_completes_when_both_callbacks_exist(client):
+    test_client, _, _, session_id = client
+
+    async def fake_get_motion(_sid: str):
+        return {"session_id": session_id}
+
+    import app.api.sessions as sessions_module
+
+    sessions_module.crud_client.get_motion_analysis_by_session = fake_get_motion
+
+    response = test_client.get(
+        f"/api/sessions/{session_id}/status",
+        headers={"Authorization": "Bearer test-token"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "completed"
+
+
 def test_partial_report_after_motion_timeout(client, monkeypatch):
     test_client, owner_id, _, session_id = client
     old_end = datetime.now(timezone.utc) - timedelta(seconds=700)

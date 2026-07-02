@@ -9,6 +9,7 @@ VOICE_EMOTION_REMOVAL_MIGRATION_ID = "20260628_remove_voice_emotion_fields"
 REGISTRATION_IDENTITY_MIGRATION_ID = "20260628_registration_identity_uniqueness"
 VOICE_SCHEMA_MIGRATION_ID = "20260628_voice_analysis_flat_schema"
 VOICE_PAUSE_RATIO_NULLABLE_MIGRATION_ID = "20260628_voice_pause_ratio_nullable"
+VOICE_PAUSE_FIELDS_MIGRATION_ID = "20260702_voice_pause_fields"
 PRESENTATION_PROCESSING_MIGRATION_ID = "20260628_presentation_processing"
 USER_AVATAR_MIGRATION_ID = "20260629_user_avatar"
 VOICE_TRAIT_REASONS_MIGRATION_ID = "20260630_voice_trait_reasons"
@@ -85,6 +86,7 @@ async def run_migrations(connection: AsyncConnection) -> None:
     await connection.run_sync(_run_session_processing_migration)
     await connection.run_sync(_run_voice_emotion_removal_migration)
     await connection.run_sync(_run_voice_analysis_flat_schema_migration)
+    await connection.run_sync(_run_voice_pause_fields_migration)
     await connection.run_sync(_run_voice_pause_ratio_nullable_migration)
     await connection.run_sync(_run_registration_identity_migration)
     await connection.run_sync(_run_presentation_processing_migration)
@@ -419,6 +421,32 @@ def _run_voice_pause_ratio_nullable_migration(sync_connection) -> None:
         )
 
     _record_migration(sync_connection, VOICE_PAUSE_RATIO_NULLABLE_MIGRATION_ID)
+
+
+def _run_voice_pause_fields_migration(sync_connection) -> None:
+    if _migration_already_applied(
+        sync_connection, VOICE_PAUSE_FIELDS_MIGRATION_ID
+    ):
+        return
+
+    inspector = inspect(sync_connection)
+    if "voice_analysis" not in inspector.get_table_names():
+        _record_migration(sync_connection, VOICE_PAUSE_FIELDS_MIGRATION_ID)
+        return
+
+    columns = {
+        column["name"] for column in inspector.get_columns("voice_analysis")
+    }
+    if "pause_ratio" not in columns:
+        sync_connection.execute(
+            text("ALTER TABLE voice_analysis ADD COLUMN pause_ratio FLOAT")
+        )
+    if "pause_count" not in columns:
+        sync_connection.execute(
+            text("ALTER TABLE voice_analysis ADD COLUMN pause_count INTEGER")
+        )
+
+    _record_migration(sync_connection, VOICE_PAUSE_FIELDS_MIGRATION_ID)
 
 
 def _run_voice_trait_reasons_migration(sync_connection) -> None:

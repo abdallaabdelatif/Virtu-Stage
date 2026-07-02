@@ -8,10 +8,6 @@ export interface VoiceAnalysisDto {
   anxiety_level: number | null;
   clarity_level: number | null;
   focus_level: number | null;
-  confidence_reasons: string[];
-  anxiety_reasons: string[];
-  clarity_reasons: string[];
-  focus_reasons: string[];
   voice_quality_score: number | null;
   voice_quality_level: string | null;
   fluency_score: number | null;
@@ -29,6 +25,10 @@ export interface VoiceAnalysisDto {
   anxiety_feedback: string;
   clarity_feedback: string;
   focus_feedback: string;
+  confidence_reasons?: string[] | null;
+  anxiety_reasons?: string[] | null;
+  clarity_reasons?: string[] | null;
+  focus_reasons?: string[] | null;
   analyzed_at: string;
 }
 

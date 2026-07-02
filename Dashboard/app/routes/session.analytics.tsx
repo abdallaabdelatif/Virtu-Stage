@@ -243,58 +243,6 @@ export default function SessionAnalytics() {
     session.voiceFeedback.map((item) => [item.title, item.desc]),
   );
   const voiceSnapshotMetrics: VoiceSnapshotMetric[] = [
-    ...(session.speechRate != null
-      ? [
-          {
-            label: 'Speaking pace',
-            value: `${Math.round(session.speechRate)} WPM`,
-            detail: 'A natural conversational target is 115-165 WPM.',
-            score:
-              session.speechRate >= 115 && session.speechRate <= 165 ? 90 : 45,
-          },
-        ]
-      : []),
-    ...(session.fluencyScore != null
-      ? [
-          {
-            label: 'Fluency',
-            value: pct(session.fluencyScore),
-            detail: `${session.fillerWords ?? 0} fillers and ${session.pauseCount ?? 0} detected pauses.`,
-            score: scoreValue(session.fluencyScore),
-          },
-        ]
-      : []),
-    ...(session.energyControlScore != null
-      ? [
-          {
-            label: 'Vocal control',
-            value: pct(session.energyControlScore),
-            detail:
-              'How consistently your loudness and emphasis were controlled.',
-            score: scoreValue(session.energyControlScore),
-          },
-        ]
-      : []),
-    ...(session.articulationScore != null
-      ? [
-          {
-            label: 'Expression',
-            value: pct(session.articulationScore),
-            detail: 'Articulation and clarity of vocal expression.',
-            score: scoreValue(session.articulationScore),
-          },
-        ]
-      : []),
-    ...(session.voiceQualityScore != null
-      ? [
-          {
-            label: 'Voice quality',
-            value: pct(session.voiceQualityScore),
-            detail: 'Stability and cleanliness of the recorded voice.',
-            score: scoreValue(session.voiceQualityScore),
-          },
-        ]
-      : []),
     ...(session.confidence != null
       ? [
           {
@@ -334,7 +282,7 @@ export default function SessionAnalytics() {
     ...(session.anxiety != null
       ? [
           {
-            label: 'Anxiety evidence',
+            label: 'Anxiety',
             value: pct(session.anxiety),
             detail:
               voiceFeedbackByTitle.get('Anxiety') ??
@@ -344,7 +292,7 @@ export default function SessionAnalytics() {
           },
         ]
       : []),
-  ].slice(0, 4);
+  ];
 
   return (
     <>
@@ -429,11 +377,12 @@ export default function SessionAnalytics() {
                   key={item.title}
                   title={item.title}
                   desc={item.desc}
+                  reasons={item.reasons}
                   type="strength"
                 />
               ))
             ) : (
-              <p className={styles.textMuted}>
+              <p className={`${styles.textMuted} text-sm sm:text-base`}>
                 More evidence is needed to identify strengths.
               </p>
             )}
@@ -452,11 +401,12 @@ export default function SessionAnalytics() {
                   key={item.title}
                   title={item.title}
                   desc={item.desc}
+                  reasons={item.reasons}
                   type="growth"
                 />
               ))
             ) : (
-              <p className={styles.textMuted}>
+              <p className={`${styles.textMuted} text-sm sm:text-base`}>
                 No major weaknesses were detected.
               </p>
             )}
@@ -478,7 +428,7 @@ export default function SessionAnalytics() {
                 />
               ))
             ) : (
-              <p className={styles.textMuted}>
+              <p className={`${styles.textMuted} text-sm sm:text-base`}>
                 Keep practicing this balanced delivery.
               </p>
             )}
@@ -492,7 +442,7 @@ export default function SessionAnalytics() {
           <div>
             <h2 className="text-2xl font-black text-white">Voice snapshot</h2>
             <p className="text-sm text-[#d9d9d9]">
-              The four signals that best explain your delivery.
+              The four primary outcomes used to evaluate your vocal delivery.
             </p>
           </div>
         </div>
@@ -518,7 +468,8 @@ export default function SessionAnalytics() {
                 Voice analysis feedback
               </h2>
               <p className="text-sm text-[#d9d9d9]">
-                Explanations generated from this session's vocal signals.
+                Feedback with supporting reasons from this session&apos;s vocal
+                signals.
               </p>
             </div>
           </div>
@@ -528,10 +479,20 @@ export default function SessionAnalytics() {
                 key={item.title}
                 className="rounded-2xl border border-[#46513c] bg-[#1a2117] p-5"
               >
-                <p className="font-bold text-white">{item.title}</p>
+                <p className="text-xl font-black text-white">{item.title}</p>
                 <p className="mt-2 text-sm leading-relaxed text-[#d9d9d9]">
                   {item.desc}
                 </p>
+                {item.reasons && item.reasons.length > 0 && (
+                  <ul className="mt-3 space-y-2 text-base leading-relaxed text-[#b8c0b0]">
+                    {item.reasons.map((reason) => (
+                      <li key={reason} className="flex gap-2">
+                        <span className="text-[#c1ff72]">•</span>
+                        <span>{reason}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             ))}
           </div>
@@ -553,11 +514,18 @@ export default function SessionAnalytics() {
             <DeliverySnapshotCard
               label="Posture"
               value={
-                session.postureScore != null
+                session.dominantPostureType ??
+                (session.postureScore != null
                   ? `${Math.round(session.postureScore)}/100`
-                  : 'Unavailable'
+                  : 'Unavailable')
               }
-              detail="Upright, balanced positioning throughout the session."
+              detail={
+                session.dominantPostureType && session.postureScore != null
+                  ? `Most frequent posture, with a quality score of ${Math.round(session.postureScore)}/100.`
+                  : session.dominantPostureType
+                    ? 'The posture observed most often during the session.'
+                    : 'Overall posture quality throughout the session.'
+              }
               score={scoreValue(session.postureScore)}
             />
             <DeliverySnapshotCard
@@ -597,7 +565,7 @@ export default function SessionAnalytics() {
         {showVoice && (
           <DetailSection
             title="All voice measurements"
-            subtitle="Traits, timing, pauses, and acoustic delivery scores"
+            subtitle="Supporting timing, pause, fluency, and acoustic measurements"
           >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {session.speechRate != null && (
@@ -628,28 +596,6 @@ export default function SessionAnalytics() {
                 <AnalyticsStatCard
                   label="Longest Pause"
                   value={`${session.longestPauseSeconds.toFixed(1)}s`}
-                />
-              )}
-              {session.confidence != null && (
-                <AnalyticsStatCard
-                  label="Confidence"
-                  value={pct(session.confidence)}
-                />
-              )}
-              {session.clarity != null && (
-                <AnalyticsStatCard
-                  label="Clarity"
-                  value={pct(session.clarity)}
-                />
-              )}
-              {session.focus != null && (
-                <AnalyticsStatCard label="Focus" value={pct(session.focus)} />
-              )}
-              {session.anxiety != null && (
-                <AnalyticsStatCard
-                  label="Anxiety Evidence"
-                  value={pct(session.anxiety)}
-                  subText="Lower is better"
                 />
               )}
               {session.voiceQualityScore != null && (
@@ -690,33 +636,9 @@ export default function SessionAnalytics() {
         {showMotion && (
           <DetailSection
             title="All motion measurements"
-            subtitle="Posture, gaze, movement, stability, and nervousness signals"
+            subtitle="Supporting stability, fidgeting, and nervousness signals"
           >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {session.postureScore != null && (
-                <AnalyticsStatCard
-                  label="Posture"
-                  value={session.postureScore}
-                />
-              )}
-              {session.gazeAssessment != null && (
-                <AnalyticsStatCard
-                  label="Gaze Assessment"
-                  value={session.gazeAssessment}
-                />
-              )}
-              {session.gesturesScore != null && (
-                <AnalyticsStatCard
-                  label="Gestures"
-                  value={session.gesturesScore}
-                />
-              )}
-              {session.composureAssessment != null && (
-                <AnalyticsStatCard
-                  label="Composure"
-                  value={session.composureAssessment}
-                />
-              )}
               {session.stabilityScore != null && (
                 <AnalyticsStatCard
                   label="Stability"
@@ -727,6 +649,13 @@ export default function SessionAnalytics() {
                 <AnalyticsStatCard
                   label="Fidgeting"
                   value={session.fidgetingLevel}
+                  subText="Lower is better"
+                />
+              )}
+              {session.fidgetingScore != null && (
+                <AnalyticsStatCard
+                  label="Fidgeting Score"
+                  value={pct(session.fidgetingScore)}
                   subText="Lower is better"
                 />
               )}

@@ -33,26 +33,30 @@ interface RankedFeedback extends FeedbackItem {
   priority: number;
 }
 
+interface VoiceFeedbackParts {
+  desc: string;
+  reasons: string[];
+}
+
 function normalizedScore(value: number | null | undefined): number | null {
   if (value == null || !Number.isFinite(value)) return null;
   return value >= 0 && value <= 1 ? value * 100 : value;
 }
 
 function feedbackFor(
-  feedback: Record<string, string>,
+  feedback: Record<string, VoiceFeedbackParts>,
   key: string,
   fallback: string,
-): string {
-  return feedback[key]?.trim() || fallback;
+): Pick<FeedbackItem, 'desc' | 'reasons'> {
+  const item = feedback[key];
+  const desc = item?.desc.trim() || fallback;
+  return item?.reasons.length ? { desc, reasons: item.reasons } : { desc };
 }
 
-function withReasons(feedback: string, reasons?: string[] | null): string {
-  const cleanReasons = Array.isArray(reasons)
-    ? reasons.filter((reason) => reason.trim().length > 0)
-    : [];
-  if (cleanReasons.length === 0) return feedback;
-  const reasonText = cleanReasons.join(' ');
-  return feedback.trim().length > 0 ? `${feedback} ${reasonText}` : reasonText;
+function cleanReasons(reasons: string[] | null | undefined): string[] {
+  return (reasons ?? [])
+    .map((reason) => reason.trim())
+    .filter((reason) => reason.length > 0);
 }
 
 function buildVoiceInsights(voice: VoiceAnalysisDto | null): {
@@ -66,10 +70,22 @@ function buildVoiceInsights(voice: VoiceAnalysisDto | null): {
   const growthAreas: RankedFeedback[] = [];
   const recommendations: RankedFeedback[] = [];
   const feedback = {
-    confidence: withReasons(voice.confidence_feedback, voice.confidence_reasons),
-    clarity: withReasons(voice.clarity_feedback, voice.clarity_reasons),
-    focus: withReasons(voice.focus_feedback, voice.focus_reasons),
-    anxiety: withReasons(voice.anxiety_feedback, voice.anxiety_reasons),
+    confidence: {
+      desc: voice.confidence_feedback,
+      reasons: cleanReasons(voice.confidence_reasons),
+    },
+    clarity: {
+      desc: voice.clarity_feedback,
+      reasons: cleanReasons(voice.clarity_reasons),
+    },
+    focus: {
+      desc: voice.focus_feedback,
+      reasons: cleanReasons(voice.focus_reasons),
+    },
+    anxiety: {
+      desc: voice.anxiety_feedback,
+      reasons: cleanReasons(voice.anxiety_reasons),
+    },
   };
 
   const positiveTraits = [
@@ -84,7 +100,7 @@ function buildVoiceInsights(voice: VoiceAnalysisDto | null): {
     if (score >= 80) {
       strengths.push({
         title: `Voice: ${title}`,
-        desc: feedbackFor(
+        ...feedbackFor(
           feedback,
           key,
           `${title} was a strong part of this delivery.`,
@@ -92,19 +108,19 @@ function buildVoiceInsights(voice: VoiceAnalysisDto | null): {
         priority: score,
       });
     } else if (score < 60) {
-      const desc = feedbackFor(
+      const feedbackItem = feedbackFor(
         feedback,
         key,
         `${title} needs more consistency.`,
       );
       growthAreas.push({
         title: `Voice: ${title}`,
-        desc,
+        ...feedbackItem,
         priority: 100 - score,
       });
       recommendations.push({
         title: `Improve ${title.toLowerCase()}`,
-        desc,
+        ...feedbackItem,
         priority: 100 - score,
       });
     }
@@ -115,7 +131,7 @@ function buildVoiceInsights(voice: VoiceAnalysisDto | null): {
     if (anxiety <= 25) {
       strengths.push({
         title: 'Voice: Composure',
-        desc: feedbackFor(
+        ...feedbackFor(
           feedback,
           'anxiety',
           'Your voice showed few signs of anxiety.',
@@ -123,15 +139,19 @@ function buildVoiceInsights(voice: VoiceAnalysisDto | null): {
         priority: 100 - anxiety,
       });
     } else if (anxiety >= 50) {
-      const desc = feedbackFor(
+      const feedbackItem = feedbackFor(
         feedback,
         'anxiety',
         'Your voice showed elevated anxiety signals.',
       );
-      growthAreas.push({ title: 'Voice: Composure', desc, priority: anxiety });
+      growthAreas.push({
+        title: 'Voice: Composure',
+        ...feedbackItem,
+        priority: anxiety,
+      });
       recommendations.push({
         title: 'Reset before key answers',
-        desc,
+        ...feedbackItem,
         priority: anxiety,
       });
     }
@@ -318,21 +338,31 @@ export function mapSessionReport(
     ? [
         {
           title: 'Confidence',
-          desc: withReasons(voice.confidence_feedback, voice.confidence_reasons),
+          desc: voice.confidence_feedback,
+          reasons: cleanReasons(voice.confidence_reasons),
         },
         {
           title: 'Clarity',
-          desc: withReasons(voice.clarity_feedback, voice.clarity_reasons),
+          desc: voice.clarity_feedback,
+          reasons: cleanReasons(voice.clarity_reasons),
         },
         {
           title: 'Focus',
-          desc: withReasons(voice.focus_feedback, voice.focus_reasons),
+          desc: voice.focus_feedback,
+          reasons: cleanReasons(voice.focus_reasons),
         },
         {
           title: 'Anxiety',
-          desc: withReasons(voice.anxiety_feedback, voice.anxiety_reasons),
+          desc: voice.anxiety_feedback,
+          reasons: cleanReasons(voice.anxiety_reasons),
         },
-      ].filter((item) => item.desc.trim().length > 0)
+      ]
+        .filter((item) => item.desc.trim().length > 0)
+        .map((item) =>
+          item.reasons.length > 0
+            ? item
+            : { title: item.title, desc: item.desc },
+        )
     : [];
 
   const startValue = session.start_time ?? session.created_at;
@@ -411,7 +441,9 @@ export function mapSessionReport(
       ? formatRating(ratingLabel(assessment.composure))
       : null,
     stabilityScore: motion?.head_stability_score ?? null,
-    fidgetingLevel: motion?.fidgeting_level ?? null,
+    fidgetingLevel: formatRating(motion?.fidgeting_level ?? null),
+    fidgetingScore: motion?.fidgeting_score ?? null,
+    dominantPostureType: formatRating(motion?.dominant_posture_type ?? null),
     nervousness: motion?.nervousness_indicator ?? null,
     strengths: combinedStrengths,
     growthAreas: combinedGrowthAreas,

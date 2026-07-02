@@ -2,7 +2,40 @@ import pytest
 from sqlalchemy import inspect, text
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from app.migrations import _run_user_avatar_migration, run_migrations
+from app.migrations import (
+    _run_user_avatar_migration,
+    _run_voice_pause_fields_migration,
+    run_migrations,
+)
+
+
+@pytest.mark.asyncio
+async def test_voice_pause_fields_migration_adds_missing_legacy_columns():
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    try:
+        async with engine.begin() as connection:
+            await connection.execute(
+                text(
+                    "CREATE TABLE voice_analysis ("
+                    "voice_analysis_id CHAR(32) PRIMARY KEY"
+                    ")"
+                )
+            )
+
+            await connection.run_sync(_run_voice_pause_fields_migration)
+            await connection.run_sync(_run_voice_pause_fields_migration)
+
+            columns = await connection.run_sync(
+                lambda sync_connection: {
+                    column["name"]
+                    for column in inspect(sync_connection).get_columns(
+                        "voice_analysis"
+                    )
+                }
+            )
+            assert {"pause_ratio", "pause_count"}.issubset(columns)
+    finally:
+        await engine.dispose()
 
 
 @pytest.mark.asyncio

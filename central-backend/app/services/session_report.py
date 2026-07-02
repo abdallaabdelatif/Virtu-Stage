@@ -154,9 +154,30 @@ def build_session_status(
     voice: dict | None,
     motion: dict | None,
 ) -> SessionStatusResponse:
+    effective_status = session["status"]
+    if effective_status not in {"completed", "failed", "cancelled"}:
+        if voice is not None and motion is not None:
+            # The callbacks are authoritative. This also repairs the response for
+            # an older session whose final database status was not updated.
+            effective_status = "completed"
+        elif effective_status == "processing":
+            now = datetime.now(timezone.utc)
+            end_time = _parse_datetime(session.get("end_time"))
+            voice_status = _component_status(
+                voice is not None, end_time, effective_status, now
+            )
+            motion_status = _component_status(
+                motion is not None, end_time, effective_status, now
+            )
+            if "failed" in {voice_status, motion_status}:
+                # Once the analysis deadline passes, no component remains
+                # pending. Return a terminal session state so clients stop
+                # polling; the report still distinguishes partial vs failed.
+                effective_status = "failed"
+
     return SessionStatusResponse(
         session_id=str(session["session_id"]),
-        status=session["status"],
+        status=effective_status,
         voice_ready=voice is not None,
         motion_ready=motion is not None,
     )

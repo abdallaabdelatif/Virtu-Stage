@@ -10,6 +10,10 @@ import { isNonTerminalStatus } from '../types/session';
 import api from '../utils/api';
 
 const TERMINAL_STATUSES: SessionStatus[] = ['Completed', 'Failed', 'Cancelled'];
+// Central marks analysis as timed out after 10 minutes. Keep a small grace
+// period, but never let a broken deployment or repeated network errors poll
+// forever in a browser tab.
+export const MAX_SESSION_POLLING_MS = 11 * 60 * 1000;
 
 export function useSessionPolling(
   sessionId: string | null,
@@ -36,14 +40,29 @@ export function useSessionPolling(
 
     let active = true;
     let timer: number | undefined;
+    const pollingStartedAt = Date.now();
     const poll = async () => {
+      if (Date.now() - pollingStartedAt >= MAX_SESSION_POLLING_MS) {
+        if (active) {
+          setStatus('Failed');
+          setIsPolling(false);
+          onTerminal?.();
+        }
+        return;
+      }
+
       let reachedTerminal = false;
       try {
         const { data } = await api.get<SessionStatusResponseDto>(
           API_ENDPOINTS.sessions.status(sessionId),
         );
         if (!active) return;
-        const nextStatus = mapSessionStatus(data.status);
+        // Both stored callbacks are enough to consider the analysis complete,
+        // even while an older backend deployment still reports `processing`.
+        const nextStatus =
+          data.voice_ready && data.motion_ready
+            ? 'Completed'
+            : mapSessionStatus(data.status);
         setStatus(nextStatus);
         if (TERMINAL_STATUSES.includes(nextStatus)) {
           reachedTerminal = true;

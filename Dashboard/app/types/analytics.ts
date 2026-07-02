@@ -3,6 +3,7 @@ import type { BackendSessionStatus } from './session';
 export interface FeedbackItem {
   title: string;
   desc: string;
+  reasons?: string[];
 }
 
 export interface MetricCard {
@@ -52,6 +53,8 @@ export interface SessionAnalytics {
   composureAssessment: string | null;
   stabilityScore: number | null;
   fidgetingLevel: string | null;
+  fidgetingScore: number | null;
+  dominantPostureType: string | null;
   nervousness: number | null;
   strengths: FeedbackItem[];
   growthAreas: FeedbackItem[];

@@ -41,6 +41,7 @@ Thumbs.db
 # Test/coverage output
 coverage/
 .nyc_output/
+playwright/.auth/
 
 # Local demo database tooling
 /scripts/

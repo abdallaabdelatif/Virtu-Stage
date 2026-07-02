@@ -6,7 +6,7 @@ ENV PYTHONUNBUFFERED=1
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY main.py voice_analysis_bridge.py ./
+COPY main.py voice_analysis_bridge.py connection_lifecycle.py ./
 COPY config ./config
 COPY interfaces ./interfaces
 COPY pipeline ./pipeline

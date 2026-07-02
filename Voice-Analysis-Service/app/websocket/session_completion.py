@@ -6,6 +6,7 @@ from typing import Any
 from app.analysis import pipeline
 from app.audio.audio_buffer import AudioBuffer
 from app.audio.transcript_buffer import TranscriptBuffer
+from app.config import VOICE_ANALYSIS_RESULT_CALLBACK_URL
 from app.feedback import trait_feedback
 from app.scoring import trait_scorer
 from app.websocket import result_sender
@@ -21,6 +22,7 @@ class SessionAnalysisState:
     transcript_closed: bool = False
     result_callback_url: str | None = None
     result_sent: bool = False
+    result_sending: bool = False
     transcript_text: str = ""
     audio: dict[str, Any] = field(default_factory=dict)
     transcript: dict[str, Any] = field(default_factory=dict)
@@ -33,13 +35,10 @@ _session_results: dict[str, SessionAnalysisState] = {}  # shared memory for all 
 _session_lock = asyncio.Lock()  # to prevent race conditions
 
 
-async def register_result_callback(session_id: str, callback_url: str | None) -> None:
-    if not callback_url:
-        return
-
+async def register_result_callback(session_id: str) -> None:
     async with _session_lock:
         state = _get_state(session_id)
-        state.result_callback_url = callback_url
+        state.result_callback_url = VOICE_ANALYSIS_RESULT_CALLBACK_URL
 
 
 async def on_audio_socket_closed(session_id: str, buffer: AudioBuffer) -> None:
@@ -132,7 +131,7 @@ async def send_result_if_ready(session_id: str) -> bool:
         state = _session_results.get(session_id)
         if state is None:
             return False
-        if state.result_sent or not state.result_callback_url:
+        if state.result_sent or state.result_sending or not state.result_callback_url:
             return False
         if not (state.audio_closed and state.transcript_closed):
             return False
@@ -153,13 +152,22 @@ async def send_result_if_ready(session_id: str) -> bool:
                 state.transcript,
             ),
         )
-        state.result_sent = True
+        state.result_sending = True
 
-    posted = await result_sender.post_result(callback_url, payload)
-    if not posted:
-        async with _session_lock:
-            state = _session_results.get(session_id)
-            if state is not None:
+    try:
+        posted = await result_sender.post_result(callback_url, payload)
+    except Exception:
+        logger.exception(
+            "Unexpected result callback failure for session %s", session_id
+        )
+        posted = False
+
+    async with _session_lock:
+        state = _session_results.get(session_id)
+        if state is not None:
+            state.result_sending = False
+            state.result_sent = posted
+            if not posted:
                 state.errors.append(f"result_callback_failed: {callback_url}")
     return posted
 

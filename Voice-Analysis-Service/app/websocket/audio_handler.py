@@ -17,10 +17,9 @@ router = APIRouter()
 async def audio_socket(
     websocket: WebSocket,
     session_id: str,
-    result_callback_url: str | None = None,
 ) -> None:
     await websocket.accept()
-    await register_result_callback(session_id, result_callback_url)
+    await register_result_callback(session_id)
     buffer = AudioBuffer(session_id=session_id)
     logger.info("Audio websocket opened for session %s", session_id)
 

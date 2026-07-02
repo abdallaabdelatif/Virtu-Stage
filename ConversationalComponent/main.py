@@ -14,6 +14,7 @@ from providers.elevenlabs_tts import ElevenLabsTTS
 
 from pipeline.voice_session import VoiceSession
 from pipeline.conversation_pipeline import ConversationPipeline
+from connection_lifecycle import run_until_first_completes
 from voice_analysis_bridge import build_transcript_ws_url, create_transcript_payload, resolve_session_id
 
 app = FastAPI()
@@ -137,6 +138,9 @@ Only output the question.
     async def unity_listener():
         while True:
             message = await websocket.receive()
+            if message.get("type") == "websocket.disconnect":
+                return
+
             if message.get("bytes") is not None:
                 audio_chunk = message["bytes"]
                 await stt.send_audio(audio_chunk)
@@ -173,10 +177,9 @@ Only output the question.
                 print("Stored presentation transcript")
 
     try:
-        await asyncio.gather(unity_listener(),stt_processing())
+        await run_until_first_completes(unity_listener(), stt_processing())
 
     except WebSocketDisconnect:
-
         print("Unity disconnected")
 
     finally:
