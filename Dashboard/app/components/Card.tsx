@@ -21,23 +21,33 @@ export function Card({ children, className = '', title, action }: CardProps) {
   );
 }
 
-// Stat card variant
 interface StatCardProps {
   label: string;
   value: string;
-  change?: string;
+  description?: string;
   color?: string;
   icon?: React.ReactNode;
+  progress?: number;
+  valueTone?: 'positive' | 'negative' | 'neutral';
 }
 
 export function StatCard({
   label,
   value,
-  change,
+  description,
   color = '#c1ff72',
   icon,
+  progress,
+  valueTone = 'neutral',
 }: StatCardProps) {
-  const isPositive = change?.startsWith('+');
+  const valueToneClass =
+    valueTone === 'positive'
+      ? 'text-[#0bda62]'
+      : valueTone === 'negative'
+        ? 'text-red-400'
+        : 'text-white';
+  const boundedProgress =
+    progress == null ? null : Math.min(100, Math.max(0, progress));
   return (
     <div className="bg-[#1a2117] border border-[#46513c] rounded-2xl p-5">
       <div className="flex justify-between items-start mb-3">
@@ -50,20 +60,25 @@ export function StatCard({
           </span>
         )}
       </div>
-      <p className="text-white text-3xl font-black">{value}</p>
-      {change && (
-        <span
-          className={`text-xs font-bold mt-1 inline-block ${isPositive ? 'text-[#0bda62]' : 'text-red-400'}`}
-        >
-          {change} from last month
+      <p className={`${valueToneClass} text-3xl font-black`}>{value}</p>
+      {description && (
+        <span className="mt-1 inline-block text-xs font-bold text-[#aeb4a8]">
+          {description}
         </span>
       )}
-      <div className="w-full h-1 rounded-full mt-3 bg-[#2a3325]">
-        <div
-          className="h-full rounded-full"
-          style={{ width: '60%', backgroundColor: color }}
-        />
-      </div>
+      {boundedProgress != null && (
+        <div className="w-full h-1 rounded-full mt-3 bg-[#2a3325]">
+          <div
+            role="progressbar"
+            aria-label={`${label} progress`}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={boundedProgress}
+            className="h-full rounded-full"
+            style={{ width: `${boundedProgress}%`, backgroundColor: color }}
+          />
+        </div>
+      )}
     </div>
   );
 }

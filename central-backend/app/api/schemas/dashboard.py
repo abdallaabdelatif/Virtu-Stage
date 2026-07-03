@@ -8,12 +8,14 @@ from pydantic import BaseModel
 class ScoreHistoryPoint(BaseModel):
     session_id: str
     date: str
+    timestamp: datetime
     score: float
 
 
 class AnalysisHistoryPoint(BaseModel):
     session_id: str
     label: str
+    timestamp: datetime
     voice_score: float
     motion_score: float
 

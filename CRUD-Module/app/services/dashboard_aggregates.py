@@ -68,6 +68,9 @@ async def get_user_dashboard(
     )
     total_sessions = int(total_sessions or 0)
 
+    completed_at = func.coalesce(
+        TrainingSession.end_time, TrainingSession.created_at
+    )
     completed_result = await db.execute(
         select(TrainingSession)
         .where(
@@ -75,7 +78,7 @@ async def get_user_dashboard(
             TrainingSession.status == SessionStatus.completed,
             TrainingSession.overall_score.is_not(None),
         )
-        .order_by(TrainingSession.end_time.desc(), TrainingSession.created_at.desc())
+        .order_by(completed_at.desc())
     )
     completed_sessions = list(completed_result.scalars().all())
     analyzed_sessions = len(completed_sessions)
@@ -96,6 +99,7 @@ async def get_user_dashboard(
             date=_as_platform_time(
                 session.end_time or session.created_at
             ).date().isoformat(),
+            timestamp=_as_utc(session.end_time or session.created_at),
             score=float(session.overall_score),
         )
         for session in completed_sessions[:30]
@@ -109,7 +113,7 @@ async def get_user_dashboard(
             TrainingSession.voice_analysis_score.is_not(None),
             TrainingSession.motion_analysis_score.is_not(None),
         )
-        .order_by(TrainingSession.end_time.desc(), TrainingSession.created_at.desc())
+        .order_by(completed_at.desc())
         .limit(10)
     )
     analysis_sessions = list(analysis_result.scalars().all())
@@ -117,6 +121,7 @@ async def get_user_dashboard(
         AnalysisHistoryPoint(
             session_id=session.session_id,
             label=_format_label(session.end_time or session.created_at),
+            timestamp=_as_utc(session.end_time or session.created_at),
             voice_score=float(session.voice_analysis_score),
             motion_score=float(session.motion_analysis_score),
         )

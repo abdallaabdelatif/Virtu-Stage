@@ -139,7 +139,14 @@ describe('frontend services', () => {
           analyzed_sessions: 1,
           average_overall_score: 81,
           improvement_rate: null,
-          score_history: [{ session_id: 's1', date: '2026-06-30', score: 81 }],
+          score_history: [
+            {
+              session_id: 's1',
+              date: '2026-06-30',
+              timestamp: '2026-06-30T10:05:00Z',
+              score: 81,
+            },
+          ],
           analysis_history: [],
         },
       })

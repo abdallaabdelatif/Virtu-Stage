@@ -18,10 +18,24 @@ import {
 import type { UserDashboardData } from '../types/dashboard';
 import { formatImprovementRate } from '../types/dashboard';
 import { EmptyState } from './EmptyState';
+import { formatPlatformDate, formatPlatformTime } from '../utils/dateTime';
 
 interface UserDashboardProps {
   name: string;
   data: UserDashboardData;
+}
+
+function formatTooltipTimestamp(value: string) {
+  const date = formatPlatformDate(value, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+  const time = formatPlatformTime(value, {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+  return `${date}, ${time}`;
 }
 
 export function UserDashboard({ name, data }: UserDashboardProps) {
@@ -35,6 +49,25 @@ export function UserDashboard({ name, data }: UserDashboardProps) {
   } = data;
 
   const improvementLabel = formatImprovementRate(improvementRate);
+  const orderedProgressData = [...progressData].reverse();
+  const progressLabels = new Map(
+    progressData.map((point) => [point.sessionId, point.date]),
+  );
+  const progressTooltipLabels = new Map(
+    progressData.map((point) => [
+      point.sessionId,
+      formatTooltipTimestamp(point.timestamp),
+    ]),
+  );
+  const voiceMotionLabels = new Map(
+    voiceMotionData.map((point) => [point.sessionId, point.label]),
+  );
+  const voiceMotionTooltipLabels = new Map(
+    voiceMotionData.map((point) => [
+      point.sessionId,
+      formatTooltipTimestamp(point.timestamp),
+    ]),
+  );
 
   return (
     <>
@@ -51,7 +84,7 @@ export function UserDashboard({ name, data }: UserDashboardProps) {
         <StatCard
           label="Total Sessions"
           value={totalSessions.toString()}
-          change={
+          description={
             totalSessions === 0
               ? 'Complete your first training session'
               : 'Your recorded training sessions'
@@ -62,21 +95,29 @@ export function UserDashboard({ name, data }: UserDashboardProps) {
         <StatCard
           label="Avg Performance Score"
           value={avgScore != null ? `${avgScore}/100` : '--'}
-          change={
+          description={
             analyzedSessions === 0
               ? 'Available after your first completed analysis'
               : 'Based on completed analyzed sessions'
           }
+          progress={avgScore ?? undefined}
           color="#FFB703"
           icon={<Star className="w-5 h-5" />}
         />
         <StatCard
           label="Improvement Rate"
           value={improvementLabel}
-          change={
+          description={
             improvementRate == null
               ? 'Requires at least 10 completed sessions'
               : 'Recent 5 sessions vs the previous 5'
+          }
+          valueTone={
+            improvementRate == null || improvementRate === 0
+              ? 'neutral'
+              : improvementRate > 0
+                ? 'positive'
+                : 'negative'
           }
           color="#0bda62"
           icon={<Zap className="w-5 h-5" />}
@@ -118,10 +159,13 @@ export function UserDashboard({ name, data }: UserDashboardProps) {
               </p>
             ) : (
               <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={[...progressData].reverse()}>
+                <LineChart data={orderedProgressData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#2a3325" />
                   <XAxis
-                    dataKey="date"
+                    dataKey="sessionId"
+                    tickFormatter={(sessionId) =>
+                      progressLabels.get(String(sessionId)) ?? ''
+                    }
                     tick={{ fill: '#aeb4a8', fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
@@ -132,13 +176,25 @@ export function UserDashboard({ name, data }: UserDashboardProps) {
                     tickLine={false}
                     domain={[0, 100]}
                   />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip
+                    content={
+                      <CustomTooltip
+                        labelFormatter={(sessionId) =>
+                          progressTooltipLabels.get(String(sessionId)) ?? ''
+                        }
+                      />
+                    }
+                  />
                   <Line
                     type="monotone"
                     dataKey="score"
                     stroke="#c1ff72"
                     strokeWidth={3}
-                    dot={false}
+                    dot={
+                      orderedProgressData.length === 1
+                        ? { r: 5, fill: '#c1ff72' }
+                        : false
+                    }
                     activeDot={{ r: 6, fill: '#c1ff72' }}
                   />
                 </LineChart>
@@ -162,7 +218,10 @@ export function UserDashboard({ name, data }: UserDashboardProps) {
                 <BarChart data={voiceMotionData} barGap={4}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#2a3325" />
                   <XAxis
-                    dataKey="label"
+                    dataKey="sessionId"
+                    tickFormatter={(sessionId) =>
+                      voiceMotionLabels.get(String(sessionId)) ?? ''
+                    }
                     tick={{ fill: '#aeb4a8', fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
@@ -173,7 +232,15 @@ export function UserDashboard({ name, data }: UserDashboardProps) {
                     tickLine={false}
                     domain={[0, 100]}
                   />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip
+                    content={
+                      <CustomTooltip
+                        labelFormatter={(sessionId) =>
+                          voiceMotionTooltipLabels.get(String(sessionId)) ?? ''
+                        }
+                      />
+                    }
+                  />
                   <Legend
                     formatter={(value) => (
                       <span style={{ color: '#d9d9d9' }}>{value}</span>

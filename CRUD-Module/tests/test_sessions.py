@@ -4,6 +4,36 @@ import pytest
 
 
 @pytest.mark.asyncio
+async def test_session_scores_must_be_between_zero_and_one_hundred(client, user_id):
+    session_id = str(uuid.uuid4())
+    create_response = await client.post(
+        "/sessions",
+        json={
+            "session_id": session_id,
+            "user_id": user_id,
+            "scenario_type": "interview",
+            "difficulty_level": "medium",
+        },
+        headers={"X-Internal-API-Key": "test-internal-key"},
+    )
+    assert create_response.status_code == 201
+
+    above_range = await client.put(
+        f"/sessions/{session_id}",
+        json={"overall_score": 100.01},
+        headers={"X-Internal-API-Key": "test-internal-key"},
+    )
+    below_range = await client.put(
+        f"/sessions/{session_id}",
+        json={"voice_analysis_score": -0.01},
+        headers={"X-Internal-API-Key": "test-internal-key"},
+    )
+
+    assert above_range.status_code == 422
+    assert below_range.status_code == 422
+
+
+@pytest.mark.asyncio
 async def test_session_lifecycle_and_scoring(client, user_id):
     session_id = str(uuid.uuid4())
 

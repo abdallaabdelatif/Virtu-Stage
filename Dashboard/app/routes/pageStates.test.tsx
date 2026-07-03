@@ -96,9 +96,11 @@ describe('page states', () => {
     mockedUseAuth.mockReturnValue({
       user,
       isAuthenticated: true,
+      isExplicitLogout: false,
       loading: false,
       login: vi.fn(),
       logout: vi.fn(),
+      clearExplicitLogout: vi.fn(),
       updateUser: vi.fn(),
     });
   });

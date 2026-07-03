@@ -31,7 +31,6 @@ export default function ForgotPassword() {
 
   return (
     <div className="min-h-screen bg-[#0a0c10] flex items-center justify-center p-6 lg:p-12 relative overflow-hidden">
-      {/* Background Ornaments (matches home.tsx) */}
       <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-brand/10 lg:from-brand/5 to-transparent pointer-events-none" />
       <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-brand/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] rounded-full bg-[#0bda62]/5 blur-[100px] pointer-events-none" />

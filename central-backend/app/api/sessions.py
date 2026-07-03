@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -45,11 +47,28 @@ async def _get_owned_session(session_id: str, user: dict) -> dict:
     return session
 
 
+async def _resolve_list_session_status(session: dict) -> dict:
+    if session.get("status") != "processing":
+        return session
+    session_id = str(session["session_id"])
+    voice, motion = await asyncio.gather(
+        crud_client.get_voice_analysis_by_session(session_id),
+        crud_client.get_motion_analysis_by_session(session_id),
+    )
+    effective_status = build_session_status(session, voice, motion).status
+    if effective_status == session["status"]:
+        return session
+    return {**session, "status": effective_status}
+
+
 @router.get("/me", response_model=list[TrainingSessionResponse])
 async def list_my_sessions(user=Depends(get_current_active_user)):
     try:
         sessions = await crud_client.list_training_sessions_by_user(
             str(user["user_id"])
+        )
+        sessions = await asyncio.gather(
+            *(_resolve_list_session_status(session) for session in sessions)
         )
     except httpx.HTTPError as exc:
         raise HTTPException(

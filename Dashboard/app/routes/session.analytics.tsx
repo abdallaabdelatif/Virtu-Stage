@@ -5,7 +5,7 @@ import {
   useRef,
   type ReactNode,
 } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useLocation, useParams, useNavigate } from 'react-router';
 import {
   ArrowLeft,
   CheckCircle,
@@ -34,6 +34,10 @@ import { useTransientMessages } from '../hooks/useTransientMessages';
 import { RefreshNotice } from '../components/RefreshNotice';
 
 const cachedSessionAnalytics = new Map<string, SessionAnalyticsData>();
+
+interface AnalyticsLocationState {
+  from?: string;
+}
 
 function ProcessingBanner({ label }: { label: string }) {
   return (
@@ -154,6 +158,16 @@ function DetailSection({
 export default function SessionAnalytics() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const locationState = location.state as AnalyticsLocationState | null;
+  const requestedBackTarget = locationState?.from;
+  const backTarget =
+    requestedBackTarget === '/sessions' ||
+    requestedBackTarget?.startsWith('/sessions?') ||
+    requestedBackTarget === '/analytics' ||
+    requestedBackTarget?.startsWith('/analytics?')
+      ? requestedBackTarget
+      : '/analytics';
   const cachedSession = id ? cachedSessionAnalytics.get(id) : null;
   const [session, setSession] = useState<SessionAnalyticsData | null>(
     () => cachedSession ?? null,
@@ -217,7 +231,11 @@ export default function SessionAnalytics() {
     };
   }, [fetchSessionAnalytics, id]);
 
-  useSessionPolling(id ?? null, backendStatus, fetchSessionAnalytics);
+  const { status: polledStatus } = useSessionPolling(
+    id ?? null,
+    backendStatus,
+    fetchSessionAnalytics,
+  );
 
   if (loading) {
     return <SessionAnalyticsSkeleton />;
@@ -239,6 +257,12 @@ export default function SessionAnalytics() {
 
   const showVoice = !session.voicePending && !session.voiceFailed;
   const showMotion = !session.motionPending && !session.motionFailed;
+  const displayStatus =
+    session.reportStatus === 'complete'
+      ? 'Completed'
+      : session.reportStatus === 'partial' || session.reportStatus === 'failed'
+        ? 'Failed'
+        : polledStatus;
   const voiceFeedbackByTitle = new Map(
     session.voiceFeedback.map((item) => [item.title, item.desc]),
   );
@@ -297,7 +321,7 @@ export default function SessionAnalytics() {
   return (
     <>
       <button
-        onClick={() => navigate('/analytics')}
+        onClick={() => navigate(backTarget)}
         className="flex items-center gap-2 text-[#d9d9d9] hover:text-white text-sm font-medium mb-4 transition-colors group"
       >
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
@@ -312,7 +336,7 @@ export default function SessionAnalytics() {
       <RefreshNotice messages={refreshMessages} />
 
       <div className="flex items-center gap-3 mb-6 -mt-4">
-        <StatusBadge status={session.status} />
+        <StatusBadge status={displayStatus} />
         <span className="text-[#aeb4a8] text-xs uppercase tracking-wider font-bold">
           Report: {session.reportStatus}
         </span>

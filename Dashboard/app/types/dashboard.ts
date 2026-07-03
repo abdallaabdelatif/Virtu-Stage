@@ -1,10 +1,14 @@
 export interface PerformancePoint {
+  sessionId: string;
   date: string;
+  timestamp: string;
   score: number;
 }
 
 export interface VoiceMotionPoint {
+  sessionId: string;
   label: string;
+  timestamp: string;
   voice: number;
   motion: number;
 }

@@ -22,13 +22,17 @@ function formatChartDay(value: string) {
   return formatPlatformCalendarDay(value, {
     month: 'short',
     day: 'numeric',
+    year: 'numeric',
   });
 }
 
 function formatChartMonth(value: string) {
   const [year, month] = value.split('-');
   const date = new Date(Number(year), Number(month) - 1, 1);
-  return date.toLocaleDateString('en-US', { month: 'short' });
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    year: 'numeric',
+  });
 }
 
 export function mapUserDashboard(dto: UserDashboardDto): UserDashboardData {
@@ -38,11 +42,15 @@ export function mapUserDashboard(dto: UserDashboardDto): UserDashboardData {
     avgScore: dto.average_overall_score,
     improvementRate: dto.improvement_rate,
     progressData: dto.score_history.map((point) => ({
+      sessionId: point.session_id,
       date: point.date,
+      timestamp: point.timestamp,
       score: point.score,
     })),
     voiceMotionData: dto.analysis_history.map((point) => ({
+      sessionId: point.session_id,
       label: point.label,
+      timestamp: point.timestamp,
       voice: point.voice_score,
       motion: point.motion_score,
     })),

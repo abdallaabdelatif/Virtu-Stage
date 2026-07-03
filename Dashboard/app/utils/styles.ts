@@ -1,5 +1,4 @@
 export const styles = {
-  // Container & Card Styles
   card: 'bg-[#1a2117] border border-[#46513c] rounded-2xl p-6',
   cardSub: 'bg-[#2a3325] rounded-2xl p-5',
   cardActive:
@@ -7,7 +6,6 @@ export const styles = {
   cardInteractive:
     'bg-[#121610] border border-[#2a3325] hover:border-[#46513c] rounded-2xl p-5 transition-all hover:bg-white/5',
 
-  // Text Styles
   pageTitle: 'text-3xl sm:text-4xl font-black tracking-tight text-white mb-1',
   pageSubtitle: 'text-secondary text-base',
 
@@ -22,14 +20,12 @@ export const styles = {
 
   statValueLarge: 'text-white text-4xl sm:text-5xl font-black',
 
-  // Forms & Inputs
   inputBase:
     'w-full bg-[#121610] border border-[#46513c] rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-[#aeb4a8] focus:outline-none focus:border-brand transition-colors',
   inputWithIcon: 'pl-9',
   selectBase:
     'bg-[#121610] border border-[#46513c] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand transition-colors',
 
-  // Tables
   tableContainer:
     'bg-[#121610] border border-[#2a3325] rounded-2xl overflow-hidden',
   tableHeaderGroup:
@@ -37,12 +33,10 @@ export const styles = {
   tableRow:
     'border-b border-[#25301f] hover:bg-white/5 transition-colors last:border-0',
 
-  // Flex Utilities
   flexCenter: 'flex items-center justify-center',
   flexBetween: 'flex items-center justify-between',
   flexStart: 'flex items-center justify-start',
 
-  // Buttons
   btnPrimaryIcon:
     'flex items-center gap-2 bg-brand hover:bg-brand-hover text-brand-contrast text-sm font-bold px-5 h-11 rounded-xl transition-all shadow-lg shadow-brand/20',
   btnSecondaryIcon:

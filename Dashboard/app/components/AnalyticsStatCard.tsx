@@ -1,4 +1,3 @@
-// app/components/AnalyticsStatCard.tsx
 import type { ReactNode } from 'react';
 import { styles } from '../utils/styles';
 

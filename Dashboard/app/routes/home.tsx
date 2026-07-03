@@ -32,10 +32,22 @@ const getRedirectTarget = (role: UserRole, path: string): string => {
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isAuthenticated, user } = useAuth();
+  const {
+    login,
+    clearExplicitLogout,
+    isAuthenticated,
+    isExplicitLogout,
+    user,
+  } = useAuth();
 
   const locationState = location.state as LoginLocationState | null;
-  const from = locationState?.from?.pathname || '/dashboard';
+  const from = isExplicitLogout
+    ? '/dashboard'
+    : locationState?.from?.pathname || '/dashboard';
+
+  useEffect(() => {
+    if (isExplicitLogout) clearExplicitLogout();
+  }, [clearExplicitLogout, isExplicitLogout]);
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -78,7 +90,6 @@ export default function Login() {
           'radial-gradient(at 0% 100%, rgba(193,255,114,0.14) 0, transparent 48%), radial-gradient(at 100% 0%, rgba(6,68,35,0.55) 0, transparent 46%)',
       }}
     >
-      {/* Header */}
       <header className="flex items-center justify-between px-6 md:px-10 py-4 border-b border-[#2a3325] bg-[#10130f]/30 backdrop-blur-sm sticky top-0 z-50">
         <VirtuStageLogo
           variant="wordmark"
@@ -97,11 +108,9 @@ export default function Login() {
         </div>
       </header>
 
-      {/* Main */}
       <main className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-[480px]">
           <div className="bg-[#1a2117]/60 border border-[#46513c] rounded-xl p-8 shadow-2xl backdrop-blur-md">
-            {/* Title */}
             <div className="text-center mb-8">
               <h1 className="text-white text-[32px] font-bold pb-2">
                 Welcome Back
@@ -111,7 +120,6 @@ export default function Login() {
               </p>
             </div>
 
-            {/* Error */}
             {error && (
               <div
                 role="alert"
@@ -121,7 +129,6 @@ export default function Login() {
               </div>
             )}
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-1">
               <Input
                 label="Email or Username"

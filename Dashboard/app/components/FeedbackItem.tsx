@@ -1,4 +1,3 @@
-// app/components/FeedbackItem.tsx
 import { CheckCircle, AlertTriangle } from 'lucide-react';
 import { styles } from '../utils/styles';
 

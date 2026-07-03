@@ -29,29 +29,27 @@ const AdminDashboard = lazy(() =>
 type DashboardRole = 'admin' | 'user';
 type DashboardStats = AdminDashboardData | UserDashboardData;
 
-const cachedDashboardStats: Record<DashboardRole, DashboardStats | null> = {
-  admin: null,
-  user: null,
-};
+const cachedDashboardStats = new Map<string, DashboardStats>();
 
 export default function Dashboard() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const roleKey: DashboardRole = isAdmin ? 'admin' : 'user';
+  const cacheKey = user ? `${roleKey}:${user.id}` : null;
+  const cachedStats = cacheKey ? cachedDashboardStats.get(cacheKey) : null;
 
-  const [loading, setLoading] = useState(
-    () => cachedDashboardStats[roleKey] === null,
-  );
+  const [loading, setLoading] = useState(() => cachedStats == null);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(
-    () => cachedDashboardStats[roleKey],
+    () => cachedStats ?? null,
   );
   const { messages: refreshMessages, appendMessage: appendRefreshMessage } =
     useTransientMessages();
   const mountedRef = useRef(false);
 
   const fetchDashboardData = useCallback(async () => {
-    const hasCachedSnapshot = cachedDashboardStats[roleKey] !== null;
+    if (!cacheKey) return;
+    const hasCachedSnapshot = cachedDashboardStats.has(cacheKey);
     try {
       if (!hasCachedSnapshot) setLoading(true);
       setError(null);
@@ -59,12 +57,12 @@ export default function Dashboard() {
         ? await getDashboardStats('admin')
         : await getDashboardStats('user');
       if (!mountedRef.current) return;
-      cachedDashboardStats[roleKey] = data;
+      cachedDashboardStats.set(cacheKey, data);
       setStats(data);
     } catch (err: unknown) {
       if (!mountedRef.current) return;
       const message = getApiErrorMessage(err, 'Failed to load dashboard data.');
-      if (cachedDashboardStats[roleKey] !== null) {
+      if (cachedDashboardStats.has(cacheKey)) {
         appendRefreshMessage(`${message} Showing the latest dashboard data.`);
       } else {
         setError(message);
@@ -72,15 +70,20 @@ export default function Dashboard() {
     } finally {
       if (mountedRef.current) setLoading(false);
     }
-  }, [appendRefreshMessage, isAdmin, roleKey]);
+  }, [appendRefreshMessage, cacheKey, isAdmin]);
 
   useEffect(() => {
     mountedRef.current = true;
-    const cachedStats = cachedDashboardStats[roleKey];
-    if (cachedStats) {
-      setStats(cachedStats);
+    const nextCachedStats = cacheKey
+      ? cachedDashboardStats.get(cacheKey)
+      : undefined;
+    if (nextCachedStats) {
+      setStats(nextCachedStats);
       setLoading(false);
       setError(null);
+    } else {
+      setStats(null);
+      setLoading(true);
     }
     if (user) {
       fetchDashboardData();
@@ -88,7 +91,7 @@ export default function Dashboard() {
     return () => {
       mountedRef.current = false;
     };
-  }, [fetchDashboardData, roleKey, user]);
+  }, [cacheKey, fetchDashboardData, user]);
 
   if (loading && !stats) {
     return <DashboardSkeleton />;

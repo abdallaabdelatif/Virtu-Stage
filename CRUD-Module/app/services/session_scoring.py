@@ -27,7 +27,8 @@ def _score_or_default(value: float | None) -> float:
     if value is None:
         return 50.0
     value = float(value)
-    return value * 100.0 if 0.0 <= value <= 1.0 else value
+    normalized = value * 100.0 if 0.0 <= value <= 1.0 else value
+    return min(100.0, max(0.0, normalized))
 
 
 def calculate_overall_score(voice_score: float, motion_score: float) -> float:
@@ -52,7 +53,7 @@ async def apply_motion_score_to_session(
     session: TrainingSession,
     motion_score: float,
 ) -> None:
-    session.motion_analysis_score = motion_score
+    session.motion_analysis_score = min(100.0, max(0.0, float(motion_score)))
 
 
 async def try_complete_session(db: AsyncSession, session_id: uuid.UUID) -> TrainingSession | None:
@@ -74,9 +75,15 @@ async def try_complete_session(db: AsyncSession, session_id: uuid.UUID) -> Train
     if session.motion_analysis_score is None:
         session.motion_analysis_score = motion.motion_overall_score
 
+    session.voice_analysis_score = min(
+        100.0, max(0.0, float(session.voice_analysis_score or 0.0))
+    )
+    session.motion_analysis_score = min(
+        100.0, max(0.0, float(session.motion_analysis_score or 0.0))
+    )
     session.overall_score = calculate_overall_score(
-        session.voice_analysis_score or 0.0,
-        session.motion_analysis_score or 0.0,
+        session.voice_analysis_score,
+        session.motion_analysis_score,
     )
     session.status = SessionStatus.completed
     return session

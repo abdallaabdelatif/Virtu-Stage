@@ -6,11 +6,10 @@ import {
 } from '@react-router/dev/routes';
 
 export default [
-  // ── Auth ──────────────────────────────
-  index('routes/home.tsx'), // / → Login
-  route('register', 'routes/register.tsx'), // /register
-  route('forgot-password', 'routes/forgot-password.tsx'), // /forgot-password
-  route('reset-password', 'routes/reset-password.tsx'), // /reset-password?token=...
+  index('routes/home.tsx'),
+  route('register', 'routes/register.tsx'),
+  route('forgot-password', 'routes/forgot-password.tsx'),
+  route('reset-password', 'routes/reset-password.tsx'),
 
   layout('routes/protected-layout.tsx', [
     route('dashboard', 'routes/dashboard.tsx'),
@@ -27,6 +26,5 @@ export default [
 
   layout('routes/admin-layout.tsx', [route('admin', 'routes/admin.tsx')]),
 
-  // ── Error Pages ──
   route('*', 'routes/not-found.tsx'),
 ] satisfies RouteConfig;

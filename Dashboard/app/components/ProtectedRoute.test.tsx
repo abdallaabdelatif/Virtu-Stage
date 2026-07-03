@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as allure from 'allure-js-commons';
-import { MemoryRouter, Route, Routes } from 'react-router';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { ProtectedRoute } from './ProtectedRoute';
 import { useAuth } from '../context/AuthContext';
 import type { AuthUser } from '../types/auth';
@@ -25,11 +25,22 @@ const activeUser: AuthUser = {
   gender: 'female',
 };
 
+function LoginPage() {
+  const location = useLocation();
+  const state = location.state as { from?: { pathname?: string } } | null;
+  return (
+    <div>
+      <p>Login Page</p>
+      <span>{state?.from?.pathname ?? 'No return path'}</span>
+    </div>
+  );
+}
+
 function renderProtected(initialPath = '/admin') {
   return render(
     <MemoryRouter initialEntries={[initialPath]}>
       <Routes>
-        <Route path="/" element={<div>Login Page</div>} />
+        <Route path="/" element={<LoginPage />} />
         <Route path="/dashboard" element={<div>Dashboard Page</div>} />
         <Route
           path="/admin"
@@ -56,15 +67,18 @@ describe('ProtectedRoute', () => {
     mockedUseAuth.mockReturnValue({
       user: null,
       isAuthenticated: false,
+      isExplicitLogout: false,
       loading: false,
       login: vi.fn(),
       logout: vi.fn(),
+      clearExplicitLogout: vi.fn(),
       updateUser: vi.fn(),
     });
 
     renderProtected();
 
     expect(screen.getByText('Login Page')).toBeInTheDocument();
+    expect(screen.getByText('/admin')).toBeInTheDocument();
   });
 
   it('redirects inactive users to login', async () => {
@@ -74,9 +88,11 @@ describe('ProtectedRoute', () => {
     mockedUseAuth.mockReturnValue({
       user: { ...activeUser, isActive: false },
       isAuthenticated: true,
+      isExplicitLogout: false,
       loading: false,
       login: vi.fn(),
       logout: vi.fn(),
+      clearExplicitLogout: vi.fn(),
       updateUser: vi.fn(),
     });
 
@@ -92,9 +108,11 @@ describe('ProtectedRoute', () => {
     mockedUseAuth.mockReturnValue({
       user: activeUser,
       isAuthenticated: true,
+      isExplicitLogout: false,
       loading: false,
       login: vi.fn(),
       logout: vi.fn(),
+      clearExplicitLogout: vi.fn(),
       updateUser: vi.fn(),
     });
 
@@ -110,9 +128,11 @@ describe('ProtectedRoute', () => {
     mockedUseAuth.mockReturnValue({
       user: { ...activeUser, role: 'admin' },
       isAuthenticated: true,
+      isExplicitLogout: false,
       loading: false,
       login: vi.fn(),
       logout: vi.fn(),
+      clearExplicitLogout: vi.fn(),
       updateUser: vi.fn(),
     });
 

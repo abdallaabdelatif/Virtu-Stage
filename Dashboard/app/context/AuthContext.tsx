@@ -18,8 +18,10 @@ interface AuthContextType {
   user: AuthUser | null;
   login: (user: AuthUser, token: string) => void;
   logout: () => void;
+  clearExplicitLogout: () => void;
   updateUser: (updates: Partial<AuthUser>) => void;
   isAuthenticated: boolean;
+  isExplicitLogout: boolean;
   loading: boolean;
 }
 
@@ -27,10 +29,14 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [isExplicitLogout, setIsExplicitLogout] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const handleUnauthorized = () => setUser(null);
+    const handleUnauthorized = () => {
+      setIsExplicitLogout(false);
+      setUser(null);
+    };
     window.addEventListener(UNAUTHORIZED_EVENT, handleUnauthorized);
     return () =>
       window.removeEventListener(UNAUTHORIZED_EVENT, handleUnauthorized);
@@ -53,13 +59,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (nextUser: AuthUser, token: string) => {
+    setIsExplicitLogout(false);
     setUser(nextUser);
     setAccessToken(token);
   };
 
   const logout = () => {
+    setIsExplicitLogout(true);
     setUser(null);
     clearAccessToken();
+  };
+
+  const clearExplicitLogout = () => {
+    setIsExplicitLogout(false);
   };
 
   const updateUser = (updates: Partial<AuthUser>) => {
@@ -75,8 +87,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         login,
         logout,
+        clearExplicitLogout,
         updateUser,
         isAuthenticated: Boolean(user),
+        isExplicitLogout,
         loading,
       }}
     >

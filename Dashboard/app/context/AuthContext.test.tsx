@@ -39,10 +39,12 @@ const testUser: AuthUser = {
 };
 
 function AuthHarness() {
-  const { user, login, logout, updateUser, isAuthenticated } = useAuth();
+  const { user, login, logout, updateUser, isAuthenticated, isExplicitLogout } =
+    useAuth();
   return (
     <div>
       <p>{isAuthenticated ? 'authenticated' : 'guest'}</p>
+      <p>{isExplicitLogout ? 'explicit logout' : 'normal auth flow'}</p>
       <p>{user?.name ?? 'No user'}</p>
       <button type="button" onClick={() => login(testUser, 'new-token')}>
         Login
@@ -117,12 +119,14 @@ describe('AuthProvider', () => {
 
     expect(mockedSetAccessToken).toHaveBeenCalledWith('new-token');
     expect(screen.getByText('authenticated')).toBeInTheDocument();
+    expect(screen.getByText('normal auth flow')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Update User' }));
     expect(screen.getByText('Updated Ahmed')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Logout' }));
     await waitFor(() => expect(screen.getByText('guest')).toBeInTheDocument());
+    expect(screen.getByText('explicit logout')).toBeInTheDocument();
     expect(mockedClearAccessToken).toHaveBeenCalled();
   });
 

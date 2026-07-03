@@ -77,11 +77,19 @@ describe('frontend mappers', () => {
       analyzed_sessions: 2,
       average_overall_score: 82,
       improvement_rate: 12,
-      score_history: [{ session_id: 's1', date: '2026-06-30', score: 82 }],
+      score_history: [
+        {
+          session_id: 's1',
+          date: '2026-06-30',
+          timestamp: '2026-06-30T10:05:00Z',
+          score: 82,
+        },
+      ],
       analysis_history: [
         {
           session_id: 's1',
           label: 'Session 1',
+          timestamp: '2026-06-30T10:05:00Z',
           voice_score: 80,
           motion_score: 84,
         },
@@ -106,13 +114,15 @@ describe('frontend mappers', () => {
 
     expect(userDashboard.totalSessions).toBe(3);
     expect(userDashboard.voiceMotionData[0]).toEqual({
+      sessionId: 's1',
       label: 'Session 1',
+      timestamp: '2026-06-30T10:05:00Z',
       voice: 80,
       motion: 84,
     });
     expect(adminDashboard.totalUsers).toBe(5);
     expect(adminDashboard.adminScoreData[0]).toMatchObject({
-      month: 'Jun',
+      month: 'Jun 2026',
       score: 79,
     });
   });

@@ -50,9 +50,11 @@ function mockGuestAuth() {
   mockedUseAuth.mockReturnValue({
     user: null,
     isAuthenticated: false,
+    isExplicitLogout: false,
     loading: false,
     login,
     logout: vi.fn(),
+    clearExplicitLogout: vi.fn(),
     updateUser: vi.fn(),
   });
   return { login };

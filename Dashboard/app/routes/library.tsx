@@ -64,12 +64,10 @@ export default function Library() {
     appendMessage: appendError,
   } = useTransientMessages();
 
-  // Always holds the latest files array — fixes stale closure in useCallback handlers
   const filesRef = useRef<LibraryFile[]>([]);
   const dragDepthRef = useRef(0);
   const mountedRef = useRef(false);
 
-  // Keep ref in sync with state
   const updateFiles = useCallback((newFiles: LibraryFile[]) => {
     filesRef.current = newFiles;
     setCachedLibraryFiles(newFiles);
@@ -132,8 +130,8 @@ export default function Library() {
       try {
         const nextFiles = await getFiles();
         if (active) updateFiles(nextFiles);
-      } catch {
-        // A later poll can recover from a temporary network failure.
+      } catch (error) {
+        void error;
       } finally {
         if (active) timer = window.setTimeout(poll, 2500);
       }
@@ -145,7 +143,6 @@ export default function Library() {
     };
   }, [files, updateFiles]);
 
-  // ── Validation ────────────────────────────────
   const validateFile = (file: File): string | null => {
     const ext = file.name.split('.').pop()?.toLowerCase();
     if (!ext || !ALLOWED_TYPES.includes(ext)) {
@@ -157,7 +154,6 @@ export default function Library() {
     return null;
   };
 
-  // ── Upload with server-reported progress ──────
   const uploadSelectedFile = useCallback(
     async (file: File) => {
       const uploadId = crypto.randomUUID();
@@ -195,7 +191,6 @@ export default function Library() {
     [appendError, updateFiles],
   );
 
-  // ── Process Files ─────────────────────────────
   const processFiles = useCallback(
     (fileList: FileList | File[]) => {
       const newErrors: string[] = [];
@@ -230,7 +225,6 @@ export default function Library() {
     [setErrors, uploadSelectedFile],
   );
 
-  // ── Drag Handlers ─────────────────────────────
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -326,7 +320,6 @@ export default function Library() {
 
   return (
     <>
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-black tracking-tight">Content Library</h1>
         <p className="text-[#d9d9d9] mt-1">
@@ -339,7 +332,6 @@ export default function Library() {
 
       {!loading && !error && (
         <>
-          {/* Error Messages */}
           {errors.length > 0 && (
             <div
               role="alert"
@@ -373,7 +365,6 @@ export default function Library() {
             onFileInput={handleFileInput}
           />
 
-          {/* Files Header & Search */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <h2 className="text-white text-xl font-black">
               Your Files
@@ -393,7 +384,6 @@ export default function Library() {
             </div>
           </div>
 
-          {/* Files Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {filtered.map((file) => (
               <LibraryFileCard

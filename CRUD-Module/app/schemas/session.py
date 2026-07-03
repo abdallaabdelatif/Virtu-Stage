@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.models.session import DifficultyLevel, ScenarioType, SessionStatus
 
@@ -19,9 +19,9 @@ class TrainingSessionUpdate(BaseModel):
     difficulty_level: Optional[DifficultyLevel] = None
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
-    overall_score: Optional[float] = None
-    voice_analysis_score: Optional[float] = None
-    motion_analysis_score: Optional[float] = None
+    overall_score: Optional[float] = Field(default=None, ge=0.0, le=100.0)
+    voice_analysis_score: Optional[float] = Field(default=None, ge=0.0, le=100.0)
+    motion_analysis_score: Optional[float] = Field(default=None, ge=0.0, le=100.0)
 
     @model_validator(mode="after")
     def validate_end_after_start(self) -> "TrainingSessionUpdate":

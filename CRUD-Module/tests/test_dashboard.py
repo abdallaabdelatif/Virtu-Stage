@@ -44,9 +44,11 @@ async def test_user_dashboard_aggregate(client, user_id):
     assert body["total_sessions"] == 11
     assert body["analyzed_sessions"] == 11
     assert body["average_overall_score"] == 75.0
-    assert body["improvement_rate"] is not None
+    assert body["improvement_rate"] == 6.85
     assert len(body["score_history"]) == 11
     assert len(body["analysis_history"]) == 10
+    assert all(point["timestamp"] for point in body["score_history"])
+    assert all(point["timestamp"] for point in body["analysis_history"])
 
 
 @pytest.mark.asyncio

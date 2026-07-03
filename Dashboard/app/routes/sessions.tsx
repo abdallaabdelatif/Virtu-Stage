@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { getSessions } from '../services/sessionService';
 import { SessionTable } from '../components/SessionTable';
 import { SectionHeader } from '../components/SectionHeader';
@@ -16,6 +16,7 @@ let cachedSessions: SessionListItem[] | null = null;
 
 export default function Sessions() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [sessions, setSessions] = useState<SessionListItem[]>(
     () => cachedSessions ?? [],
   );
@@ -83,7 +84,11 @@ export default function Sessions() {
         <SessionTable
           sessions={sessions}
           actionLabel="View Analysis"
-          onRowClick={(id) => navigate(`/session-analytics/${id}`)}
+          onRowClick={(id) =>
+            navigate(`/session-analytics/${id}`, {
+              state: { from: `${location.pathname}${location.search}` },
+            })
+          }
           onRefresh={fetchSessions}
         />
       )}

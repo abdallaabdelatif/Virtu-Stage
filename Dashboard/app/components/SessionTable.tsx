@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useSearchParams } from 'react-router';
 import { useSessionPolling } from '../hooks/useSessionPolling';
 import { styles } from '../utils/styles';
 import { StatusBadge } from './StatusBadge';
@@ -31,9 +32,27 @@ export function SessionTable({
   onRowClick,
   onRefresh,
 }: SessionTableProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [scenario, setScenario] = useState('All');
-  const [page, setPage] = useState(1);
+  const requestedPage = Number(searchParams.get('page'));
+  const page =
+    Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+
+  const setPage = useCallback(
+    (nextPage: number) => {
+      setSearchParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          if (nextPage <= 1) next.delete('page');
+          else next.set('page', String(nextPage));
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   const scenarios = useMemo(
     () =>
@@ -59,7 +78,7 @@ export function SessionTable({
 
   useEffect(() => {
     if (page !== currentPage) setPage(currentPage);
-  }, [currentPage, page]);
+  }, [currentPage, page, setPage]);
 
   return (
     <>

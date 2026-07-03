@@ -6,11 +6,13 @@ export interface UserDashboardDto {
   score_history: Array<{
     session_id: string;
     date: string;
+    timestamp: string;
     score: number;
   }>;
   analysis_history: Array<{
     session_id: string;
     label: string;
+    timestamp: string;
     voice_score: number;
     motion_score: number;
   }>;

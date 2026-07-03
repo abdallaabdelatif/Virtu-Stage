@@ -52,7 +52,7 @@ export function AdminDashboard({ name, data }: AdminDashboardProps) {
         <StatCard
           label="Total Users"
           value={totalUsers.toString()}
-          change={
+          description={
             totalUsers === 0
               ? 'No registered users yet'
               : 'Registered platform users'
@@ -63,7 +63,7 @@ export function AdminDashboard({ name, data }: AdminDashboardProps) {
         <StatCard
           label="Total Sessions"
           value={totalSessions.toString()}
-          change={
+          description={
             totalSessions === 0
               ? 'No sessions recorded yet'
               : 'Sessions across all users'
@@ -74,18 +74,19 @@ export function AdminDashboard({ name, data }: AdminDashboardProps) {
         <StatCard
           label="Platform Avg Score"
           value={platformAvgScore != null ? `${platformAvgScore}/100` : '--'}
-          change={
-            totalSessions === 0
+          description={
+            platformAvgScore == null
               ? 'Available after session analysis'
               : 'Average across completed sessions'
           }
+          progress={platformAvgScore ?? undefined}
           color="#FFB703"
           icon={<TrendingUp className="w-5 h-5" />}
         />
         <StatCard
           label="Sessions Today"
           value={sessionsToday.toString()}
-          change={
+          description={
             sessionsToday === 0
               ? 'No sessions started today (Cairo time)'
               : 'Sessions started today (Cairo time)'

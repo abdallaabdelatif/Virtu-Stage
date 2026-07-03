@@ -1,5 +1,3 @@
-// app/components/RecommendationItem.tsx
-
 interface RecommendationItemProps {
   num: number;
   title: string;

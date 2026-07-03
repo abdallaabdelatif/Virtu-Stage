@@ -98,6 +98,45 @@ def test_list_my_sessions(client):
     )
     assert response.status_code == 200
     assert len(response.json()) == 1
+    assert response.json()[0]["status"] == "processing"
+
+
+def test_list_my_sessions_resolves_timed_out_processing_status(client, monkeypatch):
+    test_client, owner_id, _, session_id = client
+    old_end = datetime.now(timezone.utc) - timedelta(seconds=700)
+    old_session = {
+        "session_id": session_id,
+        "user_id": owner_id,
+        "scenario_type": "interview",
+        "difficulty_level": "medium",
+        "status": "processing",
+        "start_time": old_end.isoformat(),
+        "end_time": old_end.isoformat(),
+        "overall_score": None,
+        "voice_analysis_score": 81.0,
+        "motion_analysis_score": None,
+        "created_at": old_end.isoformat(),
+    }
+
+    async def fake_list_sessions(_user_id: str):
+        return [old_session]
+
+    import app.api.sessions as sessions_module
+
+    monkeypatch.setattr(
+        sessions_module.crud_client,
+        "list_training_sessions_by_user",
+        fake_list_sessions,
+    )
+    monkeypatch.setattr(report_service, "ANALYSIS_TIMEOUT_SECONDS", 600)
+
+    response = test_client.get(
+        "/api/sessions/me",
+        headers={"Authorization": "Bearer test-token"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()[0]["status"] == "failed"
 
 
 def test_session_ownership_forbidden(client):

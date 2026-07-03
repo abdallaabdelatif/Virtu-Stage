@@ -59,6 +59,7 @@ def admin_client(monkeypatch):
             {
                 "session_id": str(uuid.uuid4()),
                 "date": "2026-06-28",
+                "timestamp": "2026-06-28T09:05:00+00:00",
                 "score": 81.0,
             }
         ],

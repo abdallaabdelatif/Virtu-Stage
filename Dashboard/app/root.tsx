@@ -10,7 +10,7 @@ import {
 import type { Route } from './+types/root';
 import './app.css';
 
-import { AuthProvider } from './context/AuthContext'; // ADDED THIS
+import { AuthProvider } from './context/AuthContext';
 
 export const meta: Route.MetaFunction = () => [
   { title: 'VirtuStage' },

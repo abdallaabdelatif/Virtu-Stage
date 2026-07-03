@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { MemoryRouter } from 'react-router';
 import { SessionTable } from './SessionTable';
 import type { SessionListItem } from '../types/session';
 
@@ -13,15 +14,29 @@ const sessions: SessionListItem[] = Array.from({ length: 6 }, (_, index) => ({
   backendStatus: 'completed',
 }));
 
+function renderTable(initialEntry = '/sessions') {
+  return render(
+    <MemoryRouter initialEntries={[initialEntry]}>
+      <SessionTable
+        sessions={sessions}
+        actionLabel="View Analysis"
+        onRowClick={vi.fn()}
+      />
+    </MemoryRouter>,
+  );
+}
+
 describe('SessionTable', () => {
   it('opens completed sessions from a keyboard-operable row', () => {
     const onRowClick = vi.fn();
     render(
-      <SessionTable
-        sessions={sessions}
-        actionLabel="View Analysis"
-        onRowClick={onRowClick}
-      />,
+      <MemoryRouter>
+        <SessionTable
+          sessions={sessions}
+          actionLabel="View Analysis"
+          onRowClick={onRowClick}
+        />
+      </MemoryRouter>,
     );
 
     fireEvent.click(
@@ -31,13 +46,7 @@ describe('SessionTable', () => {
   });
 
   it('filters scenarios and keeps pagination bounded', () => {
-    render(
-      <SessionTable
-        sessions={sessions}
-        actionLabel="View Analysis"
-        onRowClick={vi.fn()}
-      />,
-    );
+    renderTable();
 
     fireEvent.change(screen.getByLabelText('Filter by scenario'), {
       target: { value: 'Public Speaking' },
@@ -47,6 +56,19 @@ describe('SessionTable', () => {
     ).toHaveLength(3);
     expect(
       screen.queryByRole('button', { name: 'Page 2' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('restores the selected page from the URL', () => {
+    renderTable('/sessions?page=2');
+
+    expect(
+      screen.getByRole('button', { name: /job interview session from jun 5/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: /job interview session from jun 1/i,
+      }),
     ).not.toBeInTheDocument();
   });
 });

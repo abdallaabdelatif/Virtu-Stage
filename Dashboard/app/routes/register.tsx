@@ -110,7 +110,6 @@ export default function Register() {
           'radial-gradient(at 0% 100%, rgba(193,255,114,0.14) 0, transparent 48%), radial-gradient(at 100% 0%, rgba(6,68,35,0.55) 0, transparent 46%)',
       }}
     >
-      {/* Header */}
       <header className="flex items-center justify-between px-6 md:px-10 py-4 border-b border-[#2a3325] bg-[#10130f]/30 backdrop-blur-sm sticky top-0 z-50">
         <VirtuStageLogo
           variant="wordmark"
@@ -129,7 +128,6 @@ export default function Register() {
         </div>
       </header>
 
-      {/* Main */}
       <main className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-[480px]">
           <div className="bg-[#1a2117]/60 border border-[#46513c] rounded-xl p-8 shadow-2xl backdrop-blur-md">

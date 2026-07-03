@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import {
   LayoutDashboard,
-  PlaySquare,
   BarChart2,
   BookOpen,
   Settings,
@@ -14,17 +13,11 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { VirtuStageLogo } from './icons';
 
-// ── Regular User Nav ──────────────────────────────
 const userNavItems = [
   {
     label: 'Dashboard',
     icon: <LayoutDashboard className="w-5 h-5" />,
     path: '/dashboard',
-  },
-  {
-    label: 'Sessions',
-    icon: <PlaySquare className="w-5 h-5" />,
-    path: '/sessions',
   },
   {
     label: 'Analytics',
@@ -43,7 +36,6 @@ const userNavItems = [
   },
 ];
 
-// ── Admin Nav ─────────────────────────────────────
 const adminNavItems = [
   {
     label: 'Dashboard',
@@ -69,7 +61,6 @@ interface PageLayoutProps {
 export function PageLayout({ children }: PageLayoutProps) {
   const { user, logout } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const mobileDrawerRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -79,7 +70,6 @@ export function PageLayout({ children }: PageLayoutProps) {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
   };
 
   const isActive = (path: string) => {
@@ -87,11 +77,6 @@ export function PageLayout({ children }: PageLayoutProps) {
       return (
         location.pathname === path ||
         location.pathname.startsWith('/session-analytics/')
-      );
-    }
-    if (path === '/sessions') {
-      return (
-        location.pathname === path || location.pathname.startsWith('/session/')
       );
     }
     return location.pathname === path;
@@ -144,7 +129,6 @@ export function PageLayout({ children }: PageLayoutProps) {
 
   const renderSidebarContent = (mobile = false) => (
     <div className="flex flex-col h-full">
-      {/* Logo */}
       <div className="flex items-center h-[76px] gap-3 px-4 border-b border-border-subtle">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/10 ring-1 ring-brand/20">
           <VirtuStageLogo className="h-10 w-10 object-contain" />
@@ -167,9 +151,7 @@ export function PageLayout({ children }: PageLayoutProps) {
         )}
       </div>
 
-      {/* Nav Items */}
       <nav className="flex-1 px-3 py-4 space-y-1">
-        {/* Section label for admin */}
         {isAdmin && (
           <p className="text-muted text-xs font-bold uppercase tracking-wider px-3 pb-2">
             Admin
@@ -194,7 +176,6 @@ export function PageLayout({ children }: PageLayoutProps) {
         ))}
       </nav>
 
-      {/* User Info + Logout */}
       <div className="px-3 py-4 border-t border-border-subtle">
         <Link
           to="/settings"
@@ -238,7 +219,6 @@ export function PageLayout({ children }: PageLayoutProps) {
       >
         Skip to main content
       </a>
-      {/* Desktop Sidebar */}
       <aside
         aria-label="Primary navigation"
         className="hidden lg:flex flex-col w-56 bg-sidebar border-r border-border-subtle fixed h-full z-20"
@@ -246,7 +226,6 @@ export function PageLayout({ children }: PageLayoutProps) {
         {renderSidebarContent()}
       </aside>
 
-      {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-30 flex">
           <div
@@ -267,9 +246,7 @@ export function PageLayout({ children }: PageLayoutProps) {
         </div>
       )}
 
-      {/* Main Content */}
       <div className="flex-1 lg:ml-56 flex flex-col min-h-screen">
-        {/* Top Bar */}
         <header className="sticky top-0 z-10 h-[76px] flex items-center justify-between px-4 sm:px-6 border-b border-border-subtle bg-canvas/80 backdrop-blur-sm">
           <button
             ref={menuButtonRef}
@@ -302,7 +279,6 @@ export function PageLayout({ children }: PageLayoutProps) {
           </div>
         </header>
 
-        {/* Page Content */}
         <main id="main-content" className="flex-1 p-4 sm:p-6 lg:p-8">
           {children}
         </main>

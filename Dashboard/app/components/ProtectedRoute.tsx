@@ -11,13 +11,19 @@ export function ProtectedRoute({
   children,
   allowedRoles,
 }: ProtectedRouteProps) {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, isExplicitLogout, loading } = useAuth();
   const location = useLocation();
 
   if (loading) return null;
 
   if (!isAuthenticated || !user) {
-    return <Navigate to="/" state={{ from: location }} replace />;
+    return (
+      <Navigate
+        to="/"
+        state={isExplicitLogout ? null : { from: location }}
+        replace
+      />
+    );
   }
 
   if (!user.isActive) {
