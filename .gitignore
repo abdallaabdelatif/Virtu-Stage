@@ -12,8 +12,8 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
-**/___pycache__/
-Voice-Analysis-Service/wav2vec2_checkpoints
+**/__pycache__/
+Voice-Analysis-Service/wav2vec2_checkpoints/
 
 # Database Files 
 *.db
@@ -26,6 +26,10 @@ Voice-Analysis-Service/wav2vec2_checkpoints
 .env.development
 .env.production
 **/.env
+.env.*
+**/.env.*
+!.env.example
+!**/.env.example
 
 # Distribution / Packaging 
 dist/
@@ -53,7 +57,12 @@ desktop.ini
 .coverage
 htmlcov/
 coverage.xml
+allure-results/
+**/allure-results/
 
 # Logs 
 *.log
 logs/
+
+# Generated analysis/demo outputs
+Motion-Analysis-Service/output/
